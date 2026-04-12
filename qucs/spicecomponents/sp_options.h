@@ -31,6 +31,9 @@ public:
   static void splitEqn(QString &eqn, QStringList &tokens);
   QString getExpression(spicecompat::SpiceDialect dialect = spicecompat::SPICEDefault);
 
+  // Xyce Package options <pkgName, description>
+  static const QMap<QString, QString>& getXycePackageOptions();
+
 protected:
   QString vhdlCode(int) { return QString(); }
   QString verilogCode(int) { return QString(); }

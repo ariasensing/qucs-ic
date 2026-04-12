@@ -26,6 +26,7 @@
 #include <QTextEdit>
 
 class Schematic;
+class SpiceOptions;
 
 class QValidator;
 class QIntValidator;
@@ -77,6 +78,7 @@ private:
   QCheckBox* cmdConsoleCheck = nullptr;  // CMD console toggle
   QCheckBox* cmdHoldCheck = nullptr;     // CMD hold toggle
   QLineEdit* cmdTerminalEdit;            // CMD component: Specify terminal emulator
+  QComboBox* xycePkgCombo = nullptr;     // Xyce options package for use in SpiceOptions
 
   Component* component;
   Schematic* document;

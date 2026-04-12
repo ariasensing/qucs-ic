@@ -48,8 +48,8 @@ SpiceOptions::SpiceOptions()
   Model = "SpiceOptions";
   Name  = "SpiceOptions";
 
-  Props.append(new Property("XyceOptionPackage", "DEVICE", false,
-        QObject::tr("Xyce option package name")));
+  Props.append(new Property("XyceOptionPackage", "DEVICE", true,
+        QObject::tr("Xyce option package name"), Property::Type::Value, spicecompat::simXyce));
   Props.append(new Property("GMIN", "1e-12", true));
 }
 
@@ -91,3 +91,30 @@ QString SpiceOptions::getExpression(spicecompat::SpiceDialect dialect /* = spice
     return s;
 }
 
+// Xyce Package options <pkgName, description>
+const QMap<QString, QString>& SpiceOptions::getXycePackageOptions() {
+    // Based on Xyce v7.10 Reference Guide
+    static const QMap<QString, QString> pkgInfo = {
+      {"DEVICE",          QObject::tr("Device Model")},
+      {"DIAGNOSTIC",      QObject::tr("Diagnostic Simulation Output")},
+      {"TIMEINT",         QObject::tr("Time Integration")},
+      {"NONLIN",          QObject::tr("Nonlinear Solver")},
+      {"NONLIN-TRAN",     QObject::tr("Transient Nonlinear Solver")},
+      {"NONLIN-HB",       QObject::tr("HB Nonlinear Solver")},
+      {"LOCA",            QObject::tr("Continuation/Bifurcation Tracking")},
+      {"LINSOL",          QObject::tr("Linear Solver")},
+      {"LINSOL-HB",       QObject::tr("HB Linear Solver")},
+      {"LINSOL-AC",       QObject::tr("AC Linear Solver")},
+      {"OUTPUT",          QObject::tr("Output")},
+      {"RESTART",         QObject::tr("Restart")},
+      {"SAMPLES",         QObject::tr("Sampling analysis and non-intrusive Polynomial Chaos (PCE)")},
+      {"EMBEDDEDSAMPLES", QObject::tr("EmbeddedSampling and non-intrusive Polynomial Chaos (PCE)")},
+      {"PCES",            QObject::tr("Fully intrusive Polynomial Chaos (PCE)")},
+      {"SENSITIVITY",     QObject::tr("Direct and Adjoint sensitivities")},
+      {"HBINT",           QObject::tr("Harmonic Balance (HB)")},
+      {"DIST",            QObject::tr("Distribution")},
+      {"MEASURE",         QObject::tr("Measure")},
+      {"PARSER",          QObject::tr("Parsing")}
+    };
+    return pkgInfo;
+}
