@@ -1638,4 +1638,6 @@ void QucsApp::setDefaultShortcut() {
 
   mgr.registerCommand("Help.AboutQt", "Help", "About Qt", helpAboutQt,
                       QKeySequence());
+
+  mgr.loadFromSettings();
 }

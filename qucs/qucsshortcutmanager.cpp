@@ -394,6 +394,8 @@ void QucsShortcutManager::saveToSettings() const {
   for (const auto &cmd : m_commands) {
     if (cmd->isModified()) {
       settings.setValue(cmd->id(), cmd->currentKeySequence().toString());
+    } else {
+      settings.remove(cmd->id());
     }
   }
 
