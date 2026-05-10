@@ -17,7 +17,8 @@ env:
   QT_VERSION: 6.10.3
   QUCS_MACOS_BIN: ${{github.workspace}}/build/qucs/qucs-s.app/Contents/MacOS/bin
   QUCS_MACOS_RESOURCES: ${{github.workspace}}/build/qucs/qucs-s.app/Contents/MacOS/share/qucs-s
-  NGSPICE_URL: https://downloads.sourceforge.net/project/ngspice/ng-spice-rework/46/ngspice-46_64.7z
+  #NGSPICE_URL: https://downloads.sourceforge.net/project/ngspice/ng-spice-rework/46/ngspice-46_64.7z
+  NGSPICE_URL: https://downloads.sourceforge.net/project/ngspice/ng-spice-rework/old-releases/45.2/ngspice-45.2_64.7z
 
 jobs:
   setup:
@@ -217,6 +218,7 @@ jobs:
           mkdir -p ${{ env.QUCS_MACOS_BIN }}
           mkdir -p ${{ env.QUCS_MACOS_RESOURCES }}/examples
           mkdir -p ${{ env.QUCS_MACOS_RESOURCES }}/library
+          mkdir -p ${{ env.QUCS_MACOS_RESOURCES }}/library/spicelibrary
           mkdir -p ${{ env.QUCS_MACOS_RESOURCES }}/symbols
           mkdir -p ${{ env.QUCS_MACOS_RESOURCES }}/lang
           cp -pR ${{ github.workspace }}/build/qucs-activefilter/qucs-sactivefilter.app ${{ env.QUCS_MACOS_BIN }}
@@ -231,6 +233,7 @@ jobs:
           cp -pR ${{ github.workspace }}/examples/* ${{ env.QUCS_MACOS_RESOURCES }}/examples
           cp -pR ${{ github.workspace }}/library/*.lib ${{ env.QUCS_MACOS_RESOURCES }}/library
           cp -pR ${{ github.workspace }}/library/*.blacklist ${{ env.QUCS_MACOS_RESOURCES }}/library
+          cp -pR ${{ github.workspace }}/library/spicelibrary/*.cir ${{ env.QUCS_MACOS_RESOURCES }}/library/spicelibrary
           cp -pR ${{ github.workspace }}/library/symbols/* ${{ env.QUCS_MACOS_RESOURCES }}/symbols
           cp -pR ${{ github.workspace }}/build/translations/*.qm ${{ env.QUCS_MACOS_RESOURCES }}/lang
           macdeployqt ${{ github.workspace }}/build/qucs/qucs-s.app

@@ -49,14 +49,14 @@ Here are some examples for the popular Linux distributions.
 ~~~
 sudo apt-get install ngspice build-essential git cmake flex bison gperf dos2unix
 sudo apt-get install qt6-base-dev qt6-tools-dev qt6-tools-dev-tools libglx-dev linguist-qt6
-sudo apt-get install qt6-l10n-tools libqt6svg6-dev libgl1-mesa-dev qt6-charts-dev libqt6opengl6-dev
+sudo apt-get install qt6-l10n-tools libqt6svg6-dev libgl1-mesa-dev libqt6opengl6-dev
 ~~~
 
 #### Fedora
 
 ~~~
 sudo dnf install gcc-c++ cmake git flex bison gperf dos2unix ngspice
-sudo dnf install qt6-qtbase-devel cmake qt6-qtsvg-devel qt6-qttools-devel qt6-qtcharts-devel
+sudo dnf install qt6-qtbase-devel cmake qt6-qtsvg-devel qt6-qttools-devel
 ~~~
 
 ### Compiling
