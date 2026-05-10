@@ -17,7 +17,8 @@ env:
   QT_VERSION: 6.10.3
   QUCS_MACOS_BIN: ${{github.workspace}}/build/qucs/qucs-s.app/Contents/MacOS/bin
   QUCS_MACOS_RESOURCES: ${{github.workspace}}/build/qucs/qucs-s.app/Contents/MacOS/share/qucs-s
-  NGSPICE_URL: https://downloads.sourceforge.net/project/ngspice/ng-spice-rework/46/ngspice-46_64.7z
+  #NGSPICE_URL: https://downloads.sourceforge.net/project/ngspice/ng-spice-rework/46/ngspice-46_64.7z
+  NGSPICE_URL: https://downloads.sourceforge.net/project/ngspice/ng-spice-rework/old-releases/45.2/ngspice-45.2_64.7z
 
 jobs:
   setup:
