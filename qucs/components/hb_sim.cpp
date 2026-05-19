@@ -67,13 +67,26 @@ QString HB_Sim::spice_netlist(spicecompat::SpiceDialect dialect /* = spicecompat
 {
     QString s="";
     if (dialect == spicecompat::SPICEXyce) {  // Only in Xyce
-        s += QStringLiteral(".options hbint numfreq=%1 STARTUPPERIODS=2\n").arg(Props.at(1)->Value);
+        // Get frequency list from the properties
         QStringList freqs = Props.at(0)->Value.split(QRegularExpression("\\s+(?=[0-9])"));
+
+        // Build the NUMFREQ QString for N fundamental frequencies
+        QString NUMFREQ = Props.at(1)->Value; // Number of harmonics to be calculated for each tone
+        QString numfreqs = NUMFREQ;
+        int N = freqs.count(); // Number of fundamental frequencies
+        if (N > 1){
+          // Multitone input
+          for (int i = 0; i < N-1; ++i) {
+            numfreqs.append(QString(",%1").arg(NUMFREQ));
+          }
+        }
+
         // split frequencyes list by space before digit
         for (QStringList::iterator it = freqs.begin();it != freqs.end(); it++) {
             (*it) = spicecompat::normalize_value(*it);
         }
         s += QStringLiteral(".HB %1\n").arg(freqs.join(" "));
+        s += QStringLiteral(".options hbint numfreq=%1 STARTUPPERIODS=2\n").arg(numfreqs);
     }
     return s;
 }
