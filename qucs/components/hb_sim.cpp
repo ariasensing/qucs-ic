@@ -68,7 +68,7 @@ QString HB_Sim::spice_netlist(spicecompat::SpiceDialect dialect /* = spicecompat
     QString s="";
     if (dialect == spicecompat::SPICEXyce) {  // Only in Xyce
         // Get frequency list from the properties
-        QStringList freqs = Props.at(0)->Value.split(QRegularExpression("\\s+(?=[0-9])"));
+        QStringList freqs = Props.at(0)->Value.split(QRegularExpression("\\s*[,;]\\s*|\\s+(?=[0-9])"), Qt::SkipEmptyParts);
 
         // Build the NUMFREQ QString for N fundamental frequencies
         QString NUMFREQ = Props.at(1)->Value; // Number of harmonics to be calculated for each tone
