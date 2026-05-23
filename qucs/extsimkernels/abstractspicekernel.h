@@ -57,6 +57,19 @@ private:
     bool extractASCIISamples(QString &lin, QTextStream &ngsp_data, QList< QList<double> > &sim_points,
                              int NumVars, bool isComplex);
 
+    /// @brief Interpolates variable-length time steps onto a common uniform time grid.
+    /// This is used in parametric transient simulations with Xyce. This simulator has an adaptative timestep that
+    /// produces a different number of points per sweep step. convertToQucsData() assumes that all the time series have the same time vector, so
+    /// the data that Xyce yields with parametric simulations break this.
+
+    /// This function finds the time intersection of all steps, builds a uniform grid from
+    /// the median timestep of the first step, and linearly interpolates every step onto
+    /// that grid before merging into sim_points.
+    /// @param steps   Per-step simulation data: steps[step][point][var]
+    /// @param sim_points Flat output list filled by this function
+    /// @param nVars   Number of variables (including the time column)
+    void resampleToCommonGrid(const QList< QList< QList<double> > > &steps, QList< QList<double> > &sim_points, int nVars);
+
 protected:
     QString a_workdir;
     QString a_simulator_cmd;

@@ -891,6 +891,12 @@ void AbstractSpiceKernel::parseSTEPOutput(QString ngspice_file,
     bool header_parsed = false;
     int NumVars=0; // Number of dep. and indep.variables
     int NumPoints=0; // Number of simulation points
+
+    // Per-step storage for resampling (Xyce adaptive timestepper produces
+    // variable-length steps; we interpolate onto a common grid before merging)
+    QList< QList< QList<double> > > all_steps;
+    QList< QList<double> > current_step;
+
     while (!ngsp_data.atEnd()) {
         QRegularExpression sep("[ \t,]");
         QString lin = ngsp_data.readLine();
@@ -906,10 +912,6 @@ void AbstractSpiceKernel::parseSTEPOutput(QString ngspice_file,
             }
             if (lin.contains("No. Variables")) {  // get number of variables
                 NumVars=lin.section(sep,2,2,QString::SectionSkipEmpty).toInt();
-                continue;
-            }
-            if (lin.contains("No. Points:")) {  // get number of variables
-                NumPoints=lin.section(sep,2,2,QString::SectionSkipEmpty).toInt();
                 continue;
             }
             if (lin=="Variables:") {
@@ -932,6 +934,18 @@ void AbstractSpiceKernel::parseSTEPOutput(QString ngspice_file,
             }
         }
 
+        // Re-read NumPoints for every block, this allows teh program to know the length of each step.
+        // The previous step is saved when a new block starts.
+        if (lin.contains("No. Points:")) {
+            NumPoints = lin.section(sep,2,2,QString::SectionSkipEmpty).toInt();
+            if (!current_step.isEmpty()) {
+                all_steps.append(current_step);
+                current_step.clear();
+            }
+            start_values_sec = false;
+            continue;
+        }
+
         if (lin=="Values:") {
             start_values_sec = true;
             continue;
@@ -945,7 +959,9 @@ void AbstractSpiceKernel::parseSTEPOutput(QString ngspice_file,
             QDataStream dbl(content);
             dbl.setByteOrder(QDataStream::LittleEndian);
             dbl.device()->seek(bin_offset);
-            extractBinSamples(dbl,sim_points,NumPoints,NumVars,isComplex);
+            extractBinSamples(dbl, current_step, NumPoints, NumVars, isComplex);
+            all_steps.append(current_step);
+            current_step.clear();
             int pos = dbl.device()->pos();
             ngsp_data.seek(pos);
             isBinary = false;
@@ -954,10 +970,27 @@ void AbstractSpiceKernel::parseSTEPOutput(QString ngspice_file,
 
 
         if (start_values_sec) {
-            if (!extractASCIISamples(lin,ngsp_data,sim_points,NumVars,isComplex)) continue;
+            if (!extractASCIISamples(lin, ngsp_data, current_step, NumVars, isComplex)) continue;
         }
-
     }
+
+    if (!current_step.isEmpty()) {
+       all_steps.append(current_step);
+    }
+
+    if (all_steps.isEmpty()) return;
+
+    // For time-domain sweeps, resample onto a common grid to fix unequal step lengths.
+    // For other sweep types (AC, DC) merge steps as-is (equal lengths assumed).
+    if (!var_list.isEmpty() && var_list.first().toLower() == "time") {
+       resampleToCommonGrid(all_steps, sim_points, var_list.count());
+    } else {
+      for (const auto& step : std::as_const(all_steps)){
+        for (const auto& point : step) {
+         sim_points.append(point);
+        }
+     }
+   }
 }
 
 /*!
@@ -1771,3 +1804,78 @@ QStringList AbstractSpiceKernel::collectSpiceLibraryFiles(Schematic *sch)
   return collected_spicelib;
 }
 
+void AbstractSpiceKernel::resampleToCommonGrid(
+    const QList< QList< QList<double> > > &steps,
+    QList< QList<double> > &sim_points,
+    int nVars)
+{
+  // Find minimum start time and the maximum stop time for
+  // all the iterations
+  double tStart = 0.0, tStop = 1e99;
+  for (const auto& step : steps) {
+    tStart = qMax(tStart, step.first().at(0));
+    tStop  = qMin(tStop,  step.last().at(0));
+  }
+
+  // Here the timestep for the new time vector is defined. The proper way
+  // to do this would be to access the "tstep" value of the transient simulation block
+  // but that information is not available here.
+  // In order to get the timestep from the first iteration, the time vector of the first
+  // iteration is used. Since the timestep is not uniform, the timestep must be taken from
+  // some statistic of the time vector. I think that that metric should be the median, because
+  // it the time vector contains a few points with too small or too coarse step, that would
+  // oversample or undersample the time vector.
+  QVector<double> dts;
+  for (int i = 1; i < steps[0].count(); i++) {
+    dts.append(steps[0][i][0] - steps[0][i-1][0]);
+  }
+  std::sort(dts.begin(), dts.end());
+  double tstep = dts[dts.size() / 2];
+  double mag   = std::pow(10.0, std::floor(std::log10(tstep)));
+  tstep = std::round(tstep / mag) * mag;
+
+  // Build uniform time grid
+  int nPts = static_cast<int>(std::round((tStop - tStart) / tstep)) + 1;
+  QVector<double> grid(nPts);
+  for (int i = 0; i < nPts; i++) {
+    grid[i] = tStart + i * tstep;
+  }
+
+  // Interpolate each step onto the common grid and append to sim_points
+  for (const auto& step : steps) {
+    // Extract the time vector of the current iteration
+    QVector<double> st(step.count());
+    for (int i = 0; i < step.count(); i++) {
+      st[i] = step[i][0]; // Time column
+    }
+
+    for (int ti = 0; ti < nPts; ti++) {
+      double t = grid[ti];
+      // Find the neighbours for time value on the original time vector
+      int lo = 0, hi = st.size() - 1;
+      while (hi - lo > 1) {
+        int mid = (lo + hi) / 2;
+        if (st[mid] <= t) {
+          lo = mid;
+        } else {
+          hi = mid;
+        }
+      }
+
+      // Interpolation fraction
+      double frac = 0.0;
+      if (st[hi] > st[lo]) {
+        frac = (t - st[lo]) / (st[hi] - st[lo]);
+      }
+
+      // Interpolate the value
+      QList<double> point;
+      point.append(t);
+      for (int c = 1; c < nVars; c++){
+        point.append(step[lo][c] + frac * (step[hi][c] - step[lo][c]));
+      }
+
+      sim_points.append(point); // Add the value to the final result
+    }
+  }
+}
