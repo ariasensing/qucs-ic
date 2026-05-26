@@ -131,26 +131,11 @@ QString Source_ac::ngspice_netlist()
     if (freqs.size() > 1 && !isTermination) {
       return multitone_ngspice(z0, freqs, powers, phases, en_tran);
     } else {
-      // Single-tone setup — extract scalar values from the first index in the list
+      // Single-tone setup
       const QString pVal  = powers.isEmpty() ? QString() : powers.first();
       const QString f     = freqs.isEmpty()  ? QString() : spicecompat::normalize_value(freqs.first());
       const QString phase = phases.isEmpty() ? QStringLiteral("0") : phases.first();
-
-      const QString vamp = resolveVamp(pVal, z0, spicecompat::SPICEDefault);
-
-      if (isTermination) {
-        s += QStringLiteral(" dc 0 ac 0");
-      } else {
-        s += QStringLiteral(" dc 0 ac %1").arg(vamp);
-        if (en_tran)
-          s += QStringLiteral(" SIN(0 %1 %2 0 0 %3)").arg(vamp, f, phase);
-    }
-
-      s += QStringLiteral(" portnum %1").arg(getProperty("Num")->Value);
-      s += QStringLiteral(" z0 %1").arg(z0);
-      s += "\n";
-      return s;
-
+      return singletone_ngspice(s, z0, f, pVal, phase, en_tran, isTermination);
     }
 }
 
@@ -208,6 +193,29 @@ QString Source_ac::multitone_ngspice(double z0,
     s += '\n';
   }
 
+  return s;
+}
+
+
+QString Source_ac::singletone_ngspice(const QString &nodeString, double z0,
+                                      const QString &freq, const QString &pVal,
+                                      const QString &phase,
+                                      bool enTran, bool isTermination)
+{
+  QString s = nodeString;
+  const QString vamp = resolveVamp(pVal, z0, spicecompat::SPICEDefault);
+
+  if (isTermination) {
+    s += QStringLiteral(" dc 0 ac 0");
+  } else {
+    s += QStringLiteral(" dc 0 ac %1").arg(vamp);
+    if (enTran)
+      s += QStringLiteral(" SIN(0 %1 %2 0 0 %3)").arg(vamp, freq, phase);
+  }
+
+  s += QStringLiteral(" portnum %1").arg(getProperty("Num")->Value);
+  s += QStringLiteral(" z0 %1").arg(z0);
+  s += "\n";
   return s;
 }
 

@@ -26,15 +26,28 @@ private:
   QString ngspice_netlist();
   QString xyce_netlist();
 
-  /// @brief Prepare netline for multitone setup
+  /// @brief Prepare the ngspice netline for the multitone setup
   /// @param z0 Characteristic impedance
   /// @param freqs List of the tone frequencies
   /// @param powers List of powers per carrier in dBm (to be converter in Vpeak inside)
   /// @param phases List of phases per carrier
   /// @param enTran Flag for the transient simulation
-  QString multitone_ngspice(double z0, const QStringList &freqs,
+  QString multitone_ngspice(double z0,
+                            const QStringList &freqs,
                             const QStringList &powers,
                             const QStringList &phases, bool enTran);
+
+  /// @brief Prepare the ngspice netline for the single-tone setup
+  /// @param z0 Characteristic impedance
+  /// @param freq Frequency of the tone
+  /// @param power RMS power
+  /// @param phases Phase
+  /// @param enTran Flag for the transient simulation
+  /// @param isTermination Flag for passive port
+  QString singletone_ngspice(const QString &nodeString, double z0,
+                             const QString &freq, const QString &pVal,
+                             const QString &phase,
+                             bool enTran, bool isTermination);
 
 
   /// @brief Split a comma-separated property string into a trimmed list.
