@@ -67,6 +67,9 @@ Source_ac::Source_ac()
                 QObject::tr("(available) ac power in dBm")));
   Props.append(new Property("f", "1 MHz", false,
                 QObject::tr("frequency in Hertz")));
+  Props.append(new Property("Phase", "0", false,
+                            QObject::tr("initial phase in degrees")));
+
   Props.append(new Property("Temp", "26.85", false,
         QObject::tr("simulation temperature in degree Celsius")));
   Props.append(new Property("EnableTran", "true", false,
@@ -109,6 +112,7 @@ QString Source_ac::ngspice_netlist()
     double z0 = spicecompat::normalize_value(getProperty("Z")->Value).toDouble();
     QString pVal = getProperty("P")->Value.trimmed();
     QString f = spicecompat::normalize_value(getProperty("f")->Value);
+    QString phase = spicecompat::normalize_value(getProperty("Phase")->Value);
 
     bool en_tran = true;
     if (getProperty("EnableTran")->Value == "true") {
@@ -137,7 +141,7 @@ QString Source_ac::ngspice_netlist()
       double vamp = 2.0 * vrms * sqrt(2.0);
       s += QStringLiteral(" dc 0 ac %1").arg(vamp);
       if (en_tran)
-        s += QStringLiteral(" SIN(0 %1 %2)").arg(vamp).arg(f);
+        s += QStringLiteral(" SIN(0 %1 %2 0 0 %3)").arg(vamp).arg(f, phase);
     } else {
       // P is a parameter name — emit a .PARAM expression and reference it
       // vamp = 2*sqrt(2) * sqrt(z0/1000) * 10^(P/20)
@@ -145,7 +149,7 @@ QString Source_ac::ngspice_netlist()
                  .arg(z0).arg(pVal);
       s += QStringLiteral(" dc 0 ac %1").arg(vamp);
       if (en_tran){
-        s += QStringLiteral(" SIN(0 %1 %2 0 0)").arg(vamp, f);
+        s += QStringLiteral(" SIN(0 %1 %2 0 0 %3)").arg(vamp, f, phase);
       }
     }
 
@@ -204,9 +208,9 @@ QString Source_ac::xyce_netlist()
     }
 
     s += QStringLiteral(" z0=%1 ").arg(s_z0);
-    s += QStringLiteral(" AC %1 ").arg(vamp);
+    s += QStringLiteral(" AC %1 ACPHASE %2 ").arg(vamp, phase);
     if (en_tran && !isTermination) {
-        s += QStringLiteral(" SIN 0 %1 %2").arg(vamp, f);
+        s += QStringLiteral(" SIN 0 %1 %2 0 0 %3").arg(vamp, f, phase);
     }
     s += "\n";
     return s;
