@@ -108,11 +108,12 @@ QString Source_ac::ngspice_netlist()
         s += " "+ nam;   // node names
     }
 
-    // Get source parameters
+    // Get source parameters (as lists)
     double z0 = spicecompat::normalize_value(getProperty("Z")->Value).toDouble();
-    QString pVal = getProperty("P")->Value.trimmed();
-    QString f = spicecompat::normalize_value(getProperty("f")->Value);
-    QString phase = spicecompat::normalize_value(getProperty("Phase")->Value);
+    const QStringList freqs   = parseList(getProperty("f")->Value);
+    const QStringList powers  = parseList(getProperty("P")->Value);
+    const QStringList phases  = parseList(getProperty("Phase")->Value);
+
 
     bool en_tran = true;
     if (getProperty("EnableTran")->Value == "true") {
@@ -121,43 +122,95 @@ QString Source_ac::ngspice_netlist()
         en_tran = false;
     }
 
-    // Calculate the power
-    // The power may come explicitly in the "Power" field of the component (literal value) or be part of a sweep simulation (symbolic variable).
-    // Check if P is a symbolic parameter (not a numeric dBm literal)
-    bool isNumeric = false;
-    spicecompat::normalize_value(pVal).toDouble(&isNumeric);
-    // if user has explicitly set LoadOnly OR
-    // if P is empty (unset), the port acts as a terminated port (a passive load).
-    bool isTermination = (getProperty("LoadOnly")->Value == "true") || pVal.isEmpty();
+    // if user has explicitly set LoadOnly OR if P is empty (unset), the port acts as a terminated port (a passive load).
+    const bool isTermination = (getProperty("LoadOnly")->Value == "true")
+                               || (powers.isEmpty() || powers.first().isEmpty());
 
-    QString vamp;
-    if (isTermination) {
-      // Terminated port: set Vamp to 0
-      s += QStringLiteral(" dc 0 ac 0");
-    } else if (isNumeric) {
-      // Original behaviour: pre-compute amplitude
-      double p = spicecompat::normalize_value(pVal).toDouble();
-      double vrms = sqrt(z0/1000.0) * pow(10, p/20.0);
-      double vamp = 2.0 * vrms * sqrt(2.0);
-      s += QStringLiteral(" dc 0 ac %1").arg(vamp);
-      if (en_tran)
-        s += QStringLiteral(" SIN(0 %1 %2 0 0 %3)").arg(vamp).arg(f, phase);
+
+    // Multi-tone setup
+    if (freqs.size() > 1 && !isTermination) {
+      return multitone_ngspice(z0, freqs, powers, phases, en_tran);
     } else {
-      // P is a parameter name — emit a .PARAM expression and reference it
-      // vamp = 2*sqrt(2) * sqrt(z0/1000) * 10^(P/20)
-      vamp = QStringLiteral("'2*sqrt(2)*sqrt(%1/1000)*pow(10,(%2)/20)'")
-                 .arg(z0).arg(pVal);
-      s += QStringLiteral(" dc 0 ac %1").arg(vamp);
-      if (en_tran){
-        s += QStringLiteral(" SIN(0 %1 %2 0 0 %3)").arg(vamp, f, phase);
-      }
+      // Single-tone setup — extract scalar values from the first index in the list
+      const QString pVal  = powers.isEmpty() ? QString() : powers.first();
+      const QString f     = freqs.isEmpty()  ? QString() : spicecompat::normalize_value(freqs.first());
+      const QString phase = phases.isEmpty() ? QStringLiteral("0") : phases.first();
+
+      const QString vamp = resolveVamp(pVal, z0, spicecompat::SPICEDefault);
+
+      if (isTermination) {
+        s += QStringLiteral(" dc 0 ac 0");
+      } else {
+        s += QStringLiteral(" dc 0 ac %1").arg(vamp);
+        if (en_tran)
+          s += QStringLiteral(" SIN(0 %1 %2 0 0 %3)").arg(vamp, f, phase);
     }
 
-    s += QStringLiteral(" portnum %1").arg(getProperty("Num")->Value);
-    s += QStringLiteral(" z0 %1").arg(z0);
-    s += "\n";
-    return s;
+      s += QStringLiteral(" portnum %1").arg(getProperty("Num")->Value);
+      s += QStringLiteral(" z0 %1").arg(z0);
+      s += "\n";
+      return s;
+
+    }
 }
+
+QString Source_ac::multitone_ngspice(double z0,
+                                     const QStringList &freqs,
+                                     const QStringList &powers,
+                                     const QStringList &phases,
+                                     bool enTran)
+{
+  // Resolve external node names
+  auto toSpiceNode = [](Port *p) {
+    const QString n = p->Connection->Name;
+    return (n == "gnd") ? QStringLiteral("0") : n;
+  };
+  const QString nodePos = toSpiceNode(Ports.at(0));
+  const QString nodeNeg = toSpiceNode(Ports.at(1));
+
+  // Nodes between the series sources: "P1_n0", "P1_n1", ...
+  auto junctionNode = [&](int k) {
+    return QStringLiteral("%1_n%2").arg(Name).arg(k);
+  };
+
+  // Broadcast a single-entry list to all tones
+  // Falls back to a default if the list is empty or shorter than the tone index.
+  auto pick = [](const QStringList &list, int i, const QString &fallback) -> QString {
+    if (list.isEmpty())    return fallback;
+    if (list.size() == 1)  return list.at(0);
+    return (i < list.size()) ? list.at(i) : fallback;
+  };
+
+  const int N = freqs.size();
+  QString s;
+
+  // Series impedance, Z0
+  s += QStringLiteral("R_%1 %2 %3 %4\n")
+           .arg(Name, nodePos, junctionNode(0))
+           .arg(z0, 0, 'g', 8);
+
+  // Series AC voltage sources
+  for (int i = 0; i < N; ++i) {
+    const QString pVal      = pick(powers, i, QStringLiteral("0"));
+    const QString freq      = spicecompat::normalize_value(freqs.at(i));
+    const QString phase     = pick(phases, i, QStringLiteral("0"));
+    const QString vamp      = resolveVamp(pVal, z0, spicecompat::SPICEDefault);
+    const QString nodeAbove = junctionNode(i);
+    const QString nodeBelow = (i == N - 1) ? nodeNeg : junctionNode(i + 1);
+
+    s += QStringLiteral("V_%1_t%2 %3 %4 DC 0 AC %5")
+             .arg(Name).arg(i + 1)
+             .arg(nodeAbove, nodeBelow, vamp);
+
+    if (enTran){
+      s += QStringLiteral(" SIN(0 %1 %2 0 0 %3)").arg(vamp, freq, phase);
+    }
+    s += '\n';
+  }
+
+  return s;
+}
+
 
 QString Source_ac::xyce_netlist()
 {
@@ -254,4 +307,51 @@ QString Source_ac::netlist()
         s += " "+Props.at(i)->Name+"=\""+Props.at(i)->Value+"\"";
 
     return s + '\n';
+}
+
+QStringList Source_ac::parseList(const QString &raw) const
+{
+  // Strip surrounding brackets or braces if any, e.g. "{1 MHz, 2 MHz}" or "[1 MHz; 2 MHz]"
+  QString cleaned = raw.trimmed();
+  if ((cleaned.startsWith('{') && cleaned.endsWith('}')) ||
+      (cleaned.startsWith('[') && cleaned.endsWith(']'))) {
+    cleaned = cleaned.mid(1, cleaned.length() - 2).trimmed();
+  }
+
+  QStringList parts = cleaned.split(QRegularExpression("[,;]"));
+  for (QString &s : parts){
+    s = s.trimmed();
+  }
+
+  // Drop any trailing empty entry produced by a trailing delimiter,
+   // e.g. "980 MHz, 990 MHz," would otherwise produce a spurious third empty entry
+  while (!parts.isEmpty() && parts.last().isEmpty()) {
+    parts.removeLast();
+  }
+
+  return parts;
+}
+
+QString Source_ac::resolveVamp(const QString &pVal, double z0,
+                               spicecompat::SpiceDialect dialect) const
+{
+  if (pVal.isEmpty())
+    return QStringLiteral("0");
+
+  bool isNumeric = false;
+  double p = spicecompat::normalize_value(pVal).toDouble(&isNumeric);
+  if (isNumeric) {
+    double vrms = sqrt(z0 / 1000.0) * pow(10.0, p / 20.0);
+    return QString::number(2.0 * vrms * sqrt(2.0), 'g', 8);
+  }
+
+  if (dialect == spicecompat::SPICEXyce) {
+    // Xyce
+    return QStringLiteral("{2*sqrt(2)*sqrt(%1/1000)*pow(10,(%2)/20)}")
+        .arg(z0).arg(pVal);
+  } else {
+    // ngspice
+    return QStringLiteral("'2*sqrt(2)*sqrt(%1/1000)*pow(10,(%2)/20)'")
+        .arg(z0).arg(pVal);
+  }
 }

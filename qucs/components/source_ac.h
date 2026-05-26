@@ -19,11 +19,34 @@
 #define SOURCE_AC_H
 
 #include "component.h"
+#include <QRegularExpression>
 
 class Source_ac : public Component  {
 private:
   QString ngspice_netlist();
   QString xyce_netlist();
+
+  /// @brief Prepare netline for multitone setup
+  /// @param z0 Characteristic impedance
+  /// @param freqs List of the tone frequencies
+  /// @param powers List of powers per carrier in dBm (to be converter in Vpeak inside)
+  /// @param phases List of phases per carrier
+  /// @param enTran Flag for the transient simulation
+  QString multitone_ngspice(double z0, const QStringList &freqs,
+                            const QStringList &powers,
+                            const QStringList &phases, bool enTran);
+
+
+  /// @brief Split a comma-separated property string into a trimmed list.
+  /// @param raw String input from a component property field
+  QStringList parseList(const QString &raw) const;
+
+  /// @brief Convert the RMS power into a Xyce/ngspice netlist
+  /// @param pVal Power in dBm
+  /// @param z0 Characteristic impedance
+  /// @param dialect Spice dialect: Xyce of ngspice
+  QString resolveVamp(const QString &pVal, double z0, spicecompat::SpiceDialect dialect) const;
+
 public:
   Source_ac();
   ~Source_ac();
