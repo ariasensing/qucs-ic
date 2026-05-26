@@ -173,6 +173,7 @@ QString Source_ac::xyce_netlist()
     double z0 = s_z0.toDouble();
     QString pVal = getProperty("P")->Value.trimmed();
     QString f = spicecompat::normalize_value(getProperty("f")->Value);
+    QString phase = getProperty("Phase")->Value.trimmed();
 
     bool en_tran = true;
     if (getProperty("EnableTran")->Value == "true") {
@@ -186,10 +187,16 @@ QString Source_ac::xyce_netlist()
     // Check if P is a symbolic parameter (not a numeric dBm literal)
     bool isNumeric = false;
     double p = spicecompat::normalize_value(pVal).toDouble(&isNumeric);
+
+    // Check if phase is numeric
+    bool isPhaseNumeric = false;
+    phase.toDouble(&isPhaseNumeric);
+
     // if user has explicitly set LoadOnly OR
     // if P is empty (unset), the port acts as a terminated port (a passive load).
     bool isTermination = (getProperty("LoadOnly")->Value == "true") || pVal.isEmpty();
 
+    // Calculate voltage amplitude
     QString vamp;
     if (isTermination) {
       // Terminated port: set Vamp to 0
@@ -207,11 +214,19 @@ QString Source_ac::xyce_netlist()
                       .arg(z0).arg(pVal);
     }
 
+    // Build netlist line
     s += QStringLiteral(" z0=%1 ").arg(s_z0);
-    s += QStringLiteral(" AC %1 ACPHASE %2 ").arg(vamp, phase);
+
+    // AC phase (must be numeric for Xyce)
+    const QString acPhase = isPhaseNumeric ? phase : "0";
+    s += QStringLiteral(" AC %1 %2 ").arg(vamp, acPhase);
+
+    // Transient analysis SIN source
     if (en_tran && !isTermination) {
-        s += QStringLiteral(" SIN 0 %1 %2 0 0 %3").arg(vamp, f, phase);
+      const QString transPhase = isPhaseNumeric ? phase : ("{" + phase + "}");
+      s += QStringLiteral(" SIN 0 %1 %2 0 0 %3").arg(vamp, f, transPhase);
     }
+
     s += "\n";
     return s;
 }
@@ -230,7 +245,7 @@ QString Source_ac::netlist()
     QString s = Model+":"+Name;
 
     // output all node names
-    for (Port *p1 : Ports)
+    for (Port *p1 : std::as_const(Ports))
       s += " "+p1->Connection->Name;   // node names
 
     // output all properties
