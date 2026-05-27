@@ -229,68 +229,125 @@ QString Source_ac::xyce_netlist()
         s += " "+ nam;   // node names
     }
     s += QStringLiteral(" port=%1 ").arg(getProperty("Num")->Value);
+
     // Get source parameters
     QString s_z0 = spicecompat::normalize_value(getProperty("Z")->Value);
     double z0 = s_z0.toDouble();
-    QString pVal = getProperty("P")->Value.trimmed();
-    QString f = spicecompat::normalize_value(getProperty("f")->Value);
-    QString phase = getProperty("Phase")->Value.trimmed();
 
-    bool en_tran = true;
-    if (getProperty("EnableTran")->Value == "true") {
-      en_tran = true;
-    } else {
-      en_tran = false;
-    }
+    const QStringList freqs  = parseList(getProperty("f")->Value);
+    const QStringList powers = parseList(getProperty("P")->Value);
+    const QStringList phases = parseList(getProperty("Phase")->Value);
 
-    // Calculate the power
-    // The power may come explicitly in the "Power" field of the component (literal value) or be part of a sweep simulation (symbolic variable).
-    // Check if P is a symbolic parameter (not a numeric dBm literal)
-    bool isNumeric = false;
-    double p = spicecompat::normalize_value(pVal).toDouble(&isNumeric);
-
-    // Check if phase is numeric
-    bool isPhaseNumeric = false;
-    phase.toDouble(&isPhaseNumeric);
+    const bool en_tran       = (getProperty("EnableTran")->Value == "true");
 
     // if user has explicitly set LoadOnly OR
     // if P is empty (unset), the port acts as a terminated port (a passive load).
-    bool isTermination = (getProperty("LoadOnly")->Value == "true") || pVal.isEmpty();
+    const bool isTermination = (getProperty("LoadOnly")->Value == "true")
+                               || (powers.isEmpty() || powers.first().isEmpty());
 
-    // Calculate voltage amplitude
-    QString vamp;
-    if (isTermination) {
-      // Terminated port: set Vamp to 0
-      vamp = QString::number(0);
-    } else if (isNumeric) {
-      // Fixed value (not part of a parametric simulation)
-      double vrms = sqrt(z0 / 1000.0) * pow(10.0, p / 20.0);
-      double vamp_val = 2.0 * vrms * sqrt(2.0);
-      vamp = QString::number(vamp_val, 'g', 8);
+    if (freqs.size() > 1 && !isTermination) {
+      // Multi-tone
+      return multitone_xyce(z0, freqs, powers, phases, en_tran);
     } else {
-      // P is a symbolic variable (.PARAM)
-      // The dBm to V is embedded directly in the netlist line of the AC power source
-      // This is evaluated at each step
-      vamp = QStringLiteral("{2*sqrt(2)*sqrt(%1/1000)*pow(10,(%2)/20)}")
-                      .arg(z0).arg(pVal);
+      // Single-tone
+      const QString pVal  = powers.isEmpty() ? QString() : powers.first();
+      const QString freq  = freqs.isEmpty()  ? QString() : spicecompat::normalize_value(freqs.first());
+      const QString phase = phases.isEmpty() ? QStringLiteral("0") : phases.first();
+      return singletone_xyce(s, z0, pVal, freq, phase, en_tran, isTermination);
     }
 
-    // Build netlist line
-    s += QStringLiteral(" z0=%1 ").arg(s_z0);
-
-    // AC phase (must be numeric for Xyce)
-    const QString acPhase = isPhaseNumeric ? phase : "0";
-    s += QStringLiteral(" AC %1 %2 ").arg(vamp, acPhase);
-
-    // Transient analysis SIN source
-    if (en_tran && !isTermination) {
-      const QString transPhase = isPhaseNumeric ? phase : ("{" + phase + "}");
-      s += QStringLiteral(" SIN 0 %1 %2 0 0 %3").arg(vamp, f, transPhase);
-    }
-
-    s += "\n";
-    return s;
 }
+
+QString Source_ac::singletone_xyce(const QString &nodeString, double z0,
+                                   const QString &freq, const QString &pVal,
+                                   const QString &phase,
+                                   bool enTran, bool isTermination)
+{
+  const QString s_z0 = QString::number(z0, 'g', 8);
+  QString s = nodeString;
+  const QString vamp = resolveVamp(pVal, z0, spicecompat::SPICEXyce);
+
+  // ACPHASE on the Xyce PORT device must be a numeric literal;
+  // a parametric phase is wrapped in {...} only for the SIN transient source.
+  bool isPhaseNumeric = false;
+  phase.toDouble(&isPhaseNumeric);
+  const QString acPhase    = isPhaseNumeric ? phase : QStringLiteral("0");
+  const QString transPhase = isPhaseNumeric ? phase : ('{' + phase + '}');
+
+  s += QStringLiteral(" z0=%1 ").arg(s_z0);
+  s += QStringLiteral(" AC %1 %2 ").arg(vamp, acPhase);
+  if (enTran && !isTermination)
+    s += QStringLiteral(" SIN 0 %1 %2 0 0 %3").arg(vamp, freq, transPhase);
+
+  s += "\n";
+  return s;
+}
+
+
+QString Source_ac::multitone_xyce(double z0,
+                                  const QStringList &freqs,
+                                  const QStringList &powers,
+                                  const QStringList &phases,
+                                  bool enTran){
+  const QString s_z0 = QString::number(z0, 'g', 8);
+  const int N = freqs.size();
+
+  auto nodeName = [](Port *p) {
+    QString n = p->Connection->Name;
+    return (n == "gnd") ? QStringLiteral("0") : n;
+  };
+  const QString nodePos = nodeName(Ports.at(0));
+  const QString nodeNeg = nodeName(Ports.at(1));
+  auto intNode = [&](int k) {
+    return QStringLiteral("%1_n%2").arg(Name).arg(k);
+  };
+
+  QString s;
+
+  // Series impedance resistor
+  s += QStringLiteral("R_%1 %2 %3 %4\n")
+           .arg(Name, nodePos, intNode(0), s_z0);
+
+  // One voltage source per tone
+  // Helper: pick list[i] if available, broadcast list[0] if list has one entry, else fallback
+  auto pick = [](const QStringList &list, int i, const QString &fallback) -> QString {
+    if (list.isEmpty())       return fallback;
+    if (list.size() == 1)     return list.at(0);   // broadcast single entry to all tones
+    if (i < list.size())      return list.at(i);
+    return fallback;
+  };
+
+  for (int i = 0; i < N; ++i) {
+    const QString pVal  = pick(powers, i, QStringLiteral("0"));
+    const QString freq  = spicecompat::normalize_value(freqs.at(i));
+    const QString phase = pick(phases, i, QStringLiteral("0"));
+    const QString vamp  = resolveVamp(pVal, z0, spicecompat::SPICEXyce);
+
+    const QString nodeAbove = intNode(i);
+    const QString nodeBelow = (i == N - 1) ? nodeNeg : intNode(i + 1);
+
+    // ACPHASE must be a numeric literal on Xyce PORT device;
+    // for SIN, a parametric phase is wrapped in {...} to force expression evaluation.
+    bool isPhaseNumeric = false;
+    phase.toDouble(&isPhaseNumeric);
+    const QString acPhase    = isPhaseNumeric ? phase : QStringLiteral("0");
+    const QString transPhase = isPhaseNumeric ? phase : ('{' + phase + '}');
+
+    s += QStringLiteral("V_%1_t%2 %3 %4 DC 0 AC %5 %6")
+             .arg(Name).arg(i + 1)
+             .arg(nodeAbove, nodeBelow, vamp, acPhase);
+    if (enTran) {
+      s += QStringLiteral(" SIN 0 %1 %2 0 0 %3").arg(vamp, freq, transPhase);
+    }
+    s += '\n';
+  }
+
+  s += '\n';
+
+  return s;
+}
+
+
 
 QString Source_ac::spice_netlist(spicecompat::SpiceDialect dialect /* = spicecompat::SPICEDefault */)
 {
