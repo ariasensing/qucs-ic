@@ -253,7 +253,7 @@ QString Source_ac::xyce_netlist()
       const QString pVal  = powers.isEmpty() ? QString() : powers.first();
       const QString freq  = freqs.isEmpty()  ? QString() : spicecompat::normalize_value(freqs.first());
       const QString phase = phases.isEmpty() ? QStringLiteral("0") : phases.first();
-      return singletone_xyce(s, z0, pVal, freq, phase, en_tran, isTermination);
+      return singletone_xyce(s, z0, freq, pVal, phase, en_tran, isTermination);
     }
 
 }
