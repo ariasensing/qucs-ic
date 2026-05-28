@@ -360,18 +360,55 @@ QString Source_ac::spice_netlist(spicecompat::SpiceDialect dialect /* = spicecom
 
 QString Source_ac::netlist()
 {
-    QString s = Model+":"+Name;
+  // Get the source parameters
+  const QStringList freqs  = parseList(getProperty("f")->Value);
+  const QStringList powers = parseList(getProperty("P")->Value);
+  const QStringList phases = parseList(getProperty("Phase")->Value);
+  const QString z    = getProperty("Z")->Value;
+  const QString num  = getProperty("Num")->Value;
+  const QString temp = getProperty("Temp")->Value;
 
-    // output all node names
+
+  const bool isTermination = (getProperty("LoadOnly")->Value == "true")
+                             || (powers.isEmpty() || powers.first().isEmpty());
+
+  // Single-tone: original format
+  if (freqs.size() <= 1 || isTermination) {
+    QString s = Model + ":" + Name;
     for (Port *p1 : std::as_const(Ports))
-      s += " "+p1->Connection->Name;   // node names
-
-    // output all properties
-    for(int i=0; i <= Props.count()-2; i++)
-      if(Props.at(i)->Name != "EnableTran")
-        s += " "+Props.at(i)->Name+"=\""+Props.at(i)->Value+"\"";
-
+      s += " " + p1->Connection->Name;
+    for (int i = 0; i <= Props.count() - 2; i++) {
+      const Property *p = Props.at(i);
+      if (p->Name != "EnableTran")
+        s += " " + p->Name + "=\"" + p->Value + "\"";
+    }
     return s + '\n';
+  }
+
+  // Broadcast a single-entry list to all tones, fall back to default if absent
+  auto pick = [](const QStringList &list, int i, const QString &fallback) -> QString {
+    if (list.isEmpty())   return fallback;
+    if (list.size() == 1) return list.first();
+    return (i < list.size()) ? list.at(i) : fallback;
+  };
+
+  const int N = freqs.size();
+  const QString nodePos = Ports.at(0)->Connection->Name;
+  const QString nodeNeg = Ports.at(1)->Connection->Name;
+
+  // Build the netlist
+  QString s;
+  for (int i = 0; i < N; ++i) {
+    const QString nodeAbove = (i == 0)     ? nodePos : QStringLiteral("%1_n%2").arg(Name).arg(i);
+    const QString nodeBelow = (i == N - 1) ? nodeNeg : QStringLiteral("%1_n%2").arg(Name).arg(i + 1);
+
+    s += QStringLiteral("%1:%2_t%3 %4 %5 Num=\"%6\" Z=\"%7\" P=\"%8\" f=\"%9\" Phase=\"%10\" Temp=\"%11\"\n")
+             .arg(Model, Name).arg(i + 1)
+             .arg(nodeAbove, nodeBelow)
+             .arg(num.toInt() + i)
+             .arg(z, pick(powers, i, "0"), freqs.at(i), pick(phases, i, "0"), temp);
+  }
+  return s;
 }
 
 QStringList Source_ac::parseList(const QString &raw) const
