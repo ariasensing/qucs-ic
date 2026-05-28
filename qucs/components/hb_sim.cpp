@@ -90,3 +90,22 @@ QString HB_Sim::spice_netlist(spicecompat::SpiceDialect dialect /* = spicecompat
     }
     return s;
 }
+
+QString HB_Sim::netlist()
+{
+  QString fVal = Props.at(0)->Value.trimmed();
+
+  // qucsator reads tone frequencies directly from PAC excitation components.
+  // Its f property is PROP_REAL and cannot parse a comma-separated list —
+  // omit it when multiple tones are specified; the PAC chain handles it.
+  bool isMultitone = fVal.contains(',') || fVal.contains(';');
+
+  QString s = Model + ":" + Name;
+  for (int i = 0; i < Props.count() - 1; i++) {
+    const Property *p = Props.at(i);
+    if (p->Name == "f" && isMultitone)
+      continue;
+    s += " " + p->Name + "=\"" + p->Value + "\"";
+  }
+  return s + '\n';
+}
