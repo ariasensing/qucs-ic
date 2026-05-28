@@ -444,7 +444,10 @@ void SpiceLibCompDialog::slotTableCellDoubleClick()
 
   QComboBox *cbxSelectPin = new QComboBox;
   cbxSelectPin->addItem("NC");
-  for (int i = 1; i <= a_symbolPinsCount; i++) {
+  // Ports might not be in a linear range; use the actual indices directly
+  // to ensure correct lookup
+  QList<int> portIndices = a_symbol->getPortIndices();
+  for (int i : portIndices) {
     bool pinAssigned = false;
     for(int j = 0; j < a_tbwPinsTable->rowCount(); j++) {
       if (j == r) continue;

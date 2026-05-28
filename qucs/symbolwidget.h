@@ -57,6 +57,7 @@ public:
   bool showPinNumbersEnabled() { return showPinNumbers; }
   int getPortsNumber() { return portsNumber; }
   QString getPortName(int n);
+  QList<int> getPortIndices() const;
   void setPaintText(const QString &txt);
   void setWarning(const QString &warn) { Warning = warn; }
   // component properties
