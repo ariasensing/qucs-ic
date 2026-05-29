@@ -19,6 +19,7 @@
 #define SOURCE_AC_H
 
 #include "component.h"
+#include "misc.h"
 #include <QRegularExpression>
 
 class Source_ac : public Component  {
@@ -79,6 +80,18 @@ private:
                           const QString &pVal,
                           const QString &phase,
                           bool enTran, bool isTermination);
+
+  /// @brief Prepare the ngspice netline for the single-tone setup
+  /// @param z0 Characteristic impedance
+  /// @param freq Frequency of the tone
+  /// @param power Available power (dBm)
+  /// @param phases Initial phase
+  /// @param temp Temperature
+  QString multitone_qucsator(double z0,
+                             const QStringList &freqs,
+                             const QStringList &powers,
+                             const QStringList &phases,
+                             const QString &temp);
 
 
 

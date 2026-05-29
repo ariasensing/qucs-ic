@@ -360,54 +360,134 @@ QString Source_ac::spice_netlist(spicecompat::SpiceDialect dialect /* = spicecom
 
 QString Source_ac::netlist()
 {
-  // Get the source parameters
+  // Get source parameters
   const QStringList freqs  = parseList(getProperty("f")->Value);
   const QStringList powers = parseList(getProperty("P")->Value);
   const QStringList phases = parseList(getProperty("Phase")->Value);
+
   const QString z    = getProperty("Z")->Value;
-  const QString num  = getProperty("Num")->Value;
   const QString temp = getProperty("Temp")->Value;
 
+  const bool isTermination =
+      (getProperty("LoadOnly")->Value == "true")
+      || (powers.isEmpty() || powers.first().isEmpty());
 
-  const bool isTermination = (getProperty("LoadOnly")->Value == "true")
-                             || (powers.isEmpty() || powers.first().isEmpty());
+  // Parse Z0
+  double Z0, scale;
+  QString unit;
 
-  // Single-tone: original format
-  if (freqs.size() <= 1 || isTermination) {
-    QString s = Model + ":" + Name;
-    for (Port *p1 : std::as_const(Ports))
-      s += " " + p1->Connection->Name;
-    for (int i = 0; i <= Props.count() - 2; i++) {
-      const Property *p = Props.at(i);
-      if (p->Name != "EnableTran")
-        s += " " + p->Name + "=\"" + p->Value + "\"";
-    }
-    return s + '\n';
+  misc::str2num(z, Z0, unit, scale);
+  Z0 *= scale;
+
+  // Passive termination only
+  if (isTermination) {
+
+    const QString nodePos =
+        Ports.at(0)->Connection->Name;
+
+    const QString nodeNeg =
+        Ports.at(1)->Connection->Name;
+
+    return QStringLiteral(
+               "R:R_%1 %2 %3 "
+               "R=\"%4 Ohm\" "
+               "Temp=\"%5\"\n")
+        .arg(Name,
+             nodePos,
+             nodeNeg,
+             QString::number(Z0, 'g', 12),
+             temp);
   }
 
-  // Broadcast a single-entry list to all tones, fall back to default if absent
-  auto pick = [](const QStringList &list, int i, const QString &fallback) -> QString {
-    if (list.isEmpty())   return fallback;
-    if (list.size() == 1) return list.first();
+  // Always synthesize Thévenin equivalent, as done with Xyce and ngspice. Don't rely on the qucastor AC power source
+  return multitone_qucsator(
+      Z0,
+      freqs,
+      powers,
+      phases,
+      temp);
+}
+
+QString Source_ac::multitone_qucsator(double z0,
+                                      const QStringList &freqs,
+                                      const QStringList &powers,
+                                      const QStringList &phases,
+                                      const QString &temp)
+{
+  auto pick = [](const QStringList &list,
+                 int i,
+                 const QString &fallback) -> QString {
+    if (list.isEmpty())
+      return fallback;
+
+    if (list.size() == 1)
+      return list.first();
+
     return (i < list.size()) ? list.at(i) : fallback;
   };
 
   const int N = freqs.size();
+
   const QString nodePos = Ports.at(0)->Connection->Name;
   const QString nodeNeg = Ports.at(1)->Connection->Name;
 
-  // Build the netlist
-  QString s;
-  for (int i = 0; i < N; ++i) {
-    const QString nodeAbove = (i == 0)     ? nodePos : QStringLiteral("%1_n%2").arg(Name).arg(i);
-    const QString nodeBelow = (i == N - 1) ? nodeNeg : QStringLiteral("%1_n%2").arg(Name).arg(i + 1);
+  auto intNode = [&](int k) {
+    return QStringLiteral("%1_n%2").arg(Name).arg(k);
+  };
 
-    s += QStringLiteral("%1:%2_t%3 %4 %5 Num=\"%6\" Z=\"%7\" P=\"%8\" f=\"%9\" Phase=\"%10\" Temp=\"%11\"\n")
-             .arg(Model, Name).arg(i + 1)
-             .arg(nodeAbove, nodeBelow)
-             .arg(num.toInt() + i)
-             .arg(z, pick(powers, i, "0"), freqs.at(i), pick(phases, i, "0"), temp);
+  QString s;
+
+  // Single explicit source resistance
+  s += QStringLiteral(
+           "R:R_%1 %2 %3 R=\"%4 Ohm\" Temp=\"%5\"\n")
+           .arg(Name,
+                nodePos,
+                intNode(0),
+                QString::number(z0, 'g', 12),
+                temp);
+
+  // One ideal sinusoidal voltage source per tone
+  for (int i = 0; i < N; ++i) {
+
+    const QString freq  = freqs.at(i);
+    const QString power = pick(powers, i, QStringLiteral("0"));
+    const QString phase = pick(phases, i, QStringLiteral("0"));
+
+    // Convert dBm -> peak voltage
+    bool ok = false;
+    double p_dbm = spicecompat::normalize_value(power).toDouble(&ok);
+
+    double vamp = 0.0;
+
+    if (ok) {
+      // Vrms from dBm into z0
+      const double vrms =
+          std::sqrt(z0 / 1000.0) *
+          std::pow(10.0, p_dbm / 20.0);
+
+      vamp = 2 * vrms * std::sqrt(2.0); // peak amplitude [V -> R] -> R (same as with ngspice and xyce)
+    }
+
+    const QString nodeAbove = intNode(i);
+    const QString nodeBelow =
+        (i == N - 1) ? nodeNeg : intNode(i + 1);
+
+    s += QStringLiteral(
+             "Vac:V_%1_t%2 %3 %4 "
+             "U=\"%5 V\" "
+             "f=\"%6\" "
+             "Phase=\"%7\" "
+             "Theta=\"0\" "
+             "T=\"0\"\n")
+             .arg(Name)
+             .arg(i + 1)
+             .arg(nodeAbove,
+                  nodeBelow,
+                  QString::number(vamp, 'g', 12),
+                  freq,
+                  phase);
   }
+
   return s;
 }
 
