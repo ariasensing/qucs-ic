@@ -232,25 +232,52 @@ QString SpiceLibComp::spice_netlist(spicecompat::SpiceDialect dialect /* = spice
   } else {
     // Sanitize input from dialog
     QStringList pin_nums = pins.split(";", Qt::SkipEmptyParts);
-    int pinCount = pin_nums.count();
     int portCount = Ports.count();
 
-    if (pinCount != portCount) {
-      qWarning() << "pinCount=" << pinCount << " != portCount=" << portCount << ", malformed input?";
+    // Extract port numbers and check for duplicates
+    QList<int> uniquePortNumbers;
+    for (const QString &p : pin_nums) {
+      bool ok = false;
+      int num = p.trimmed().toInt(&ok);
+      if (!ok) {
+        qWarning() << "Invalid pin number:" << p << "; skipping";
+        continue;
+      }
+
+      // check if duplicate
+      if (uniquePortNumbers.contains(num)) {
+        qWarning() << "Duplicate pin number:" << num
+                   << "; only the first occurrence will be used.";
+      } else {
+        uniquePortNumbers.append(num);
+      }
     }
 
-    for (int i = 0; i < pinCount; i++) {
-      bool isNumber = false;
-      int pn = pin_nums.at(i).trimmed().toInt(&isNumber);
-      if (!isNumber) {
-        qWarning() << "Invalid pin number:" << pin_nums.at(i) << "; skipping";
+    // sort for ranking
+    std::sort(uniquePortNumbers.begin(), uniquePortNumbers.end());
+    int pinCount = uniquePortNumbers.count();
+
+    if (pinCount != portCount) {
+      qWarning() << QString("pinCount=%1 != portCount=%2, malformed input?")
+                  .arg(pinCount)
+                  .arg(portCount);
+    }
+
+    // Normalize pin_nums to ranks (0-based)
+    for (const QString &p : pin_nums) {
+      bool ok = false;
+      int num = p.trimmed().toInt(&ok);
+      if (!ok) {
         continue;
       }
-      if (pn < 1 || pn > portCount) {
-        qWarning() << "Pin number out of range:" << pn << "; skipping";
+
+      int rank = uniquePortNumbers.indexOf(num);
+      if (rank < 0 || rank >= Ports.count()) {
+        qWarning() << "Normalized pin number" << rank << "out of bounds; skipping";
         continue;
       }
-      Port *pp = Ports.at(pn-1);
+
+      Port *pp = Ports.at(rank);
       s += " " + spicecompat::normalize_node_name(pp->Connection->Name);
     }
   }
