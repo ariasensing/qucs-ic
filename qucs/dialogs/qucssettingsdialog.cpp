@@ -35,6 +35,7 @@
 #include "textdoc.h"
 #include "schematic.h"
 #include "settings.h"
+#include "../misc.h"
 
 #include <QWidget>
 #include <QLabel>
@@ -678,6 +679,8 @@ void QucsSettingsDialog::slotApply()
         if (style) {
           QApplication::setStyle(style);
           _settings::Get().setItem<QString>("AppStyle",  selectedStyle);
+          // update cached variable
+          QucsSettings.hasDarkTheme = misc::isDarkTheme();
           changed = true;  
         } 
     }

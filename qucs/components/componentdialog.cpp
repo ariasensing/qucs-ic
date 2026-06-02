@@ -35,6 +35,8 @@
 #include "misc.h"
 #include "fillfromspicedialog.h"
 #include "selfromlibdialog.h"
+// For Xyce Options
+#include "spicecomponents/sp_options.h"
 
 #include <cmath>
 
@@ -374,6 +376,111 @@ ComponentDialog::ComponentDialog(Component* schematicComponent, Schematic* schem
   // Setup the dialog according to the component kind.
   if (isEquation || isPlainText)
   {
+    // SpiceOptions: add XyceOptionPackage combo above editor
+    if (component->Model == "SpiceOptions")
+    {
+      // Make a Xyce Option Package group
+      QGroupBox *xyceGroup = new QGroupBox(tr("Xyce Option Package"));
+      QVBoxLayout *xyceGroupLayout = new QVBoxLayout(xyceGroup);
+
+      // build xycePkgOption input
+      QHBoxLayout* xycePkgLayout = new QHBoxLayout;
+      xycePkgCombo = new QComboBox(this);
+      xycePkgCombo->setEditable(true);
+      xycePkgCombo->setToolTip(tr("Xyce option package (e.g., DEVICE, DIAGNOSTIC)"));
+
+      // add label for validation icon
+      QLabel *xycePkgIconLabel = new QLabel(this);
+      xycePkgIconLabel->setFixedSize(24, 24);
+
+      // Register all known XycePkgOptions
+      QMap<QString, QString> pkgInfo = SpiceOptions::getXycePackageOptions();
+      for (auto it = pkgInfo.begin(); it != pkgInfo.end(); ++it) {
+        xycePkgCombo->addItem(it.key());
+        int index = xycePkgCombo->findText(it.key());
+        xycePkgCombo->setItemData(index, it.value(), Qt::ToolTipRole);
+      }
+
+      // Set current value from component property if it exists.
+      Property* prop = component->getProperty("XyceOptionPackage");
+      if (prop) {
+        xycePkgCombo->setCurrentText(prop->Value.trimmed().toUpper());
+      }
+
+      // Disable when not using Xyce
+      bool isXyce = (QucsSettings.DefaultSimulator == spicecompat::simXyce);
+      xycePkgCombo->setEnabled(isXyce);
+      xycePkgIconLabel->setVisible(isXyce);
+      if (!isXyce) {
+        xycePkgCombo->setToolTip(tr("Only available when using Xyce as simulator"));
+      }
+
+      // add the different layout/widgets
+      xycePkgLayout->addWidget(xycePkgCombo, 1);
+      xycePkgLayout->addWidget(xycePkgIconLabel);
+      xyceGroupLayout->addLayout(xycePkgLayout);
+      static_cast<QVBoxLayout*>(layout())->addWidget(xyceGroup, 0);
+
+      // input validation lambda
+      // colorize green border and show checkmark icon if using known package,
+      // otherwise show a yellow border and warning icon if user input and unknown
+      auto validateXycePkgCombo = [this, xycePkgIconLabel]() {
+        // NOTE: getXycePackageOptions is static
+        const auto& pkgOptions = SpiceOptions::getXycePackageOptions();
+        QString text = xycePkgCombo->currentText();
+        QString normalized = text.trimmed().toUpper();
+        bool isValid = pkgOptions.contains(normalized);
+
+        QString borderColor;
+        int borderSize       = QucsSettings.hasDarkTheme ? 2 : 3;
+
+        // set tooltip and pick color
+        if (isValid) {
+          xycePkgCombo->setToolTip(pkgOptions.value(normalized));
+          // green color if valid
+          borderColor = QucsSettings.hasDarkTheme ? "#28a745" : "#198754";
+        } else {
+          xycePkgCombo->setToolTip(
+            tr("'%1' is not a recognized Xyce option package.\n"
+               "Xyce will silently skip invalid options.")
+              .arg(normalized)
+          );
+          // Yellow-ish color if invalid
+          borderColor = QucsSettings.hasDarkTheme ? "#ffc107" : "#eab308";
+        }
+
+        // set border style
+        xycePkgCombo->setStyleSheet(
+          QStringLiteral("QComboBox { border: %1px solid %2; }")
+            .arg(borderSize)
+            .arg(borderColor)
+        );
+
+        // set icon
+        QIcon icon = QApplication::style()->standardIcon(
+          isValid ? QStyle::SP_DialogApplyButton : QStyle::SP_MessageBoxWarning
+        );
+        xycePkgIconLabel->setPixmap(icon.pixmap(24, 24));
+        // update icon to have the same tooltip as the combo-box
+        xycePkgIconLabel->setToolTip(xycePkgCombo->toolTip());
+
+        // set the normalized input
+        if (text != normalized) {
+          xycePkgCombo->blockSignals(true);
+          xycePkgCombo->setEditText(normalized);
+          xycePkgCombo->blockSignals(false);
+        }
+      };
+
+      // Validate input
+      connect(xycePkgCombo, &QComboBox::editTextChanged, this, validateXycePkgCombo);
+
+      // initialize input validation if using Xyce
+      if (isXyce) {
+        validateXycePkgCombo();
+      }
+    }
+
     // Create the equation editor.
     QGroupBox* editorGroup = new QGroupBox(tr("Equation Editor"));
     static_cast<QVBoxLayout*>(layout())->addWidget(editorGroup, 2);
@@ -785,6 +892,8 @@ void ComponentDialog::updateEqnEditor()
     else if (eqnExportCheck && property->Name == "Export")
       eqnExportCheck->setCheckState(property->Value == "yes" ? Qt::Checked : Qt::Unchecked);
 
+    else if (xycePkgCombo && property->Name == "XyceOptionPackage")
+      xycePkgCombo->setCurrentText(property->Value.trimmed().toUpper());
     else
       eqnList.append(property->Name + " = " + property->Value + "\n");
   }
@@ -823,6 +932,21 @@ void ComponentDialog::writeEquation()
   // Clear all old properties and free their memory.
   qDeleteAll(component->Props.begin(), component->Props.end());
   component->Props.clear();
+
+  // SpiceOptions: save XyceOptionPackage from current combo state.
+  if (xycePkgCombo)
+  {
+    QString pkgName = xycePkgCombo->currentText().trimmed().toUpper();
+    // NOTE: Since the property is freed above, we need to recreate it here
+    Property *p = Property::Builder()
+      .name("XyceOptionPackage")
+      .value(pkgName)
+      .desc(tr("Xyce option package"))
+      .visible()
+      .simulator(spicecompat::simXyce)
+      .buildNew();
+    component->Props.append(p);
+  }
   
   // Note: the description needs to be written as "Simulation name" because this is used when saving the file.
   if (eqnSimCombo)
