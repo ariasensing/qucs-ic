@@ -565,6 +565,14 @@ void Graph::drawLines(QPainter* painter) const {
     segment_start = segment_end;
   }
 
+  // If every data point mapped to the same screen coordinate (e.g. a
+  // constant S11 on a Smith chart), the line list will be empty even though
+  // there is data to show. This falls back to a star plot to show a single point.
+  if (lines.isEmpty()) {
+      painter->restore(); // restore the pen state saved at the top of drawLines
+      drawStarSymbols(painter);
+      return;
+  }
 
   // Cannot render the points greater than diagram size in pixels
   auto max_points = std::max(parentDiagram()->boundingRect().width(),
