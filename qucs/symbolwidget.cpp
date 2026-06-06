@@ -601,7 +601,14 @@ int SymbolWidget::analyseLine(const QString& Row)
     if(!getCompLineIntegers(Row, &i1, &i2, &i3))  return -1;
     QString portName = Row.section(' ', 5).trimmed();
     if (!portName.isEmpty()) {
-        PortNames.insert(i3, portName);
+      // Port already exists at this index and will be overridden
+      if (PortNames.contains(i3)) {
+        qWarning() << QString("Port index %1 overridden, old port '%2' replaced by '%3'")
+                      .arg(i3)
+                      .arg(getPortName(i3))
+                      .arg(portName);
+      }
+      PortNames.insert(i3, portName);
     }
     Arcs.append(new struct qucs::Arc(i1-4, i2-4, 8, 8, 0, 16*360,
                                QPen(Qt::red,1)));
@@ -812,4 +819,8 @@ void SymbolWidget::setPaintText(const QString &txt)
 
 QString SymbolWidget::getPortName(int n) {
     return PortNames.value(n, QString());
+}
+
+QList<int> SymbolWidget::getPortIndices() const {
+  return PortNames.keys();
 }
