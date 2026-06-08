@@ -589,6 +589,9 @@ private:
   bool a_isAnalog;
   bool a_isVerilog;
   bool a_creatingLib;
+
+  QString m_simType; // Simulation type. Needed for the Pac (constant AC power source) to determine with network to build with Qucsator-RF
+  QString getSimType() const { return m_simType; } // Return the type of simulation
 };
 
 #endif
