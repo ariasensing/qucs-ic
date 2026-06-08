@@ -391,7 +391,7 @@ double Graph::ScrPt::getDep() const
 void Graph::drawCircleSymbols(QPainter* painter) const {
   constexpr double radius = 4.0;
 
-  for (auto point : *this) {
+  for (const auto & point : *this) {
     if (!point.isPt()) {
       continue;
     }
@@ -403,7 +403,7 @@ void Graph::drawArrowSymbols(QPainter* painter) const {
   // Arrow head size constants
   constexpr double head_height = 7.0;
   constexpr double head_half_width = 4.0;
-  for (auto point : *this) {
+  for (const auto & point : *this) {
     if (point.isGraphEnd()) {
       break;
     }
@@ -423,7 +423,7 @@ void Graph::drawArrowSymbols(QPainter* painter) const {
 }
 
 void Graph::drawStarSymbols(QPainter* painter) const {
-  for (auto point : *this) {
+  for (const auto & point : *this) {
     if (!point.isPt()) {
       continue;
     }
