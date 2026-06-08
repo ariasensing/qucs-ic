@@ -176,7 +176,7 @@ int Graph::getSelected(int x, int y)
   if(pp == ScrPoints.end()) return -1;
 
   int A, z=0;
-  int dx, dx2, x1;
+  int dx, dx2=0, x1;
   int dy, dy2, y1;
 
   int countX = cPointsX.at(0)->count;
