@@ -111,7 +111,7 @@ QString Graph::save()
 	      " "+QString::number(numMode)+" "+QString::number(Style)+
 	      " "+QString::number(yAxisNo)+">";
 
-  for (Marker *pm : Markers)
+  for (Marker *pm : std::as_const(Markers))
     s += "\n\t  "+pm->save();
 
   return s;
@@ -266,7 +266,7 @@ Graph* Graph::sameNewOne()
   pg->numMode   = numMode;
   pg->yAxisNo   = yAxisNo;
 
-  for (Marker *pm : Markers)
+  for (Marker *pm : std::as_const(Markers))
     pg->Markers.append(pm->sameNewOne(pg));
 
   return pg;
@@ -588,7 +588,7 @@ void Graph::drawLines(QPainter* painter) const {
 
     auto near = [](float x1, float x2) { return std::abs(x1-x2) < 0.25; };
 
-    for (const auto& l : lines) {
+    for (const auto& l : std::as_const(lines)) {
       bool try_join = count++ < final_count; // Do not extend last line
 
       if (try_join && !joining && near(l.x1(),l.x2())) {
