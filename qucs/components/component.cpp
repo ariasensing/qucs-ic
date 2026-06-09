@@ -1818,6 +1818,31 @@ Component *getComponentFromName(QString &Line, Schematic *p) {
         return 0;
     }
 
+    // Migrate old Pac/Vac schematics saved before Phase property was inserted at index 4 (PR #1669).
+    // Old order (7 props): Num, Z, P, f, Temp, EnableTran, LoadOnly
+    // New order (8 props): Num, Z, P, f, Phase, Temp, EnableTran, LoadOnly
+    // In old versions, Temp contains a boolean string because old positional values shifted, so the
+    // idea is to detect that and fix it here.
+    if (c->Model == "Pac" || c->Model == "Vac") {
+      Property *pTemp = c->getProperty("Temp");
+      if (pTemp && (pTemp->Value == "true" || pTemp->Value == "false")) {
+        // Values are shifted: index 4 (Phase) has Temp value, index 5 (Temp) has EnableTran value
+        Property *pPhase = c->getProperty("Phase");
+        Property *pEnableTran = c->getProperty("EnableTran");
+        Property *pLoadOnly = c->getProperty("LoadOnly");
+        // Shift values back: Temp gets Phase's value, EnableTran gets Temp's value, etc.
+        pEnableTran->Value = pTemp->Value;       // "true"/"false" belongs here
+        pTemp->Value = pPhase->Value;            // temperature value belongs here
+        pPhase->Value = "0";                     // Phase gets its default
+        // LoadOnly was also shifted - it got EnableTran's old value
+        // but EnableTran already had the right value shifted in above.
+        // Check LoadOnly too:
+        if (pLoadOnly && (pLoadOnly->Value != "true" && pLoadOnly->Value != "false")) {
+          pLoadOnly->Value = "false";
+        }
+      }
+    }
+
     cstr = c->Name;   // is perhaps changed in "recreate" (e.g. subcircuit)
     int x = c->tx, y = c->ty;
     c->setSchematic(p);
