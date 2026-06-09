@@ -21,6 +21,7 @@
 #include "component.h"
 #include "misc.h"
 #include <QRegularExpression>
+#include "schematic.h" // Needed to detect the type of simulation and adjust the qucsator-rf netlist accordingly
 
 class Source_ac : public Component  {
 private:

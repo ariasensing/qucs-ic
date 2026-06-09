@@ -360,14 +360,37 @@ QString Source_ac::spice_netlist(spicecompat::SpiceDialect dialect /* = spicecom
 
 QString Source_ac::netlist()
 {
-  // Get source parameters
+  // Detect the type of simulation.
+  // The AC power source definition is different for SP and TRAN. HB and AC (VAC + R)
+  QString simType;
+  if (Schematic *sch = dynamic_cast<Schematic*>(getSchematic())) {
+    simType = sch->getSimType();
+  }
+
+  // In case of a SP simulation, use the Pac component
+  if (simType == "SP") {
+    QString s = Model + ":" + Name;
+
+    for (Port *p1 : std::as_const(Ports)){
+      s += " " + p1->Connection->Name;
+    }
+
+    for (int i = 0; i < Props.count(); i++) {
+      const QString &name = Props.at(i)->Name;
+      if (name == "EnableTran" || name == "Phase" || name == "LoadOnly")
+        continue;
+      s += " " + name + "=\"" + Props.at(i)->Value + "\"";
+    }
+    return s + '\n';
+  }
+
+
+  // For HB, TR: Thévenin equivalent
   const QStringList freqs  = parseList(getProperty("f")->Value);
   const QStringList powers = parseList(getProperty("P")->Value);
   const QStringList phases = parseList(getProperty("Phase")->Value);
-
   const QString z    = getProperty("Z")->Value;
   const QString temp = getProperty("Temp")->Value;
-
   const bool isTermination =
       (getProperty("LoadOnly")->Value == "true")
       || (powers.isEmpty() || powers.first().isEmpty());
@@ -375,37 +398,22 @@ QString Source_ac::netlist()
   // Parse Z0
   double Z0, scale;
   QString unit;
-
   misc::str2num(z, Z0, unit, scale);
   Z0 *= scale;
 
-  // Passive termination only
   if (isTermination) {
-
-    const QString nodePos =
-        Ports.at(0)->Connection->Name;
-
-    const QString nodeNeg =
-        Ports.at(1)->Connection->Name;
-
+    const QString nodePos = Ports.at(0)->Connection->Name;
+    const QString nodeNeg = Ports.at(1)->Connection->Name;
     return QStringLiteral(
                "R:R_%1 %2 %3 "
                "R=\"%4 Ohm\" "
                "Temp=\"%5\"\n")
-        .arg(Name,
-             nodePos,
-             nodeNeg,
+        .arg(Name, nodePos, nodeNeg,
              QString::number(Z0, 'g', 12),
              temp);
   }
 
-  // Always synthesize Thévenin equivalent, as done with Xyce and ngspice. Don't rely on the qucastor AC power source
-  return multitone_qucsator(
-      Z0,
-      freqs,
-      powers,
-      phases,
-      temp);
+  return multitone_qucsator(Z0, freqs, powers, phases, temp);
 }
 
 QString Source_ac::multitone_qucsator(double z0,
