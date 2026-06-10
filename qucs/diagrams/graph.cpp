@@ -111,7 +111,7 @@ QString Graph::save()
 	      " "+QString::number(numMode)+" "+QString::number(Style)+
 	      " "+QString::number(yAxisNo)+">";
 
-  for (Marker *pm : Markers)
+  for (Marker *pm : std::as_const(Markers))
     s += "\n\t  "+pm->save();
 
   return s;
@@ -176,7 +176,7 @@ int Graph::getSelected(int x, int y)
   if(pp == ScrPoints.end()) return -1;
 
   int A, z=0;
-  int dx, dx2, x1;
+  int dx, dx2=0, x1;
   int dy, dy2, y1;
 
   int countX = cPointsX.at(0)->count;
@@ -266,7 +266,7 @@ Graph* Graph::sameNewOne()
   pg->numMode   = numMode;
   pg->yAxisNo   = yAxisNo;
 
-  for (Marker *pm : Markers)
+  for (Marker *pm : std::as_const(Markers))
     pg->Markers.append(pm->sameNewOne(pg));
 
   return pg;
@@ -391,7 +391,7 @@ double Graph::ScrPt::getDep() const
 void Graph::drawCircleSymbols(QPainter* painter) const {
   constexpr double radius = 4.0;
 
-  for (auto point : *this) {
+  for (const auto & point : *this) {
     if (!point.isPt()) {
       continue;
     }
@@ -403,7 +403,7 @@ void Graph::drawArrowSymbols(QPainter* painter) const {
   // Arrow head size constants
   constexpr double head_height = 7.0;
   constexpr double head_half_width = 4.0;
-  for (auto point : *this) {
+  for (const auto & point : *this) {
     if (point.isGraphEnd()) {
       break;
     }
@@ -423,7 +423,7 @@ void Graph::drawArrowSymbols(QPainter* painter) const {
 }
 
 void Graph::drawStarSymbols(QPainter* painter) const {
-  for (auto point : *this) {
+  for (const auto & point : *this) {
     if (!point.isPt()) {
       continue;
     }
@@ -565,6 +565,14 @@ void Graph::drawLines(QPainter* painter) const {
     segment_start = segment_end;
   }
 
+  // If every data point mapped to the same screen coordinate (e.g. a
+  // constant S11 on a Smith chart), the line list will be empty even though
+  // there is data to show. This falls back to a star plot to show a single point.
+  if (lines.isEmpty()) {
+      painter->restore(); // restore the pen state saved at the top of drawLines
+      drawStarSymbols(painter);
+      return;
+  }
 
   // Cannot render the points greater than diagram size in pixels
   auto max_points = std::max(parentDiagram()->boundingRect().width(),
@@ -580,7 +588,7 @@ void Graph::drawLines(QPainter* painter) const {
 
     auto near = [](float x1, float x2) { return std::abs(x1-x2) < 0.25; };
 
-    for (const auto& l : lines) {
+    for (const auto& l : std::as_const(lines)) {
       bool try_join = count++ < final_count; // Do not extend last line
 
       if (try_join && !joining && near(l.x1(),l.x2())) {
