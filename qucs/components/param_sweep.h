@@ -34,6 +34,7 @@ public:
   QString getCounterVar();
 
 protected:
+  QString netlist() override;
   QString spice_netlist(spicecompat::SpiceDialect dialect = spicecompat::SPICEDefault);
   QString param_split_str=";";
 };

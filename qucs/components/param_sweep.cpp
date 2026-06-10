@@ -231,3 +231,59 @@ QString Param_Sweep::spice_netlist(spicecompat::SpiceDialect dialect /* = spicec
     return s.toLower();
 }
 
+
+// In linear and log sweeps, check if Start/Stop values have "dBm" units.
+// QucsatorRF converts dBm to watts before passing values to the equation
+// evaluator, so a linear dBm sweep becomes linear in watts, so the linear
+// sweep in dBm is list.
+// This function was introduced after the qucsator's AC Power source was replaced
+// by a AC Voltage source + a Z0 resistor in PR #1669 (to match Xyce and ngspice behaviour
+// and fix problems with TR and HB simulations)
+QString Param_Sweep::netlist()
+{
+  const QString type  = getProperty("Type")->Value;
+  const QString param = getProperty("Param")->Value;
+
+  if (type == "lin" || type == "log") {
+    QString startUnit, stopUnit, pointsUnit;
+    double start, stop, points, fac;
+
+    misc::str2num(getProperty("Start")->Value,  start,  startUnit,  fac);
+    start *= fac;
+    misc::str2num(getProperty("Stop")->Value,   stop,   stopUnit,   fac);
+    stop *= fac;
+    misc::str2num(getProperty("Points")->Value, points, pointsUnit, fac);
+    points *= fac;
+
+    // Detect dBm units
+    if (startUnit.trimmed().toLower() == "dbm" ||
+        stopUnit.trimmed().toLower()  == "dbm") {
+
+      // Convert each dBm point to watts: P_W = 10^(P_dBm/10) / 1000
+      QStringList wattsValues;
+      const double step = (stop - start) / (points - 1);
+      for (int i = 0; i < (int)points; ++i) {
+        double p_dbm = start + i * step;
+        double p_w   = std::pow(10.0, p_dbm / 10.0) / 1000.0;
+        wattsValues << QString::number(p_w, 'g', 12);
+      }
+
+      // Emit as a precorrected list in Watts that map a linear sweep in dBm
+      return QStringLiteral(".SW:%1 Sim=\"%2\" Type=\"list\" Param=\"%3\" Values=\"[%4]\"\n")
+          .arg(Name,
+               getProperty("Sim")->Value,
+               param,
+               wattsValues.join(";"));
+    }
+  }
+
+  // Default behavior: keep the sweep as-is for non-dBm sweeps
+  QString s = Model + ":" + Name;
+  for (Property *p : std::as_const(Props)) {
+    if (p->Name == "Symbol") {
+      continue;
+    }
+    s += " " + p->Name + "=\"" + p->Value + "\"";
+  }
+  return s + '\n';
+}
