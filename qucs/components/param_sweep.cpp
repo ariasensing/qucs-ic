@@ -92,8 +92,8 @@ QString Param_Sweep::getNgspiceBeforeSim(QString sim, int lvl)
 
     s = "option interp\n";
     s += QStringLiteral("let number_%1 = 0\n").arg(step_var);
-    if (lvl==0) s += QStringLiteral("echo \"STEP %1.%2\" > spice4qucs.%3.cir.res\n").arg(sim).arg(step_var).arg(sim);
-    else s += QStringLiteral("echo \"STEP %1.%2\" > spice4qucs.%3.cir.res%4\n").arg(sim).arg(step_var).arg(sim).arg(lvl);
+    if (lvl==0) s += QStringLiteral("echo \"STEP %1.%2\" > spice4qucs.%3.cir.res\n").arg(sim, step_var, sim);
+    else s += QStringLiteral("echo \"STEP %1.%2\" > spice4qucs.%3.cir.res%4\n").arg(sim, step_var, sim).arg(lvl);
 
     s += QStringLiteral("foreach  %1_act ").arg(step_var);
 
@@ -151,13 +151,13 @@ QString Param_Sweep::getNgspiceBeforeSim(QString sim, int lvl)
         if (step_var == "temp" || step_var == "temper") temper_sweep = true;
 
         if (temper_sweep) { // Sweep temperature
-          s += QStringLiteral("option temp = $%1_act%2").arg(step_var).arg(nline_char);
+          s += QStringLiteral("option temp = $%1_act%2").arg(step_var, nline_char);
         } else if (compfound) { // Sweep device
-          s += QStringLiteral("alter %1 = $%2_act%3").arg(par).arg(step_var).arg(nline_char);
+          s += QStringLiteral("alter %1 = $%2_act%3").arg(par, step_var, nline_char);
         } else if (par.startsWith("@")) { // Sweep model
-          s += QStringLiteral("altermod %1 = $%2_act%3").arg(par).arg(step_var).arg(nline_char);
+          s += QStringLiteral("altermod %1 = $%2_act%3").arg(par, step_var, nline_char);
         } else { // Sweep .PARAM variable
-          s += QStringLiteral("alterparam %1 = $%2_act%3reset%3").arg(par).arg(step_var).arg(nline_char);
+          s += QStringLiteral("alterparam %1 = $%2_act%3reset%3").arg(par, step_var, nline_char);
         }
     }
     return s;
@@ -175,8 +175,8 @@ QString Param_Sweep::getNgspiceAfterSim(QString sim, int lvl)
 
     s = "set appendwrite\n";
 
-    if (lvl==0) s += QStringLiteral("echo \"$&number_%1  $%2_act\" >> spice4qucs.%3.cir.res\n").arg(par).arg(par).arg(sim);
-    else s += QStringLiteral("echo \"$&number_%1\" $%1_act >> spice4qucs.%2.cir.res%3\n").arg(par).arg(sim).arg(lvl);
+    if (lvl==0) s += QStringLiteral("echo \"$&number_%1  $%2_act\" >> spice4qucs.%3.cir.res\n").arg(par, par, sim);
+    else s += QStringLiteral("echo \"$&number_%1\" $%1_act >> spice4qucs.%2.cir.res%3\n").arg(par, sim).arg(lvl);
     s += QStringLiteral("let number_%1 = number_%1 + 1\n").arg(par);
 
     s += "end\n";
@@ -204,7 +204,7 @@ QString Param_Sweep::spice_netlist(spicecompat::SpiceDialect dialect /* = spicec
             QString list = getProperty("Values")->Value;
             list.remove('[').remove(']');
             list = list.split(';').join(" ");
-            s = QStringLiteral(".STEP %1 LIST %2\n").arg(var).arg(list);
+            s = QStringLiteral(".STEP %1 LIST %2\n").arg(var, list);
             return s.toLower();
         }
     }
