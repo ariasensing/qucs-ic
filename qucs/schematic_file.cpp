@@ -2334,6 +2334,14 @@ QString Schematic::createNetlist(QTextStream& stream, int NumPorts)
   a_Signals.clear();  // was filled in "giveNodeNames()"
   FileList.clear();
 
+  // Determine the type of simulation in the schematic.
+  // This is needed for component whose netlist depend on the type of simulation (e.g. Pac)
+  for (Component *pc : a_DocComps) {
+    if (pc->Model == ".SP") { m_simType = "SP"; break; }
+    if (pc->Model == ".HB") { m_simType = "HB"; break; }
+    if (pc->Model == ".TR") { m_simType = "TR"; break; }
+  }
+
   QString s, Time;
   for(Component *pc : a_DocComps) {
     if(pc->Model == "CMD") continue; // Skip "system command" component. It must not go to the simulation backend

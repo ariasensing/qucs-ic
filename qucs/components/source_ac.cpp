@@ -360,14 +360,37 @@ QString Source_ac::spice_netlist(spicecompat::SpiceDialect dialect /* = spicecom
 
 QString Source_ac::netlist()
 {
-  // Get source parameters
+  // Detect the type of simulation.
+  // The AC power source definition is different for SP and TRAN. HB and AC (VAC + R)
+  QString simType;
+  if (Schematic *sch = dynamic_cast<Schematic*>(getSchematic())) {
+    simType = sch->getSimType();
+  }
+
+  // In case of a SP simulation, use the Pac component
+  if (simType == "SP") {
+    QString s = Model + ":" + Name;
+
+    for (Port *p1 : std::as_const(Ports)){
+      s += " " + p1->Connection->Name;
+    }
+
+    for (int i = 0; i < Props.count(); i++) {
+      const QString &name = Props.at(i)->Name;
+      if (name == "EnableTran" || name == "Phase" || name == "LoadOnly")
+        continue;
+      s += " " + name + "=\"" + Props.at(i)->Value + "\"";
+    }
+    return s + '\n';
+  }
+
+
+  // For HB, TR: Thévenin equivalent
   const QStringList freqs  = parseList(getProperty("f")->Value);
   const QStringList powers = parseList(getProperty("P")->Value);
   const QStringList phases = parseList(getProperty("Phase")->Value);
-
   const QString z    = getProperty("Z")->Value;
   const QString temp = getProperty("Temp")->Value;
-
   const bool isTermination =
       (getProperty("LoadOnly")->Value == "true")
       || (powers.isEmpty() || powers.first().isEmpty());
@@ -375,37 +398,22 @@ QString Source_ac::netlist()
   // Parse Z0
   double Z0, scale;
   QString unit;
-
   misc::str2num(z, Z0, unit, scale);
   Z0 *= scale;
 
-  // Passive termination only
   if (isTermination) {
-
-    const QString nodePos =
-        Ports.at(0)->Connection->Name;
-
-    const QString nodeNeg =
-        Ports.at(1)->Connection->Name;
-
+    const QString nodePos = Ports.at(0)->Connection->Name;
+    const QString nodeNeg = Ports.at(1)->Connection->Name;
     return QStringLiteral(
                "R:R_%1 %2 %3 "
                "R=\"%4 Ohm\" "
                "Temp=\"%5\"\n")
-        .arg(Name,
-             nodePos,
-             nodeNeg,
+        .arg(Name, nodePos, nodeNeg,
              QString::number(Z0, 'g', 12),
              temp);
   }
 
-  // Always synthesize Thévenin equivalent, as done with Xyce and ngspice. Don't rely on the qucastor AC power source
-  return multitone_qucsator(
-      Z0,
-      freqs,
-      powers,
-      phases,
-      temp);
+  return multitone_qucsator(Z0, freqs, powers, phases, temp);
 }
 
 QString Source_ac::multitone_qucsator(double z0,
@@ -414,78 +422,84 @@ QString Source_ac::multitone_qucsator(double z0,
                                       const QStringList &phases,
                                       const QString &temp)
 {
-  auto pick = [](const QStringList &list,
-                 int i,
-                 const QString &fallback) -> QString {
-    if (list.isEmpty())
-      return fallback;
-
-    if (list.size() == 1)
-      return list.first();
-
+  // Helper: pick list[i] if available, broadcast list[0] if single entry, else fallback.
+  // This allows a single power/phase value to apply to all tones in a multitone setup.
+  auto pick = [](const QStringList &list, int i, const QString &fallback) -> QString {
+    if (list.isEmpty())   return fallback;
+    if (list.size() == 1) return list.first();
     return (i < list.size()) ? list.at(i) : fallback;
   };
 
   const int N = freqs.size();
-
   const QString nodePos = Ports.at(0)->Connection->Name;
   const QString nodeNeg = Ports.at(1)->Connection->Name;
 
+  // Internal junction nodes between the series voltage sources:
+  // nodePos -- R -- n0 -- Vac_t1 -- n1 -- Vac_t2 -- ... -- nodeNeg
   auto intNode = [&](int k) {
     return QStringLiteral("%1_n%2").arg(Name).arg(k);
   };
 
   QString s;
 
-  // Single explicit source resistance
-  s += QStringLiteral(
-           "R:R_%1 %2 %3 R=\"%4 Ohm\" Temp=\"%5\"\n")
-           .arg(Name,
-                nodePos,
-                intNode(0),
-                QString::number(z0, 'g', 12),
-                temp);
+  // Thévenin source impedance — one resistor shared by all tones.
+  // Placed between the external positive node and the first internal junction.
+  s += QStringLiteral("R:R_%1 %2 %3 R=\"%4 Ohm\" Temp=\"%5\"\n")
+           .arg(Name, nodePos, intNode(0),
+                QString::number(z0, 'g', 12), temp);
 
   // One ideal sinusoidal voltage source per tone
+  // Adjust the AC voltage amplitude according to the power
   for (int i = 0; i < N; ++i) {
-
     const QString freq  = freqs.at(i);
     const QString power = pick(powers, i, QStringLiteral("0"));
     const QString phase = pick(phases, i, QStringLiteral("0"));
 
-    // Convert dBm -> peak voltage
+    // Series chain: tone i sits between intNode(i) and intNode(i+1),
+    // except the last tone which connects directly to the negative external node.
+    const QString nodeAbove = intNode(i);
+    const QString nodeBelow = (i == N - 1) ? nodeNeg : intNode(i + 1);
+
+    QString vampStr;
     bool ok = false;
     double p_dbm = spicecompat::normalize_value(power).toDouble(&ok);
 
-    double vamp = 0.0;
-
     if (ok) {
-      // Vrms from dBm into z0
-      const double vrms =
-          std::sqrt(z0 / 1000.0) *
-          std::pow(10.0, p_dbm / 20.0);
-
-      vamp = 2 * vrms * std::sqrt(2.0); // peak amplitude [V -> R] -> R (same as with ngspice and xyce)
+      // Numeric power: compute vamp directly
+      const double vrms = std::sqrt(z0 / 1000.0) * std::pow(10.0, p_dbm / 20.0);
+      const double vamp = 2.0 * vrms * std::sqrt(2.0);
+      vampStr = QString::number(vamp, 'g', 12) + " V";
+    } else {
+      // Non-numeric power: the value is a sweep parameter variable (e.g. "Pin").
+      // QucsatorRF cannot evaluate inline expressions inside component property
+      // strings, so it needs to emit a Eqn: block that computes the amplitude
+      // symbolically. The equation is evaluated at each sweep iteration.
+      //
+      // Important: QucsatorRF passes sweep parameter values to the equation
+      // evaluator already converted in W, despite the sweep is in dBm.
+      // The amplitude formula is thus derived from P_watts directly:
+      //   Vrms  = sqrt(Z0 * P_watts)
+      //   Vpeak = sqrt(2) * Vrms
+      //   Vamp  = 2 * Vpeak = 2*sqrt(2)*sqrt(Z0 * P_watts)
+      const QString eqnBlockName = QStringLiteral("Eqn_vamp_%1_t%2").arg(Name).arg(i + 1);
+      const QString eqnVarName   = QStringLiteral("vamp_%1_t%2").arg(Name).arg(i + 1);
+      s += QStringLiteral("Eqn:%1 %2=\"2*sqrt(2)*sqrt(%3*%4)\" Export=\"yes\"\n")
+               .arg(eqnBlockName, eqnVarName,
+                    QString::number(z0, 'g', 12),
+                    power);
+      // Reference the variable name directly — no unit suffix when using a variable
+      vampStr = eqnVarName;
     }
-
-    const QString nodeAbove = intNode(i);
-    const QString nodeBelow =
-        (i == N - 1) ? nodeNeg : intNode(i + 1);
 
     s += QStringLiteral(
              "Vac:V_%1_t%2 %3 %4 "
-             "U=\"%5 V\" "
+             "U=\"%5\" "
              "f=\"%6\" "
              "Phase=\"%7\" "
              "Theta=\"0\" "
              "T=\"0\"\n")
-             .arg(Name)
-             .arg(i + 1)
-             .arg(nodeAbove,
-                  nodeBelow,
-                  QString::number(vamp, 'g', 12),
-                  freq,
-                  phase);
+             .arg(Name).arg(i + 1)
+             .arg(nodeAbove, nodeBelow, vampStr, freq, phase);
   }
 
   return s;

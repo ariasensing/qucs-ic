@@ -555,6 +555,9 @@ public:
   bool getIsVerilog() const { return a_isVerilog; }
   bool giveNodeNames(QTextStream *, int&, QStringList&, QPlainTextEdit*, int);
 
+  /// @brief Get the type of simulation from the schematic
+  QString getSimType() const { return m_simType; }
+
 private:
   int  saveDocument();
 
@@ -589,6 +592,8 @@ private:
   bool a_isAnalog;
   bool a_isVerilog;
   bool a_creatingLib;
+
+  QString m_simType; // Simulation type. Needed for the Pac (constant AC power source) to determine with network to build with Qucsator-RF
 };
 
 #endif
