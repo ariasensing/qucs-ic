@@ -33,8 +33,6 @@ public:
   ~SPDeEmbed() {};
   Component* newOne();
   static Element* info(QString&, char* &, bool getNewOne=false);
-  static Element* info2(QString&, char* &, bool getNewOne=false);
-  static Element* info4(QString&, char* &, bool getNewOne=false);
 
   QString getSubcircuitFile();
 

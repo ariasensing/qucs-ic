@@ -65,37 +65,12 @@ Element* SPDeEmbed::info(QString& Name, char* &BitmapFile, bool getNewOne)
   // "de-embedding" at the beginning, so it's always visible in the component dock
   // to help distinguish it from the regular embedding component
   Name = QObject::tr("de-embedding n-port S parameter file");
-  BitmapFile = (char *) "spdfile6";
-
-  if(getNewOne) {
-    SPDeEmbed* p = new SPDeEmbed();
-    p->Props.first()->Value = "test.s6p";
-    p->Props.last()->Value = "6";
-    return p;
-  }
-  return 0;
-}
-
-// -------------------------------------------------------
-Element* SPDeEmbed::info2(QString& Name, char* &BitmapFile, bool getNewOne)
-{
-  Name = QObject::tr("de-embedding 2-port S parameter file");
   BitmapFile = (char *) "spdfile2";
 
-  if(getNewOne)  return new SPDeEmbed();
-  return 0;
-}
-
-// -------------------------------------------------------
-Element* SPDeEmbed::info4(QString& Name, char* &BitmapFile, bool getNewOne)
-{
-  Name = QObject::tr("de-embedding 4-port S parameter file");
-  BitmapFile = (char *) "spdfile4";
-
   if(getNewOne) {
     SPDeEmbed* p = new SPDeEmbed();
-    p->Props.first()->Value = "test.s4p";
-    p->Props.last()->Value = "4";
+    p->Props.first()->Value = "test.s2p";
+    p->Props.last()->Value = "2";
     return p;
   }
   return 0;
