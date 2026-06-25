@@ -32,6 +32,7 @@
 SPDeEmbed::SPDeEmbed()
 {
   Description = QObject::tr("S parameter file de-embedding");
+  Simulator = spicecompat::simQucsator; // qucsator-RF only
   Model = "SPDfile";
   Name  = "XD";
 
