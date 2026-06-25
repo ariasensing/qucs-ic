@@ -1,44 +1,45 @@
-/*
- * spdeembed.h - two-port S-parameters de-embedding component
- *
- * Copyright (C) 2017 Qucs Team
- * based on sparamfile.h, (C) 2003 by Michael Margraf
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2, or (at your option)
- * any later version.
- *
- * This software is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this package; see the file COPYING.  If not, write to
- * the Free Software Foundation, Inc., 51 Franklin Street - Fifth Floor,
- * Boston, MA 02110-1301, USA.
- *
- */
+/// @file spdeembed.h
+/// @brief S-parameter network N-port de-embedding component (definition)
+/// @author Qucs Team; Andrés Martínez Mera
+/// @date 2017-2026
+/// @copyright Copyright (C) 2017 Qucs Team,
+///            Based on sparamfile.cpp (C) 2003 by Michael Margraf
+///            2026 Andrés Martínez Mera
+///            Code porting from Qucs PR#693; GPLv3-or-later
+/// @license GPL-3.0-or-later
 
 #ifndef SPDEEMBED_H
 #define SPDEEMBED_H
 
 #include "component.h"
+#include "componentdialog.h"
+
+/// @class SPDeEmbedDialog
+/// @brief Custom dialog for the S-parameter de-embedding component
+class SPDeEmbedDialog : public ComponentDialog {
+  Q_OBJECT
+public:
+  /// @brief Constructor
+  SPDeEmbedDialog(Component* c, Schematic* s);
+};
 
 
+/// @class SPDeEmbed
+/// @details S-parameter de-embedding component
 class SPDeEmbed : public MultiViewComponent  {
 public:
   SPDeEmbed();
   ~SPDeEmbed() {};
-  Component* newOne();
+  Component* newOne() override;
   static Element* info(QString&, char* &, bool getNewOne=false);
 
-  QString getSubcircuitFile();
+  ComponentDialog* createDialog(Schematic* s) override;
+  static int portsFromFilename(const QString& filename);
+  QString getSubcircuitFile() override;
 
 protected:
-  QString netlist();
-  void createSymbol();
+  QString netlist() override;
+  void createSymbol() override;
 };
 
 #endif /* SPDEEMBED_H */

@@ -1788,7 +1788,9 @@ void MouseActions::editElement(Schematic *Doc, QMouseEvent *Event)
             if (od->exec() != 1)
                 break; // dialog is WDestructiveClose
         } else {
-            ComponentDialog *cd = new ComponentDialog(c, Doc);
+            // Create the properties dialog. If the component doesn't have a custom implementation (X:createDialog() member)
+            // the control flow goes to Component::createDialog()
+            ComponentDialog *cd = c->createDialog(Doc);
             if (cd->exec() != 1)
                 break; // dialog is WDestructiveClose
 

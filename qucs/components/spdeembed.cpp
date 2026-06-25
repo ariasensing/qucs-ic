@@ -1,25 +1,12 @@
-/*
- * spdeembed.cpp - N-port S-parameters de-embedding component
- *
- * Copyright (C) 2017 Qucs Team
- * based on sparamfile.cpp, (C) 2003 by Michael Margraf
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2, or (at your option)
- * any later version.
- *
- * This software is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this package; see the file COPYING.  If not, write to
- * the Free Software Foundation, Inc., 51 Franklin Street - Fifth Floor,
- * Boston, MA 02110-1301, USA.
- *
- */
+/// @file spdeembed.cpp
+/// @brief S-parameter network N-port de-embedding component (implementation)
+/// @author Qucs Team; Andrés Martínez Mera
+/// @date 2017-2026
+/// @copyright Copyright (C) 2017 Qucs Team,
+///            Based on sparamfile.cpp (C) 2003 by Michael Margraf
+///            2026 Andrés Martínez Mera
+///            Code porting from Qucs PR#693; GPLv3-or-later
+/// @license GPL-3.0-or-later
 
 #include "spdeembed.h"
 #include "main.h" // for QucsSettings
@@ -176,4 +163,60 @@ void SPDeEmbed::createSymbol()
   QFontMetrics  metrics(QucsSettings.font, 0);   // use the screen-compatible metric
   tx = x1+4;
   ty = y1 - 2*metrics.lineSpacing() - 4;
+}
+
+
+ComponentDialog* SPDeEmbed::createDialog(Schematic* s)
+{
+  return new SPDeEmbedDialog(this, s);
+}
+
+int SPDeEmbed::portsFromFilename(const QString& filename)
+{
+  QFileInfo fi(filename);
+  QString ext = fi.suffix().toLower();  // e.g. "s4p"
+  if (!ext.startsWith('s') || !ext.endsWith('p'))
+    return -1;
+  QString middle = ext.mid(1, ext.length() - 2);  // strip leading 's' and trailing 'p'
+  bool ok = false;
+  int n = middle.toInt(&ok);
+  return (ok && n >= 1) ? n : -1;
+}
+
+SPDeEmbedDialog::SPDeEmbedDialog(Component* c, Schematic* s)
+    : ComponentDialog(c, s)
+{
+  QTableWidget* table = findChild<QTableWidget*>();
+  if (!table) return;
+
+  int fileRow  = -1;
+  int portsRow = -1;
+  for (int row = 0; row < table->rowCount(); ++row) {
+    QTableWidgetItem* nameItem = table->item(row, 0);
+    if (!nameItem) continue;
+    if (nameItem->text() == "File")  fileRow  = row;
+    if (nameItem->text() == "Ports") portsRow = row;
+  }
+
+  if (fileRow < 0 || portsRow < 0) return;
+
+  QWidget* cellWidget = table->cellWidget(fileRow, 1);
+  if (!cellWidget) return;
+  QLineEdit* fileEdit = cellWidget->findChild<QLineEdit*>();
+  if (!fileEdit) return;
+
+  connect(fileEdit, &QLineEdit::textChanged, this, [table, portsRow](const QString& filename) {
+    // Get the number of ports from the .snp extension
+    int n = SPDeEmbed::portsFromFilename(filename);
+    if (n < 1) return;
+    QString value = QString::number(n);
+
+    // Update the QTableWidgetItem text — this is what slotApplyButton reads back.
+    QTableWidgetItem* item = table->item(portsRow, 1);
+    if (item) item->setText(value);
+
+    // Update the port number widget.
+    QLineEdit* portsEdit = qobject_cast<QLineEdit*>(table->cellWidget(portsRow, 1));
+    if (portsEdit) portsEdit->setText(value);
+  });
 }
