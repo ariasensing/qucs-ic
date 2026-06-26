@@ -186,11 +186,13 @@ int SPDeEmbed::portsFromFilename(const QString& filename)
 SPDeEmbedDialog::SPDeEmbedDialog(Component* c, Schematic* s)
     : ComponentDialog(c, s)
 {
+  // The base class constructor has already built the full property table.
   QTableWidget* table = findChild<QTableWidget*>();
   if (!table) return;
 
   int fileRow  = -1;
   int portsRow = -1;
+  // Walk the table rows to find the "File" and "Ports" properties by name.
   for (int row = 0; row < table->rowCount(); ++row) {
     QTableWidgetItem* nameItem = table->item(row, 0);
     if (!nameItem) continue;
@@ -205,10 +207,31 @@ SPDeEmbedDialog::SPDeEmbedDialog(Component* c, Schematic* s)
   QLineEdit* fileEdit = cellWidget->findChild<QLineEdit*>();
   if (!fileEdit) return;
 
-  connect(fileEdit, &QLineEdit::textChanged, this, [table, portsRow](const QString& filename) {
+  // Note: The lambda function here is the most simple way to check the number of ports. "table", "fileEdit" and "ports" are
+  // not member variables
+  connect(fileEdit, &QLineEdit::textChanged, this, [this, table, portsRow, fileEdit](const QString& filename) {
     // Get the number of ports from the .snp extension
     int n = SPDeEmbed::portsFromFilename(filename);
     if (n < 1) return;
+
+    // Port count must be even
+    if (n % 2 != 0) {
+      QMessageBox::critical(this,
+                            QObject::tr("Invalid port count"),
+                            QObject::tr("The file \"%1\" specifies %2 port(s).\n\n"
+                                        "De-embedding requires an even number of ports.")
+                                .arg(QFileInfo(filename).fileName())
+                                .arg(n));
+
+      // Block the signal temporarily to avoid re-triggering this handler,
+      // then clear the file field so the invalid file is not accepted.
+      fileEdit->blockSignals(true);
+      fileEdit->clear();
+      fileEdit->blockSignals(false);
+      return;
+    }
+
+
     QString value = QString::number(n);
 
     // Update the QTableWidgetItem text — this is what slotApplyButton reads back.

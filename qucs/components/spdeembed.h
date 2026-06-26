@@ -13,6 +13,7 @@
 
 #include "component.h"
 #include "componentdialog.h"
+#include <QMessageBox>
 
 /// @class SPDeEmbedDialog
 /// @brief Custom dialog for the S-parameter de-embedding component
