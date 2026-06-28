@@ -46,7 +46,7 @@ SParamFile::SParamFile()
   Props.append(new Property("Ports", "1", false,
 		QObject::tr("number of ports")));
 
-  createSymbol();
+  SParamFile::createSymbol();
 }
 
 // -------------------------------------------------------
@@ -116,7 +116,7 @@ QString SParamFile::netlist()
   QString s = Model+":"+Name;
 
   // output all node names
-  for (Port *p1 : Ports)
+  for (Port *p1 : std::as_const(Ports))
     s += " "+p1->Connection->Name;   // node names
 
   // output all properties
@@ -206,14 +206,13 @@ QString SParamFile::spice_netlist(spicecompat::SpiceDialect dialect /* = spiceco
         for(int i = 0; i < Np; i++) {
             QString p_in = spicecompat::normalize_node_name(Ports.at(i)->Connection->Name);
             QString p_com = spicecompat::normalize_node_name(Ports.at(Np)->Connection->Name);
-            s += QStringLiteral(" %1 %2").arg(p_in).arg(p_com);
+            s += QStringLiteral(" %1 %2").arg(p_in, p_com);
         }
         s += QStringLiteral(" %1\n").arg(s_mod);
-        s += QStringLiteral(".MODEL %1 LIN TSTONEFILE=%2\n").arg(s_mod)
-                .arg(getSubcircuitFile());
+        s += QStringLiteral(".MODEL %1 LIN TSTONEFILE=%2\n").arg(s_mod, getSubcircuitFile());
     } else {
         s += SpiceModel+Name;
-        for (Port *p1 : Ports) {
+        for (Port *p1 : std::as_const(Ports)) {
             s += " "+ spicecompat::normalize_node_name(p1->Connection->Name);   // node names
         }
         s += " Sub_" + Model + "_" + Name + "\n";
