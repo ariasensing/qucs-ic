@@ -4043,7 +4043,7 @@ void QucsApp::runPostSimCommands(Schematic* sch)
     // Join multi-line commands into a single shell statement, skipping comments and blank lines
     QStringList lines = cmd.split('\n', Qt::SkipEmptyParts);
     QStringList filteredLines;
-    for (const QString& line : qAsConst(lines)) {
+    for (const QString& line : std::as_const(lines)) {
       QString trimmed = line.trimmed();
       if (trimmed.isEmpty() || trimmed.startsWith('#'))
         continue;

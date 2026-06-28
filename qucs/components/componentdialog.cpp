@@ -865,7 +865,7 @@ void ComponentDialog::updateEqnEditor()
   // Save plain text components (e.g. systemcommand component)
   if (isPlainText)
   {
-    for (auto prop : qAsConst(component->Props)) {
+    for (auto prop : std::as_const(component->Props)) {
       if (prop->Name == "cmd"){
         eqnEditor->setPlainText(prop->Value);
       }
@@ -912,7 +912,7 @@ void ComponentDialog::writeEquation()
     // The command text is stored as-is — no parsing or transformation is applied,
     // preserving multi-line scripts, comments, and blank lines exactly as the user typed them.
 
-    for (auto prop : qAsConst(component->Props)) {
+    for (auto prop : std::as_const(component->Props)) {
       if (prop->Name == "cmd") {
         prop->Value = eqnEditor->document()->toPlainText().trimmed();
       }
@@ -955,7 +955,7 @@ void ComponentDialog::writeEquation()
   QString text = eqnEditor->document()->toPlainText();
   QStringList lines = text.split('\n', Qt::SkipEmptyParts);
   
-  for (const QString& line : qAsConst(lines))
+  for (const QString& line : std::as_const(lines))
   {
     QString LHS = line.section('=',0,0).trimmed();
     QString RHS = line.section('=',1).trimmed();
