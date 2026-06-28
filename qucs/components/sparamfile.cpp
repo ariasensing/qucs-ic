@@ -220,3 +220,66 @@ QString SParamFile::spice_netlist(spicecompat::SpiceDialect dialect /* = spiceco
     }
     return s;
 }
+
+ComponentDialog* SParamFile::createDialog(Schematic* s)
+{
+  return new SParamFileDialog(this, s);
+}
+
+// Same function used in spdeembed component
+int SParamFile::portsFromFilename(const QString& filename)
+{
+  QFileInfo fi(filename);
+  QString ext = fi.suffix().toLower();       // e.g. "s3p"
+  if (!ext.startsWith('s') || !ext.endsWith('p'))
+    return -1;
+  QString middle = ext.mid(1, ext.length() - 2);  // strip 's' and 'p'
+  bool ok = false;
+  int n = middle.toInt(&ok);
+  return (ok && n >= 1) ? n : -1;
+}
+
+
+// Similar function used in spdeembed component
+SParamFileDialog::SParamFileDialog(Component* c, Schematic* s)
+    : ComponentDialog(c, s)
+{
+  // The base class constructor has already built the full property table.
+  QTableWidget* table = findChild<QTableWidget*>();
+  if (!table) return;
+
+  int fileRow  = -1;
+  int portsRow = -1;
+
+  // Walk the table rows to find the "File" and "Ports" properties by name.
+  for (int row = 0; row < table->rowCount(); ++row) {
+    QTableWidgetItem* nameItem = table->item(row, 0);
+    if (!nameItem) continue;
+    if (nameItem->text() == "File")  fileRow  = row;
+    if (nameItem->text() == "Ports") portsRow = row;
+  }
+  if (fileRow < 0 || portsRow < 0) return;
+
+  QWidget* cellWidget = table->cellWidget(fileRow, 1);
+  if (!cellWidget) return;
+  QLineEdit* fileEdit = cellWidget->findChild<QLineEdit*>();
+  if (!fileEdit) return;
+
+  // Note: The lambda function here is the most simple way to check the number of ports. "table", "fileEdit" and "ports" are not member variables
+  connect(fileEdit, &QLineEdit::textChanged,
+          this, [table, portsRow](const QString& filename)
+          {
+            int n = SParamFile::portsFromFilename(filename);
+            if (n < 1) return;
+
+            QString value = QString::number(n);
+
+            // Update the QTableWidgetItem
+            QTableWidgetItem* item = table->item(portsRow, 1);
+            if (item) item->setText(value);
+
+            // Update the port number widget.
+            QLineEdit* portsEdit = qobject_cast<QLineEdit*>(table->cellWidget(portsRow, 1));
+            if (portsEdit) portsEdit->setText(value);
+  });
+}
