@@ -1975,11 +1975,11 @@ void Schematic::insertComponentNodes(Component *component, bool noOptimize)
 
     // if component over wire then delete this wire
     QListIterator<Port *> iport(component->Ports);
-    // omit the first element
-    Port *component_port = iport.next();
+
+    iport.next(); // omit the first element
     std::vector<Wire*> dead_wires;
     while (iport.hasNext()) {
-        component_port = iport.next();
+        Port *component_port = iport.next();
 
         // At first iterate over all port's connections to find wires
         // connecting this port to another port of the same component.
