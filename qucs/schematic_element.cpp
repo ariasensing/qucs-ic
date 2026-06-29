@@ -2254,7 +2254,7 @@ void Schematic::detachComp(Component *c, bool remove_orphans, bool keepNodeLabel
     auto compStatus = disconnectComp(c, remove_orphans, keepNodeLabel);
 
     // loop over all ports, and delete if orphan
-    for (size_t i = 0; i < c->Ports.size(); ++i) {
+    for (auto i = 0; i < c->Ports.size(); ++i) {
         if (compStatus.ports[i].removed) {
             delete c->Ports[i]->Connection;
         }
@@ -2306,7 +2306,7 @@ void Schematic::decoupleComp(Component* component, bool keepNodeLabel)
     auto compStatus = disconnectComp(component, /*remove_orphans=*/true, keepNodeLabel);
 
     // Loop over all ports, and create new (isolated) nodes for all ports that got disconnected
-    for (size_t i = 0; i < component->Ports.size(); ++i) {
+    for (auto i = 0; i < component->Ports.size(); ++i) {
         if (compStatus.ports[i].disconnected) {
             Node* new_node = createNode(portPos[i]);
             new_node->connect(component);
