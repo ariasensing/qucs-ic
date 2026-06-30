@@ -1350,3 +1350,11 @@ void ShellHighlighter::highlightBlock(const QString& text)
     }
   }
 }
+
+/// @brief Default implementation of the createDialog virtual function
+/// @details If the component does not have a custom dialog implemented, control reaches this
+/// function and a new ComponentDialog object is created
+ComponentDialog* Component::createDialog(Schematic* s)
+{
+  return new ComponentDialog(this, s);
+}
