@@ -39,7 +39,6 @@
 #include "components/vhdlfile.h"
 #include "components/verilogfile.h"
 #include "components/libcomp.h"
-#include "components/sparamfile.h"
 #include "module.h"
 #include "misc.h"
 #include "extsimkernels/abstractspicekernel.h"
@@ -1516,7 +1515,6 @@ void Schematic::propagateNode(QStringList& Collect,
   Cons.clear();
 }
 
-#include <iostream>
 
 /*!
  * \brief Schematic::throughAllComps
