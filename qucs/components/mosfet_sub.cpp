@@ -136,7 +136,7 @@ MOSFET_sub::MOSFET_sub()
 {
   Description = QObject::tr("MOS field-effect transistor with substrate");
   Simulator = spicecompat::simAll;
-  createSymbol();
+  MOSFET_sub::createSymbol();
   tx = x2+4;
   ty = y1+4;
   Model = "MOSFET";

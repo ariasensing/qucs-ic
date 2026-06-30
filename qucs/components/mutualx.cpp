@@ -49,7 +49,7 @@ MutualX::MutualX()
        Props.append(new Property(nam,"0.9",false,desc));
     }
 
-  createSymbol();
+  MutualX::createSymbol();
 }
 
 // --------------------------------------------------------

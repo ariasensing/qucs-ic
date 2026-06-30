@@ -133,7 +133,7 @@ BJTsub::BJTsub()
 {
   Description = QObject::tr("bipolar junction transistor with substrate");
   Simulator = spicecompat::simAll;
-  createSymbol();
+  BJTsub::createSymbol();
   tx = x2+4;
   ty = y1+4;
   Model = "BJT";

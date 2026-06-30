@@ -24,7 +24,7 @@ BJT::BJT()
 {
   // properties obtained from "Basic_BJT" in bjtsub.cpp
   Description = QObject::tr("bipolar junction transistor");
-  createSymbol();
+  BJT;;createSymbol();
   tx = x2+4;
   ty = y1+4;
   Model = "_BJT";

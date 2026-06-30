@@ -40,7 +40,7 @@ DIODE_SPICE::DIODE_SPICE()
     Props.append(new Property("Pins", "2", true,"[2,3] Pins count"));
     Props.append(new Property("Letter", "D", true,"[D,X,N] SPICE letter"));
 
-    createSymbol();
+    DIODE_SPICE::createSymbol();
     tx = x1+4;
     ty = y2+4;
 }

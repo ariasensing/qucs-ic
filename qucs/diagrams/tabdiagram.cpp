@@ -39,7 +39,7 @@ TabDiagram::TabDiagram(int _cx, int _cy) : Diagram(_cx, _cy)
   Name = "Tab";
   xAxis.limit_min = 0.0;  // scroll bar position (needs to be saved in file)
 
-  calcDiagram();
+  TabDiagram::calcDiagram();
 }
 
 TabDiagram::~TabDiagram()

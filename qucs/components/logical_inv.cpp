@@ -37,7 +37,7 @@ Logical_Inv::Logical_Inv()
   Props.append(new Property("Symbol", "old", false,
 		QObject::tr("schematic symbol")+" [old, DIN40900]"));
 
-  createSymbol();
+  Logical_Inv::createSymbol();
   tx = x1+4;
   ty = y2+4;
   Model = "Inv";

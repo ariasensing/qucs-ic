@@ -50,7 +50,7 @@ Resistor::Resistor(bool european)
         QObject::tr("schematic symbol")+" [european, US]"));
   if(!european)  Props.back()->Value = "US";
 
-  createSymbol();
+  Resistor::createSymbol();
   tx = x1+4;
   ty = y2+4;
   Model = "R";

@@ -89,7 +89,7 @@ Diode::Diode()
   Props.append(new Property("CompName", "Generic", false,
                             QObject::tr("Component name in library")));
 
-  createSymbol();
+  Diode::createSymbol();
   tx = x1+4;
   ty = y2+4;
   Model = "Diode";

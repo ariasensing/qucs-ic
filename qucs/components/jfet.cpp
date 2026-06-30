@@ -79,7 +79,7 @@ JFET::JFET() {
     Props.append(new Property("CompName", "Generic", false,
                               QObject::tr("Component name in library")));
 
-    createSymbol();
+    JFET::createSymbol();
     tx = x2 + 4;
     ty = y1 + 4;
     Model = "JFET";

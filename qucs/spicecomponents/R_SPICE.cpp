@@ -39,7 +39,7 @@ R_SPICE::R_SPICE()
     Props.append(new Property("Pins", "2", true,"[2,3] Pins count"));
     Props.append(new Property("Letter", "R", true,"[R,X,N] SPICE letter"));
 
-    createSymbol();
+    R_SPICE::createSymbol();
 
     tx = x1+4;
     ty = y2+4;

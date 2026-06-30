@@ -48,7 +48,7 @@ EqnDefined::EqnDefined()
   Props.append(new Property("Q1", "0", false,
 		QObject::tr("charge equation") + " 1"));
 
-  createSymbol();
+  EqnDefined::createSymbol();
 }
 
 // -------------------------------------------------------

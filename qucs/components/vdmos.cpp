@@ -139,7 +139,7 @@ VDMOS::VDMOS() {
                               QObject::tr("Thermal model") + " [on,off]"));
 
 
-    createSymbol();
+    VDMOS::createSymbol();
     tx = x2 + 4;
     ty = y1 + 4;
     Model = "VDMOS";

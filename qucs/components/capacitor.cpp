@@ -32,7 +32,7 @@ Capacitor::Capacitor()
   Props.append(new Property("Symbol", "neutral", false,
   QObject::tr("schematic symbol")+" [neutral, polar]"));
 
-  createSymbol();
+  Capacitor::createSymbol();
   tx = x1+4;
   ty = y2+4;
   Model = "C";

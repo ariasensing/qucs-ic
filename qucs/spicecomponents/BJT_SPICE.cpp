@@ -41,7 +41,7 @@ BJT_SPICE::BJT_SPICE()
     Props.append(new Property("Model_Line 4", "", false,"+ continuation line 3"));
     Props.append(new Property("Model_Line 5", "", false,"+ continuation line 4"));
 
-    createSymbol();
+    BJT_SPICE::createSymbol();
     tx = x1+4;
     ty = y2+4;
 

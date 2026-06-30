@@ -50,7 +50,7 @@ Switch::Switch()
   Props.append(new Property("Type", "SPST", true,
                             QObject::tr("Switch type)") + "[SPST,SPDT]"));
 
-  createSymbol();
+  Switch::createSymbol();
   tx = x1+4;
   ty = y2+4;
   Model = "Switch";

@@ -48,7 +48,7 @@ RFedd::RFedd()
   Props.append(new Property("P22", "0", false,
 		QObject::tr("parameter equation") + " 22"));
 
-  createSymbol();
+  RFedd::createSymbol();
 }
 
 // -------------------------------------------------------

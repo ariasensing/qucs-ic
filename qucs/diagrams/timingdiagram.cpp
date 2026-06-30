@@ -38,7 +38,7 @@ TimingDiagram::TimingDiagram(int _cx, int _cy) : TabDiagram(_cx, _cy)
   Name = "Time";
   xAxis.limit_min = 0.0;  // scroll bar position (needs to be saved in file)
 
-  calcDiagram();
+  TimingDiagram::calcDiagram();
 }
 
 TimingDiagram::~TimingDiagram()

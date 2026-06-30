@@ -42,7 +42,7 @@ Relais::Relais()
 		QObject::tr("simulation temperature in degree Celsius")));
   Props.append(new Property("Type", "SPST", true,
                             QObject::tr("Switch type)") + "[SPST,SPDT]"));
-  createSymbol();
+  Relais::createSymbol();
 }
 
 void Relais::createSymbol()
