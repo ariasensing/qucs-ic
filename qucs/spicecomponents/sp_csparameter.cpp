@@ -78,7 +78,7 @@ QString SpiceCSParam::getExpression(spicecompat::SpiceDialect dialect /* = spice
     QString s;
     s.clear();
     for (Property *pp : Props) {
-        s += QStringLiteral(".CSPARAM %1 = %2\n").arg(pp->Name).arg(pp->Value);
+        s += QStringLiteral(".CSPARAM %1 = %2\n").arg(pp->Name, pp->Value);
     }
     return s;
 }

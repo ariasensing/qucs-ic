@@ -92,7 +92,7 @@ QString K_SPICE::spice_netlist(spicecompat::SpiceDialect dialect /* = spicecompa
     QString Ind2 = Props.at(1) ->Value;
     QString K = spicecompat::normalize_value(Props.at(2)->Value);
 
-    s+= QStringLiteral(" %1 %2 %3 \n").arg(Ind1).arg(Ind2).arg(K);
+    s+= QStringLiteral(" %1 %2 %3 \n").arg(Ind1, Ind2, K);
 
     return s;
 }

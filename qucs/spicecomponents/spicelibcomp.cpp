@@ -281,7 +281,7 @@ QString SpiceLibComp::spice_netlist(spicecompat::SpiceDialect dialect /* = spice
       s += " " + spicecompat::normalize_node_name(pp->Connection->Name);
     }
   }
-  s += QStringLiteral(" %1 %2\n").arg(Props.at(1)->Value).arg(Props.at(3)->Value);
+  s += QStringLiteral(" %1 %2\n").arg(Props.at(1)->Value, Props.at(3)->Value);
   return s;
 }
 

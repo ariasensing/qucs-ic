@@ -240,10 +240,10 @@ QString MutualX::spice_netlist(spicecompat::SpiceDialect dialect /* = spicecompa
         QString li = "L" + Name + "_L" + QString::number(i+1);
         QString prop_l = "L" + QString::number(i+1);
         QString ind = spicecompat::normalize_value(getProperty(prop_l)->Value);
-        s += QStringLiteral("%1 %2 %3 %4\n").arg(li)
-                .arg(spicecompat::normalize_node_name(Ports.at(2*i)->Connection->Name))
-                .arg(spicecompat::normalize_node_name(Ports.at(2*i+1)->Connection->Name))
-                .arg(ind);
+        s += QStringLiteral("%1 %2 %3 %4\n").arg(li,
+                spicecompat::normalize_node_name(Ports.at(2*i)->Connection->Name),
+                spicecompat::normalize_node_name(Ports.at(2*i+1)->Connection->Name),
+                ind);
     }
     for (int i = 0; i < coils; i++) {
         for (int j = i; j < coils; j++) {
@@ -255,7 +255,7 @@ QString MutualX::spice_netlist(spicecompat::SpiceDialect dialect /* = spicecompa
             auto pp = getProperty("k" + QString::number(i+1) + QString::number(j+1));
             if (pp == nullptr) continue;
             QString val_k = spicecompat::normalize_value(pp->Value);
-            s += QStringLiteral("%1 %2 %3 %4\n").arg(kij).arg(li).arg(lj).arg(val_k);
+            s += QStringLiteral("%1 %2 %3 %4\n").arg(kij, li, lj, val_k);
         }
     }
 

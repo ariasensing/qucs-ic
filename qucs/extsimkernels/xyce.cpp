@@ -283,13 +283,13 @@ void Xyce::createNetlist(
     }
 
     QString filename;
-    if (hasParSweep) filename = QStringLiteral("%1.%2._swp.plot").arg(basenam).arg(sim);
-    else filename = QStringLiteral("%1.%2.plot").arg(basenam).arg(sim);
+    if (hasParSweep) filename = QStringLiteral("%1.%2._swp.plot").arg(basenam, sim);
+    else filename = QStringLiteral("%1.%2.plot").arg(basenam, sim);
     filename.remove(QRegularExpression("\\s")); // XYCE don't support spaces and quotes
     QString write_str;
     if (sim=="hb") {
         // write_str = QStringLiteral(".PRINT  %1 file=%2 %3\n").arg(sim).arg(filename).arg(nods);
-        write_str = QStringLiteral(".PRINT  %1 %2\n").arg(sim).arg(nods);
+        write_str = QStringLiteral(".PRINT  %1 %2\n").arg(sim, nods);
         outputs.append("spice4qucs.hb.cir.HB.FD.prn");
     } else if (sim=="noise") {
         filename += "_std";
@@ -315,7 +315,7 @@ void Xyce::createNetlist(
         write_str += "\n";
         outputs.append("spice4qucs_sparam.prn");
     } else {
-        write_str = QStringLiteral(".PRINT  %1 format=raw file=%2 %3\n").arg(sim).arg(filename).arg(nods);
+        write_str = QStringLiteral(".PRINT  %1 format=raw file=%2 %3\n").arg(sim, filename, nods);
         outputs.append(filename);
     }
     stream<<write_str;

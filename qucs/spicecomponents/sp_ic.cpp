@@ -76,7 +76,7 @@ QString SpiceIC::getExpression(spicecompat::SpiceDialect dialect /* = spicecompa
     QString s;
     s.clear();
     for (Property *pp : Props) {
-        s += QStringLiteral(".IC %1 = %2\n").arg(pp->Name).arg(pp->Value);
+        s += QStringLiteral(".IC %1 = %2\n").arg(pp->Name, pp->Value);
     }
     return s;
 }

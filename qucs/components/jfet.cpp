@@ -104,7 +104,7 @@ QString JFET::spice_netlist(spicecompat::SpiceDialect dialect /* = spicecompat::
     QList<int> pin_seq;
     pin_seq<<1<<0<<2; // Pin sequence: DGS
     // output all node names
-    for (int pin : pin_seq) {
+    for (int pin : std::as_const(pin_seq)) {
         QString nam = Ports.at(pin)->Connection->Name;
         if (nam=="gnd") nam = "0";
         s += " "+ nam;   // node names
@@ -130,15 +130,14 @@ QString JFET::spice_netlist(spicecompat::SpiceDialect dialect /* = spicecompat::
     QString jfet_type = getProperty("Type")->Value.at(0).toUpper();
 
     if (getProperty("UseGlobTemp")->Value == "yes") {
-      s += QStringLiteral(" JMOD_%1 %2\n").arg(Name).arg(getProperty("Area")->Value);
+      s += QStringLiteral(" JMOD_%1 %2\n").arg(Name, getProperty("Area")->Value);
     } else {
-      s += QStringLiteral(" JMOD_%1 %2 TEMP=%3\n").arg(Name).arg(getProperty("Area")->Value)
-      .arg(getProperty("Temp")->Value);
+      s += QStringLiteral(" JMOD_%1 %2 TEMP=%3\n").arg(Name, getProperty("Area")->Value, getProperty("Temp")->Value);
     }
 
     if (dialect != spicecompat::CDL)
     {
-        s += QStringLiteral(".MODEL JMOD_%1 %2JF (%3)\n").arg(Name).arg(jfet_type).arg(par_str);
+        s += QStringLiteral(".MODEL JMOD_%1 %2JF (%3)\n").arg(Name, jfet_type, par_str);
     }
 
     return s;

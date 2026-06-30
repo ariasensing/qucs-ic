@@ -154,10 +154,10 @@ QString qucs2spice::convert_diode(QString line,bool /*xyce*/)
     name =  name.right(name.size()-idx-1); // name
     QString K = lst.takeFirst();
     QString A = lst.takeFirst();
-    s += QStringLiteral("D%1 %2 %3 DMOD_%4 \n").arg(name).arg(A).arg(K).arg(name);
+    s += QStringLiteral("D%1 %2 %3 DMOD_%4 \n").arg(name, A, K, name);
     QString mod_params = lst.join(" ");
     mod_params.remove('\"');
-    s += QStringLiteral(".MODEL DMOD_%1 D(%2) \n").arg(name).arg(mod_params);
+    s += QStringLiteral(".MODEL DMOD_%1 D(%2) \n").arg(name, mod_params);
     return s;
 }
 
@@ -194,11 +194,10 @@ QString qucs2spice::convert_mosfet(QString line, bool xyce)
             par_lst.append(s1); // usual parameter
         }
     }
-    s += QStringLiteral("M%1 %2 %3 %4 %5 MMOD_%6 %7 %8 \n").arg(name).arg(D).arg(G).arg(S).arg(Sub)
-            .arg(name).arg(L).arg(W);
+    s += QStringLiteral("M%1 %2 %3 %4 %5 MMOD_%6 %7 %8 \n").arg(name, D, G, S, Sub, name, L, W);
     QString mod_params = par_lst.join(" ");
     mod_params.remove('\"');
-    s += QStringLiteral(".MODEL MMOD_%1 %2(%3) \n").arg(name).arg(Typ).arg(mod_params);
+    s += QStringLiteral(".MODEL MMOD_%1 %2(%3) \n").arg(name, Typ, mod_params);
     if (xyce) s.replace("Vt0=","VtO=");
     return s;
 }
@@ -226,10 +225,10 @@ QString qucs2spice::convert_jfet(const QString& line, bool xyce)
             par_lst.append(s1); // usual parameter
         }
     }
-    s += QStringLiteral("J%1 %2 %3 %4 JMOD_%5 \n").arg(name).arg(D).arg(G).arg(S).arg(name);
+    s += QStringLiteral("J%1 %2 %3 %4 JMOD_%5 \n").arg(name, D, G, S, name);
     QString mod_params = par_lst.join(" ");
     mod_params.remove('\"');
-    s += QStringLiteral(".MODEL JMOD_%1 %2(%3) \n").arg(name).arg(Typ).arg(mod_params);
+    s += QStringLiteral(".MODEL JMOD_%1 %2(%3) \n").arg(name, Typ, mod_params);
     if (xyce) s.replace(" Vt0="," VtO=");
     return s;
 }
@@ -268,10 +267,10 @@ QString qucs2spice::convert_bjt(const QString& line)
             if (!is_incompat) par_lst.append(s1); // usual parameter
         }
     }
-    s += QStringLiteral("Q%1 %2 %3 %4 %5 QMOD_%6 \n").arg(name).arg(C).arg(B).arg(E).arg(Sub).arg(name);
+    s += QStringLiteral("Q%1 %2 %3 %4 %5 QMOD_%6 \n").arg(name, C, B, E, Sub, name);
     QString mod_params = par_lst.join(" ");
     mod_params.remove('\"');
-    s += QStringLiteral(".MODEL QMOD_%1 %2(%3) \n").arg(name).arg(Typ).arg(mod_params);
+    s += QStringLiteral(".MODEL QMOD_%1 %2(%3) \n").arg(name, Typ, mod_params);
     return s;
 }
 
@@ -302,8 +301,8 @@ QString qucs2spice::convert_ccs(const QString& line, bool voltage)
     QString s;
     if (voltage) s="H";
     else s="F";
-    s += QStringLiteral("%1 %2 %3 V%4 %5\n").arg(name).arg(nod1).arg(nod2).arg(name).arg(val); // output source nodes
-    s += QStringLiteral("V%1 %2 %3 DC 0\n").arg(name).arg(nod0).arg(nod3);   // controlling 0V source
+    s += QStringLiteral("%1 %2 %3 V%4 %5\n").arg(name, nod1, nod2, name,val); // output source nodes
+    s += QStringLiteral("V%1 %2 %3 DC 0\n").arg(name, nod0, nod3);   // controlling 0V source
     return s;
 }
 
@@ -335,7 +334,7 @@ QString qucs2spice::convert_vcs(const QString& line,bool voltage)
     QString s;
     if (voltage) s="E";
     else s="G";
-    s += QStringLiteral("%1 %2 %3 %4 %5 %6\n").arg(name).arg(nod1).arg(nod2).arg(nod0).arg(nod3).arg(val);
+    s += QStringLiteral("%1 %2 %3 %4 %5 %6\n").arg(name, nod1, nod2, nod0, nod3, val);
     return s;
 }
 
@@ -382,16 +381,16 @@ QString qucs2spice::convert_edd(const QString& line, QStringList &EqnsAndVars)
         QString plus = nods.at(2*i+1);
         QString minus = nods.at(2*i);
 
-        s += QStringLiteral("BI%1_%2 %3 %4 I=%5\n").arg(nam).arg(i).arg(plus).arg(minus).arg(Itokens.join(""));
+        s += QStringLiteral("BI%1_%2 %3 %4 I=%5\n").arg(nam).arg(i).arg(plus, minus, Itokens.join(""));
         // charge part
         QString Qvar = line.section('"',2*i+3,2*i+3,QString::SectionSkipEmpty);
         QString Qeqn = EqnsAndVars.at(EqnsAndVars.indexOf(Qvar)+1);
         Qeqn.remove(' ');
         QRegularExpression zero_pattern("0+(\\.*0+|)");
         if (!zero_pattern.match(Qeqn).hasMatch()) {
-            s += QStringLiteral("G%1Q%2 %3 %4 n%1Q%2 %4 1.0\n").arg(nam).arg(i).arg(plus).arg(minus);
+            s += QStringLiteral("G%1Q%2 %3 %4 n%1Q%2 %4 1.0\n").arg(nam).arg(i).arg(plus, minus);
             s += QStringLiteral("L%1Q%2 n%1Q%2 %3 1.0\n").arg(nam).arg(i).arg(minus);
-            s += QStringLiteral("B%1Q%2 n%1Q%2 %3 I=-(%4)\n").arg(nam).arg(i).arg(minus).arg(Qeqn);
+            s += QStringLiteral("B%1Q%2 n%1Q%2 %3 I=-(%4)\n").arg(nam).arg(i).arg(minus, Qeqn);
         }
     }
 
@@ -426,7 +425,7 @@ QString qucs2spice::convert_subckt(QString line)
         it++;
         QString val = (*it);
         val.remove(' ');
-        s += QStringLiteral("%1=%2 ").arg(var).arg(val);
+        s += QStringLiteral("%1=%2 ").arg(var, val);
     }
     s += '\n';
 
@@ -444,8 +443,8 @@ QString qucs2spice::convert_gyrator(QString line)
     QString n3 = lst.takeFirst();
     QString n4 = lst.takeFirst();
     QString R = line.section('"',1,1);
-    s +=  QStringLiteral("B%1_1 %2 %3 I=(1/(%4))*(V(%5)-V(%6))\n").arg(Name).arg(n1).arg(n4).arg(R).arg(n2).arg(n3);
-    s +=  QStringLiteral("B%1_2 %2 %3 I=-1.0*(1/(%4))*(V(%5)-V(%6))\n").arg(Name).arg(n2).arg(n3).arg(R).arg(n1).arg(n4);
+    s +=  QStringLiteral("B%1_1 %2 %3 I=(1/(%4))*(V(%5)-V(%6))\n").arg(Name, n1, n4, R, n2, n3);
+    s +=  QStringLiteral("B%1_2 %2 %3 I=-1.0*(1/(%4))*(V(%5)-V(%6))\n").arg(Name, n2, n3, R, n1, n4);
     return s;
 }
 
@@ -485,7 +484,7 @@ void qucs2spice::subsVoltages(QStringList &tokens, QStringList& nods)
             QString minus = nods.at(2*(i-1));
             //if (plus=="gnd") plus="0";
             //if (minus=="gnd") minus="0";
-            *it = QStringLiteral("(V(%1)-V(%2))").arg(plus).arg(minus);
+            *it = QStringLiteral("(V(%1)-V(%2))").arg(plus, minus);
         }
     }
 }

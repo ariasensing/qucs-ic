@@ -108,6 +108,6 @@ QString iSffm::spice_netlist(spicecompat::SpiceDialect dialect /* = spicecompat:
     QString Mdi = spicecompat::normalize_value(Props.at(3)->Value);
     QString Fs  = spicecompat::normalize_value(Props.at(4)->Value);
 
-    s += QStringLiteral(" DC 0 SFFM(%1 %2 %3 %4 %5 ) AC 0\n").arg(I0).arg(Ia).arg(Fc).arg(Mdi).arg(Fs);
+    s += QStringLiteral(" DC 0 SFFM(%1 %2 %3 %4 %5 ) AC 0\n").arg(I0, Ia, Fc, Mdi, Fs);
     return s;
 }

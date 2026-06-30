@@ -316,7 +316,7 @@ void Ngspice::createNetlist(
 
         if ( sim_typ == ".DC" ) {
             QString out = "spice4qucs." + sim_name + ".ngspice.dc.print";
-            spiceNetlist.append(QStringLiteral("print %1 > %2\n").arg(nods).arg(out));
+            spiceNetlist.append(QStringLiteral("print %1 > %2\n").arg(nods, out));
             outputs.append(out);
         } 
         else if (sim_typ == ".NOISE") {
@@ -325,13 +325,13 @@ void Ngspice::createNetlist(
                 QString basenam = "spice4qucs";
                 QString filename;
                 if ( hasParSWP && hasDblSWP )
-                    filename = QStringLiteral("%1.%2._swp_swp.raw").arg(basenam).arg(sim_name);
+                    filename = QStringLiteral("%1.%2._swp_swp.raw").arg(basenam, sim_name);
                 else if ( hasParSWP )
-                    filename = QStringLiteral("%1.%2._swp.raw").arg(basenam).arg(sim_name);
+                    filename = QStringLiteral("%1.%2._swp.raw").arg(basenam, sim_name);
                 else
-                    filename = QStringLiteral("%1.%2.raw").arg(basenam).arg(sim_name);
+                    filename = QStringLiteral("%1.%2.raw").arg(basenam, sim_name);
                 filename.replace(' ', '_'); // Ngspice cannot understand spaces in filename
-                spiceNetlist.append(QStringLiteral("write %1 %2\n").arg(filename).arg(nods));
+                spiceNetlist.append(QStringLiteral("write %1 %2\n").arg(filename, nods));
                 outputs.append(filename);
             }
         }
@@ -341,13 +341,13 @@ void Ngspice::createNetlist(
                 QString basenam = "spice4qucs";
                 QString filename;
                 if ( hasParSWP && hasDblSWP )
-                    filename = QStringLiteral("%1.%2._swp_swp.plot").arg(basenam).arg(sim_name);
+                    filename = QStringLiteral("%1.%2._swp_swp.plot").arg(basenam, sim_name);
                 else if ( hasParSWP )
-                    filename = QStringLiteral("%1.%2._swp.plot").arg(basenam).arg(sim_name);
+                    filename = QStringLiteral("%1.%2._swp.plot").arg(basenam, sim_name);
                 else
-                    filename = QStringLiteral("%1.%2.plot").arg(basenam).arg(sim_name);
+                    filename = QStringLiteral("%1.%2.plot").arg(basenam, sim_name);
                 filename.replace(' ', '_'); // Ngspice cannot understand spaces in filename
-                spiceNetlist.append(QStringLiteral("write %1 %2\n").arg(filename).arg(nods));
+                spiceNetlist.append(QStringLiteral("write %1 %2\n").arg(filename, nods));
                 outputs.append(filename);
             }
         }

@@ -168,9 +168,9 @@ QString XspiceGeneric::spice_netlist(spicecompat::SpiceDialect dialect /* = spic
             (t_port!="d")) {
             i++;
             QString nod1 =  spicecompat::normalize_node_name(Ports.at(i)->Connection->Name);
-            s += QStringLiteral(" %%1(%2 %3) ").arg(t_port).arg(nod).arg(nod1);
+            s += QStringLiteral(" %%1(%2 %3) ").arg(t_port, nod, nod1);
         } else {
-            s += QStringLiteral(" %%1(%2) ").arg(t_port).arg(nod);
+            s += QStringLiteral(" %%1(%2) ").arg(t_port, nod);
         }
         if (closing_bracket) s += ']';
         i++;

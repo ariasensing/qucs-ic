@@ -24,7 +24,7 @@ BJT::BJT()
 {
   // properties obtained from "Basic_BJT" in bjtsub.cpp
   Description = QObject::tr("bipolar junction transistor");
-  BJT;;createSymbol();
+  BJT::createSymbol();
   tx = x2+4;
   ty = y1+4;
   Model = "_BJT";
@@ -66,8 +66,7 @@ QString BJT::spice_netlist(spicecompat::SpiceDialect dialect /* = spicecompat::S
     if (getProperty("UseGlobTemp")->Value == "yes" || isDialectCDL) {
         s += QStringLiteral(" QMOD_%1 %2=%3\n").arg(Name).arg(isDialectCDL ? "$EA" : "AREA").arg(getProperty("Area")->Value);
     } else {
-        s += QStringLiteral(" QMOD_%1 AREA=%2 TEMP=%3\n").arg(Name).arg(getProperty("Area")->Value)
-            .arg(getProperty("Temp")->Value);
+        s += QStringLiteral(" QMOD_%1 AREA=%2 TEMP=%3\n").arg(Name, getProperty("Area")->Value, getProperty("Temp")->Value);
     }
 
     if (!isDialectCDL)

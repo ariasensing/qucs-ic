@@ -149,15 +149,15 @@ QString Diode::spice_netlist(spicecompat::SpiceDialect dialect /* = spicecompat:
     }
 
     if (getProperty("UseGlobTemp")->Value == "yes") {
-      s += QStringLiteral(" DMOD_%1 AREA=%2\n").arg(Name).arg(getProperty("Area")->Value);
+      s += QStringLiteral(" DMOD_%1 AREA=%2\n").arg(Name, getProperty("Area")->Value);
     } else {
-      s += QStringLiteral(" DMOD_%1 AREA=%2 Temp=%3\n").arg(Name).arg(getProperty("Area")->Value)
+      s += QStringLiteral(" DMOD_%1 AREA=%2 Temp=%3\n").arg(Name, getProperty("Area")->Value)
       .arg(getProperty("Temp")->Value);
     }
 
     if (dialect != spicecompat::CDL)
     {
-      s += QStringLiteral(".MODEL DMOD_%1 D (%2)\n").arg(Name).arg(par_str);
+      s += QStringLiteral(".MODEL DMOD_%1 D (%2)\n").arg(Name, par_str);
     }
 
     return s;

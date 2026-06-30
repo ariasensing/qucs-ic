@@ -1037,7 +1037,7 @@ int main(int argc, char *argv[])
     setlocale (LC_NUMERIC, "C");
 
 #ifdef GIT
-    const QString applicationVersion(QString::fromUtf8("qucs s%1 (%2)").arg(PACKAGE_VERSION).arg(GIT));
+    const QString applicationVersion(QString::fromUtf8("qucs s%1 (%2)").arg(PACKAGE_VERSION, GIT));
 #else
     const QString applicationVersion(QString::fromUtf8("Qucs %1").arg(PACKAGE_VERSION));
 #endif

@@ -200,15 +200,15 @@ QString MOSFET_sub::spice_netlist(spicecompat::SpiceDialect dialect /* = spiceco
 
     if (getProperty("UseGlobTemp")->Value == "yes") {
       s += QStringLiteral(" MMOD_%1 L=%2 W=%3 Ad=%4 As=%5 Pd=%6 Ps=%7\n")
-      .arg(Name).arg(l).arg(w).arg(ad).arg(as).arg(pd).arg(ps);
+      .arg(Name, l, w, ad, as, pd, ps);
     } else {
       s += QStringLiteral(" MMOD_%1 L=%2 W=%3 Ad=%4 As=%5 Pd=%6 Ps=%7 Temp=%8\n")
-      .arg(Name).arg(l).arg(w).arg(ad).arg(as).arg(pd).arg(ps).arg(getProperty("Temp")->Value);
+      .arg(Name, l, w, ad, as, pd, ps, getProperty("Temp")->Value);
     }
 
     if (dialect != spicecompat::CDL)
     {
-        s += QStringLiteral(".MODEL MMOD_%1 %2MOS (%3)\n").arg(Name).arg(mosfet_type).arg(par_str);
+        s += QStringLiteral(".MODEL MMOD_%1 %2MOS (%3)\n").arg(Name, mosfet_type, par_str);
     }
 
     return s;

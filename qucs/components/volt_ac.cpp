@@ -109,7 +109,7 @@ QString Volt_ac::spice_netlist(spicecompat::SpiceDialect dialect /* = spicecompa
     QString TD = spicecompat::normalize_value(getProperty("TD")->Value);
 
     s += QStringLiteral(" DC %1 SIN(%1 %2 %3 %4 %5 %6) AC %7 ACPHASE %8\n")
-            .arg(VO).arg(volts).arg(freq).arg(TD).arg(theta).arg(phase).arg(volts).arg(phase);
+            .arg(VO, volts, freq, TD, theta, phase, volts, phase);
     return s;
 }
 

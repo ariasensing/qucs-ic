@@ -1717,8 +1717,7 @@ bool Schematic::throughAllComps(QTextStream *stream, int& countInit,
       s = pc->Props.front()->Value;
       if(s.isEmpty()) {
         ErrText->appendPlainText(QObject::tr("ERROR: No file name in %1 component \"%2\".").
-          arg(pc->Model).
-          arg(pc->Name));
+          arg(pc->Model, pc->Name));
         return false;
       }
       QString f = pc->getSubcircuitFile();
@@ -2147,7 +2146,7 @@ bool Schematic::createSubNetlist(QTextStream *stream, int& countInit,
       if (!kern->checkSchematic(err_lst)) {
           QString s = QStringLiteral("Subcircuit %1 contains SPICE-incompatible components.\n"
                               "Check these components: %2 \n")
-                  .arg(this->a_DocName).arg(err_lst.join("; "));
+                  .arg(this->a_DocName, err_lst.join("; "));
           ErrText->insertPlainText(s);
           return false;
       }

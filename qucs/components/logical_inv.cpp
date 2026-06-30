@@ -163,6 +163,6 @@ QString Logical_Inv::spice_netlist(spicecompat::SpiceDialect dialect /* = spicec
     s += " " + Ports.at(0)->Connection->Name;
     s += " " + tmp_model + "\n";
     s += QStringLiteral(".model %1 d_inverter(rise_delay=%2 fall_delay=%2 input_load=5e-13)\n")
-            .arg(tmp_model).arg(td);
+            .arg(tmp_model, td);
     return s;
 }

@@ -208,7 +208,7 @@ void AbstractSpiceKernel::startNetlist(QTextStream &stream, spicecompat::SpiceDi
                 else continue;
                 QString ic = pw->label()->initValue;
                 if (!ic.isEmpty()) {
-                    QString ic_str = QStringLiteral(".IC v(%1)=%2\n").arg(label).arg(ic);
+                    QString ic_str = QStringLiteral(".IC v(%1)=%2\n").arg(label, ic);
                     stream<<ic_str;
                 }
             }
@@ -221,7 +221,7 @@ void AbstractSpiceKernel::startNetlist(QTextStream &stream, spicecompat::SpiceDi
                 else continue;
                 QString ic = pw->label()->initValue;
                 if (!ic.isEmpty()) {
-                    QString ic_str = QStringLiteral(".IC v(%1)=%2\n").arg(label).arg(ic);
+                    QString ic_str = QStringLiteral(".IC v(%1)=%2\n").arg(label, ic);
                     stream<<ic_str;
                 }
             }
@@ -1504,13 +1504,13 @@ void AbstractSpiceKernel::convertToQucsData(const QString &qucs_dataset)
                 }
                 if (var_list.contains(var2)) {
                   // it is digtial variable
-                  ds_stream<<QStringLiteral("<dep %1 %2>\n").arg(var).arg(var2);
+                  ds_stream<<QStringLiteral("<dep %1 %2>\n").arg(var, var2);
                 } else {
                   // it is scalar
                   if (hasParSweep) {
-                    ds_stream<<QStringLiteral("<dep %1 %2>\n").arg(var).arg(swp_var);
+                    ds_stream<<QStringLiteral("<dep %1 %2>\n").arg(var, swp_var);
                   } else {
-                    ds_stream<<QStringLiteral("<indep %1 %2>\n").arg(var).arg(var_length);
+                    ds_stream<<QStringLiteral("<indep %1 %2>\n").arg(var, var_length);
                     is_scalar = true;
                   }
                 }
@@ -1519,7 +1519,7 @@ void AbstractSpiceKernel::convertToQucsData(const QString &qucs_dataset)
                 extra_indep = true;
                 ds_stream<<QStringLiteral("<indep %1 %2>\n").arg(var).arg(var_length);
               } else {
-                ds_stream<<QStringLiteral("<dep %1 %2>\n").arg(var_list.at(i)).arg(indep);
+                ds_stream<<QStringLiteral("<dep %1 %2>\n").arg(var_list.at(i), indep);
               }
             }
 

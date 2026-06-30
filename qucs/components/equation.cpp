@@ -112,7 +112,7 @@ QString Equation::getVAExpressions()
         QStringList tokens;
         spicecompat::splitEqn(Props.at(i)->Value,tokens);
         vacompat::convert_functions(tokens);
-        s += QStringLiteral("%1=%2;\n").arg(Props.at(i)->Name).arg(tokens.join(""));
+        s += QStringLiteral("%1=%2;\n").arg(Props.at(i)->Name, tokens.join(""));
     }
     return s;
 }
@@ -156,7 +156,7 @@ QString Equation::getExpression(spicecompat::SpiceDialect dialect /* = spicecomp
         }
 
         if (!spicecompat::containNodes(tokens,ng_vars)) {
-            s += QStringLiteral(".PARAM %1=%2\n").arg(Props.at(i)->Name).arg(eqn);
+            s += QStringLiteral(".PARAM %1=%2\n").arg(Props.at(i)->Name, eqn);
         }
     }
     return s;
@@ -194,7 +194,7 @@ QString Equation::getEquations(QString sim, QStringList &dep_vars)
             if ( used_sim.toLower() == "tran" ) used_sim = "tr";
             if ( (sim.startsWith(used_sim.toLower())) || (used_sim=="all") ) {
                 eqn = tokens.join("");
-                s += QStringLiteral("let %1=%2\n").arg(Props.at(i)->Name).arg(eqn);
+                s += QStringLiteral("let %1=%2\n").arg(Props.at(i)->Name, eqn);
                 dep_vars.append(Props.at(i)->Name);
             }
         }
@@ -224,7 +224,7 @@ QString Equation::getNgspiceScript()
         eqn = tokens.join("");
 
         if (!spicecompat::containNodes(tokens,ng_vars)) {
-            s += QStringLiteral("let %1=%2\n").arg(Props.at(i)->Name).arg(eqn);
+            s += QStringLiteral("let %1=%2\n").arg(Props.at(i)->Name, eqn);
         }
     }
     return s;

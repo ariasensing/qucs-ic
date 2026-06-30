@@ -1457,7 +1457,7 @@ QString Component::getSpiceSubstrateLine()
   for(Property *pp: sub->Props) {
     QString vv = spicecompat::normalize_value(pp->Value);
     QString nn = pp->Name;
-    s += QString(" %1=%2 ").arg(nn.toLower()).arg(vv);
+    s += QString(" %1=%2 ").arg(nn.toLower(), vv);
   }
 
   return s;
@@ -1551,7 +1551,7 @@ QString GateComponent::spice_netlist(spicecompat::SpiceDialect dialect) {
     s += "] " + Ports.at(0)->Connection->Name;
     s += " " + tmp_model + "\n";
     s += QStringLiteral(".model %1 %2(rise_delay=%3 fall_delay=%3 input_load=5e-13)\n")
-            .arg(tmp_model).arg(type).arg(td);
+            .arg(tmp_model, type, td);
     return s;
 }
 

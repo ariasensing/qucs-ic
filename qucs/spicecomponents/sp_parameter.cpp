@@ -78,11 +78,11 @@ QString SpiceParam::getExpression(spicecompat::SpiceDialect dialect /* = spiceco
     for (Property *pp : Props) {
         if (dialect == spicecompat::CDL)
         {
-            s += QStringLiteral(".PARAM %1=%2\n").arg(pp->Name).arg(pp->Value);
+            s += QStringLiteral(".PARAM %1=%2\n").arg(pp->Name, pp->Value);
         }
         else
         {
-            s += QStringLiteral(".PARAM %1 = %2\n").arg(pp->Name).arg(pp->Value);
+            s += QStringLiteral(".PARAM %1 = %2\n").arg(pp->Name, pp->Value);
         }
     }
     return s;

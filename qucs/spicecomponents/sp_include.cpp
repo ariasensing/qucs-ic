@@ -91,10 +91,10 @@ QString S4Q_Include::getSpiceLibrary()
             val = misc::properAbsFileName(val, containingSchematic);
             switch (QucsSettings.DefaultSimulator) {
             case spicecompat::simSpiceOpus: // Spice Opus doesn't support quotes
-                s += QStringLiteral("%1 %2\n").arg(SpiceModel).arg(val);
+                s += QStringLiteral("%1 %2\n").arg(SpiceModel, val);
                 break;
             default:
-                s += QStringLiteral("%1 \"%2\"\n").arg(SpiceModel).arg(val);
+                s += QStringLiteral("%1 \"%2\"\n").arg(SpiceModel, val);
                 break;
             }
         }

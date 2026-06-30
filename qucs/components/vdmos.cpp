@@ -189,13 +189,13 @@ QString VDMOS::spice_netlist(spicecompat::SpiceDialect dialect /* = spicecompat:
     if (getProperty("UseGlobTemp")->Value == "yes") {
       s += QString(" VDMOS_%1 ").arg(Name);
     } else {
-      s += QString(" VDMOS_%1 TEMP=%2").arg(Name).arg(getProperty("Temp")->Value);
+      s += QString(" VDMOS_%1 TEMP=%2").arg(Name, getProperty("Temp")->Value);
     }
 
     if (hasThermal) s += " THERMAL";
     s += "\n";
 
-        s += QString(".MODEL VDMOS_%1 VDMOS(%2 %3)\n").arg(Name).arg(type).arg(par_str);
+        s += QString(".MODEL VDMOS_%1 VDMOS(%2 %3)\n").arg(Name, type, par_str);
 
     return s;
 }

@@ -126,7 +126,7 @@ QString LTL_SPICE::spice_netlist(spicecompat::SpiceDialect dialect /* = spicecom
     if (dialect == spicecompat::SPICEXyce) {
       s += "\n"; // Xyce doesn't support IC
     } else {
-      s += QStringLiteral(" IC=%5, %6, %7, %8 \n").arg(V1).arg(I1).arg(V2).arg(I2);
+      s += QStringLiteral(" IC=%5, %6, %7, %8 \n").arg(V1, I1, V2, I2);
     }
 
     return s;

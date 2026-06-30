@@ -114,7 +114,6 @@ QString vTRNOISE::spice_netlist(spicecompat::SpiceDialect dialect /* = spicecomp
    QString Rtsemt = spicecompat::normalize_value(Props.at(6)->Value);
 
 
-    s += QStringLiteral(" DC 0 AC 0 TRNOISE(%1 %2 %3 %4 %5  %6 %7) \n").arg(Na).arg(Nt).arg(Nalpha).arg(Namp).
-                                arg(Rtsam).arg(Rtscapt).arg(Rtsemt);
+    s += QStringLiteral(" DC 0 AC 0 TRNOISE(%1 %2 %3 %4 %5  %6 %7) \n").arg(Na, Nt, Nalpha, Namp, Rtsam, Rtscapt, Rtsemt);
     return s;
 }

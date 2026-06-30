@@ -93,7 +93,7 @@ QString vPulse::spice_netlist(spicecompat::SpiceDialect dialect /* = spicecompat
     QString T2 = spicecompat::normalize_value(getProperty("T2")->Value); // T2
 
     s += QStringLiteral(" DC 0 PULSE(%1 %2 %3 %4 %5 {(%6)-(%3)-(%4)-(%5)}) AC 0\n")
-             .arg(VL).arg(VH).arg(T1).arg(Tr).arg(Tf).arg(T2);
+             .arg(VL, VH, T1, Tr, Tf, T2);
 
     return s;
 }
