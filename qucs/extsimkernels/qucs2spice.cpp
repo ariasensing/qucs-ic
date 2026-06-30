@@ -20,9 +20,6 @@
 
 #include "qucs2spice.h"
 #include "spicecompat.h"
-#include "components/equation.h"
-
-#include "misc.h"
 
 /*!
   \file qucs2spice.cpp
