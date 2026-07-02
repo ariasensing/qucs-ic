@@ -83,7 +83,6 @@ void Subcircuit::createSymbol() {
     while (ip.hasNext()) {
       pp = ip.next();
       if (!pp->avail) {
-        pp = ip.peekNext();
         ip.remove();
       }
     }
