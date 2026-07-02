@@ -140,7 +140,7 @@ void RFedd2P::createSymbol()
   Ports.append(new Port( 30,  y));
   tmp = QString::number(i+1);
   Texts.append(new Text(25, y-fHeight-2, tmp)); // text left-aligned
-  y += 60;
+
   i++;
 
   x1 = -30; y1 = -h-2;
