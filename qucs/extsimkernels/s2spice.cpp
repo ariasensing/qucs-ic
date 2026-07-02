@@ -62,7 +62,7 @@ bool S2Spice::convertTouchstone(QTextStream *stream)
 
     /* Find number of ports */
     QFileInfo inf(a_file);
-    ports = inf.suffix().mid(1,1).toInt();
+    ports = QStringView(inf.suffix()).mid(1,1).toInt();
     if ( (ports < 1) || (ports > MAXPORTS) ) {
         a_err_text = "Invalid port number in file: " + a_file + "\n";
         return false;

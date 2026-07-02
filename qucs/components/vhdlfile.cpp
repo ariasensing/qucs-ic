@@ -373,7 +373,7 @@ QString VHDL_File_Info::parsePorts(QString s, int j)
       t = t.mid(k+1);
     t = t.simplified();
     k = s.indexOf(';',l+2);
-    k = (s.mid(l,k-l).count(',')) + 1;
+    k = (QStringView(s).mid(l,k-l).count(',')) + 1;
     while (k-->0) types = types + t + ",";
     i--;
     l = i;
@@ -452,7 +452,7 @@ QString VHDL_File_Info::parseGenerics(QString s, int j)
       t = t.mid(k+1);
     t = t.simplified();
     k = s.indexOf(';',l+2);
-    k = (s.mid(l,k-l).count(',')) + 1;
+    k = (QStringView(s).mid(l,k-l).count(',')) + 1;
     while (k-->0) {
       types = types + t + ",";
       defs = defs + d + ",";

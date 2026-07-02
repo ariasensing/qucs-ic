@@ -542,7 +542,7 @@ bool Marker::load(const QString& Line)
 
   do {
     j = n.indexOf('/', i);
-    VarPos[nVarPos++] = n.mid(i,j-i).toDouble(&ok);
+    VarPos[nVarPos++] = QStringView(n).mid(i,j-i).toDouble(&ok);
     if(!ok) return false;
     i = j+1;
   } while(j >= 0);

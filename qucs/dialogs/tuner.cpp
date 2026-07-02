@@ -95,7 +95,7 @@ tunerElement::tunerElement(QWidget *parent, Component *component, Property *pp, 
         if (val.at(i).isLetter())
         {
             units_index = i;//Select index
-            numValue = val.mid(0, i).toFloat();//Get the magnitude
+            numValue = QStringView(val).mid(0, i).toFloat();//Get the magnitude
             break;
         }
     }

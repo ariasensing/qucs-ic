@@ -1636,8 +1636,8 @@ void MatchDialog::SchematicParser(QString laddercode, int &x_pos, double Freq,
     // to handle such difference
     if (index != -1) // The component has two values
     {
-      value = component.mid(0, index).toDouble();
-      value2 = component.mid(index + 1).toDouble();
+      value = QStringView(component).mid(0, index).toDouble();
+      value2 = QStringView(component).mid(index + 1).toDouble();
     } else {
       if (!tag.compare("LBL")) // The value is a string
       {

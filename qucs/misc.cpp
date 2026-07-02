@@ -212,7 +212,7 @@ void misc::str2num(const QString& s_, double& Number, QString& Unit, double& Fac
       i = j;
     }
 
-  Number = str.left(i).toDouble();
+  Number = QStringView(str).left(i).toDouble();
   Unit   = str.mid(i).trimmed();
   if(Unit.length()>0)
   {
@@ -299,7 +299,7 @@ void misc::convert2Unicode(QString& Text)
   unsigned short ch;
   while((i=Text.indexOf("\\x", i)) >= 0) {
     n = Text.mid(i, 6);
-    ch = n.mid(2).toUShort(&ok, 16);
+    ch = QStringView(n).mid(2).toUShort(&ok, 16);
     if(ok)  Text.replace(n, QChar(ch));
     i++;
   }

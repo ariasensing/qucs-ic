@@ -581,7 +581,7 @@ void Ngspice::slotProcessOutput()
     QString s = a_simProcess->readAllStandardOutput();
     QRegularExpression percentage_pattern("^%\\d\\d*\\.\\d\\d.*$");
     if (percentage_pattern.match(s).hasMatch()) {
-        int percent = round(s.mid(1,5).toFloat());
+        int percent = round(QStringView(s).mid(1,5).toFloat());
         emit progress(percent);
     }
     a_output += s;
