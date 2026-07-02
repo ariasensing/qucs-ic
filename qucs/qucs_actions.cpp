@@ -62,7 +62,6 @@
 #include "spicecomponents/sp_nutmeg.h"
 #include "textdoc.h"
 #include "wire.h"
-#include "wirelabel.h"
 
 #include "extsimkernels/xyce.h"
 

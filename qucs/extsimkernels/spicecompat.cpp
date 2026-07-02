@@ -1,6 +1,5 @@
 #include "spicecompat.h"
 #include "main.h"
-#include "misc.h"
 
 #include <QDebug>
 #include <QRegularExpression>

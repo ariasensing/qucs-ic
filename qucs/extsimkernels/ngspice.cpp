@@ -17,13 +17,10 @@
 
 
 #include "ngspice.h"
-#include "components/iprobe.h"
-#include "components/vprobe.h"
 #include "components/equation.h"
 #include "components/param_sweep.h"
 #include "components/subcircuit.h"
 #include "spicecomponents/sp_spiceinit.h"
-#include "spicecomponents/xsp_cmlib.h"
 #include "main.h"
 #include "misc.h"
 #include "qucs.h"

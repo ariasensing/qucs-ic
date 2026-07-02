@@ -21,7 +21,6 @@
 #include <QtCore>
 #include <cmath>
 
-#include "misc.h"
 #include "s2spice.h"
 #include "main.h"
 

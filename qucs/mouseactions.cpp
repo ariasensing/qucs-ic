@@ -52,7 +52,6 @@
 #include <QMessageBox>
 #include <QMouseEvent>
 #include <QTextStream>
-#include <numeric>
 
 #include <climits>
 #include <cstdlib>
