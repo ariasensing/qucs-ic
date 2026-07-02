@@ -445,7 +445,7 @@ vector<Healer::HealingAction> Healer::HealerImpl::processReshapingCase(Node* nod
     vector<HealingAction> actions;
     actions.push_back(make_unique<MoveNode>(node, *other_loc));
 
-    for (auto port : m_port_groups.at(node)) {
+    for (const auto &port : m_port_groups.at(node)) {
         if (port->center() == *other_loc) continue;
         actions.push_back(make_unique<MovePort>(port.get(), *other_loc));
     }
@@ -465,7 +465,7 @@ vector<Healer::HealingAction> Healer::HealerImpl::processGenericCase(Node* node,
         actions.push_back(make_unique<MoveNode>(node, node_loc));
     }
 
-    for (auto port : m_port_groups.at(node)) {
+    for (const auto &port : m_port_groups.at(node)) {
         if (port->center() == node_loc) continue;
 
         actions.push_back(make_unique<ReplaceNode>(port.get()));

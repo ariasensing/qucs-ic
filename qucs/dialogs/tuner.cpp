@@ -125,7 +125,7 @@ tunerElement::tunerElement(QWidget *parent, Component *component, Property *pp, 
         //If one of the keywords appears in the description text, then the key of the map
         //is used as unit...
         bool found = false;
-        for(auto e : Keywords.keys())
+        for(const auto &e : Keywords.keys())
         {
           for (int i = 0; i < Keywords[e].length(); i++)
           {

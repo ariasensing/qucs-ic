@@ -830,7 +830,7 @@ void createListComponentEntry(){
   Module::registerModules ();
   QStringList cats = Category::getCategories ();
   // table for quick reference, schematic and netlist entry
-  for (QString category: std::as_const(cats)) {
+  for (const QString &category: std::as_const(cats)) {
 
     QList<Module *> Comps;
     Comps = Category::getModules(category);

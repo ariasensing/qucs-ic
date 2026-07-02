@@ -54,7 +54,7 @@ QStringList getOptionsFromString(const QString& description)
   if (start != -1 && end != -1)
   {
     list = description.mid(start + 1, end - start - 1).split(',');
-    for(auto entry : std::as_const(list))
+    for(const auto &entry : std::as_const(list))
       options << entry.trimmed(); // QString::trimmed flagged by valgrind leak check
   }
 
@@ -1005,7 +1005,7 @@ void ComponentDialog::slotApplyButton()
       // Note: Order is very important here. The component expects parameters in a 
       // specific order depending on which sweep parameters are valid for the component
       // type.
-      for (auto param : std::as_const(sweepProperties))
+      for (const auto &param : std::as_const(sweepProperties))
       {
         /* TODO: ***HACK*** to be fixed */
         QString temp = param;
