@@ -845,7 +845,7 @@ void QucsApp::slotShowLastNetlist() {
         QDir::toNativeSeparators(QucsSettings.S4Qworkdir + "/spice4qucs.cir"));
     break;
   case spicecompat::simXyce: // Xyce generates one netlist for every simulation
-    for (const auto &sim : sim_lst) {
+    for (const auto &sim : std::as_const(sim_lst)) {
       netlists.append(QDir::toNativeSeparators(QucsSettings.S4Qworkdir +
                                                "/spice4qucs." + sim + ".cir"));
     }

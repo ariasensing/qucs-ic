@@ -53,7 +53,7 @@ bool isPropertyTunable(Component* propertyOwner, Property* property) {
     return false; // String
   }
   // Check if the value contains symbols *, /, -, +
-  for (const auto& chr : property->Value) {
+  for (const auto& chr : std::as_const(property->Value)) {
     if (!chr.isLetterOrNumber() && (chr != '.') && (chr != ' ')) {
       return false;
     }

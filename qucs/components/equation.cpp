@@ -64,7 +64,7 @@ QString Equation::verilogCode(int)
 {
   QString s;
   // output all equations
-  for(Property *pr : Props)
+  for(Property *pr : std::as_const(Props))
     if(pr->Name != "Export")
       s += "  real "+pr->Name+"; initial "+pr->Name+" = "+pr->Value+";\n";
   return s;
@@ -75,7 +75,7 @@ QString Equation::vhdlCode(int)
 {
   QString s;
   // output all equations
-  for(Property *pr : Props)
+  for(Property *pr : std::as_const(Props))
     if(pr->Name != "Export")
       s += "  constant "+pr->Name+" : time := "+pr->Value+";\n";
   return s;
@@ -255,7 +255,7 @@ void Equation::getNgnutmegVars(QStringList &vars, QStringList &sims)
             }
         }
     }
-    for (const QString& var : vars) {
+    for (const QString& var : std::as_const(vars)) {
         QString sim;
         int idx = vars.indexOf(var);
         if (idx>=0) sim = sims.at(idx);
@@ -263,7 +263,7 @@ void Equation::getNgnutmegVars(QStringList &vars, QStringList &sims)
             QString eqn = getProperty(var)->Value;
             QStringList tokens;
             spicecompat::splitEqn(eqn,tokens);
-            for (const QString& tok : tokens) {
+            for (const QString& tok : std::as_const(tokens)) {
                 int idx1 = vars.indexOf(tok);
                 if ((idx1>=0)&&(sims[idx1]!="all")) sims[idx]=sims[idx1];
             }

@@ -97,7 +97,7 @@ bool Node::moveCenter(int dx, int dy) noexcept
     donor->m_wires.clear();
 
     for (auto* c : donor->components()) {
-        for (auto* p : c->Ports) {
+        for (auto* p : std::as_const(c->Ports)) {
             if (p->Connection == donor) {
                 p->Connection = this;
             }

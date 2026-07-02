@@ -54,7 +54,7 @@ QStringList getOptionsFromString(const QString& description)
   if (start != -1 && end != -1)
   {
     list = description.mid(start + 1, end - start - 1).split(',');
-    for(auto entry : list)
+    for(auto entry : std::as_const(list))
       options << entry.trimmed(); // QString::trimmed flagged by valgrind leak check
   }
 
@@ -713,7 +713,7 @@ void ComponentDialog::updateSweepProperty(const QString& property)
 
   if (property == "All")
   {
-    for (auto property : component->Props)
+    for (auto property : std::as_const(component->Props))
     {
       // qDebug() << "Property name " << property->Name;
       if (sweepParamWidget.contains(property->Name))
@@ -884,7 +884,7 @@ void ComponentDialog::updateEqnEditor()
 
   QString eqnList;
 
-  for (auto property : component->Props)
+  for (auto property : std::as_const(component->Props))
   {
     if (eqnSimCombo && property->Name == "Simulation")
       eqnSimCombo->setCurrentText(property->Value);
@@ -1005,7 +1005,7 @@ void ComponentDialog::slotApplyButton()
       // Note: Order is very important here. The component expects parameters in a 
       // specific order depending on which sweep parameters are valid for the component
       // type.
-      for (auto param : sweepProperties) 
+      for (auto param : std::as_const(sweepProperties))
       {
         /* TODO: ***HACK*** to be fixed */
         QString temp = param;
@@ -1022,7 +1022,7 @@ void ComponentDialog::slotApplyButton()
     }
 
     row = 0;
-    for (Property* property : component->Props)
+    for (Property* property : std::as_const(component->Props))
     {
       if ((property->simulators & QucsSettings.DefaultSimulator) != QucsSettings.DefaultSimulator) {
         continue;
@@ -1266,7 +1266,7 @@ void ComponentDialog::slotFillFromSpice()
   // Make a copy of the componenty type and properties.
   Component tempComponent;
   tempComponent.SpiceModelcards = component->SpiceModelcards;
-  for (auto property : component->Props)
+  for (auto property : std::as_const(component->Props))
     tempComponent.Props.append(new Property(property->Name, property->Value, property->display, property->Description));
 
   // Populate the temporary component from the spice model.
@@ -1279,7 +1279,7 @@ void ComponentDialog::slotFillFromSpice()
   }
 
   // Cleanup.
-  for (auto property : tempComponent.Props)
+  for (auto property : std::as_const(tempComponent.Props))
     delete property; 
 
   delete dlg;

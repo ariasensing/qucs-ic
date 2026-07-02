@@ -160,7 +160,7 @@ QString MOSFET_sub::spice_netlist(spicecompat::SpiceDialect dialect /* = spiceco
     QList<int> pin_seq;
     pin_seq<<1<<0<<2<<3; // Pin sequence: DGS
     // output all node names
-    for (int pin : pin_seq) {
+    for (int pin : std::as_const(pin_seq)) {
         QString nam = Ports.at(pin)->Connection->Name;
         if (nam=="gnd") nam = "0";
         s += " "+ nam;   // node names
@@ -179,7 +179,7 @@ QString MOSFET_sub::spice_netlist(spicecompat::SpiceDialect dialect /* = spiceco
     QStringList check_defaults_list;
     QString unit;
     check_defaults_list<<"Nsub"<<"Nss";
-    for (const QString& parnam : check_defaults_list) { // Check some parameters for default value (zero)
+    for (const QString& parnam : std::as_const(check_defaults_list)) { // Check some parameters for default value (zero)
         double val,fac;   // And reduce parameter list
         misc::str2num(getProperty(parnam)->Value,val,unit,fac);
         if ((val *= fac)==0.0) {

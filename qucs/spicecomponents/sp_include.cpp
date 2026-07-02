@@ -81,7 +81,7 @@ QString S4Q_Include::getSpiceLibrary()
     QString s;
     s.clear();
 
-    for (Property *pp : Props) {
+    for (Property *pp : std::as_const(Props)) {
         QString val = pp->Value;
         if (!val.isEmpty()) {
             // manually expand env. vars for Xyce
@@ -106,7 +106,7 @@ QString S4Q_Include::getSpiceLibrary()
 QStringList S4Q_Include::getSpiceLibraryFiles()
 {
   QStringList files;
-  for (Property *pp : Props) {
+  for (Property *pp : std::as_const(Props)) {
     QString val = pp->Value;
     if (!val.isEmpty()) {
       val = misc::properAbsFileName(val, containingSchematic);

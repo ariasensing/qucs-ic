@@ -123,7 +123,7 @@ QString VCVS::spice_netlist(spicecompat::SpiceDialect dialect /* = spicecompat::
     QList<int> seq; // nodes sequence
     seq<<1<<2<<0<<3;
     // output all node names
-    for (int i : seq) {
+    for (int i : std::as_const(seq)) {
         QString nam = Ports.at(i)->Connection->Name;
         if (nam=="gnd") nam = "0";
         s += " "+ nam;   // node names

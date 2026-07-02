@@ -80,7 +80,7 @@ QString MutualX::netlist()
     QString s = Model + ":" + Name;
 
     // output all node names
-    for (Port *p1 : Ports) {
+    for (Port *p1 : std::as_const(Ports)) {
       s += " "+p1->Connection->Name;   // node names
     }
 

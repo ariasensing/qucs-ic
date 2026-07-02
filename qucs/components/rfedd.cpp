@@ -85,7 +85,7 @@ QString RFedd::netlist()
   QString n, p;
 
   // output all node names
-  for (Port *p1 : Ports)
+  for (Port *p1 : std::as_const(Ports))
     s += " "+p1->Connection->Name;   // node names
 
   // output all properties

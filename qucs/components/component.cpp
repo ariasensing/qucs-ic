@@ -187,7 +187,7 @@ int Component::getTextSelected(int point_x, int point_y) {
     }
     text_index += 1;
 
-    for (auto* prop : Props) {
+    for (auto* prop : std::as_const(Props)) {
         if (!prop->display) {
             text_index += 1;
             continue;
@@ -218,7 +218,7 @@ void Component::paint(QPainter *p) {
         p->drawText(tx, ty, 1, 1, Qt::TextDontClip, Name, &text_br);
     }
 
-    for (auto *prop : Props) {
+    for (auto *prop : std::as_const(Props)) {
         if (!prop->display) continue;
         if ((prop->simulators & QucsSettings.DefaultSimulator) != QucsSettings.DefaultSimulator) continue;
         prop->paint(text_br.left(), text_br.bottom(), p);
@@ -256,27 +256,27 @@ void Component::drawSymbol(QPainter* p) {
         p->restore();
     };
 
-    for (qucs::DrawingPrimitive *line: Lines) {
+    for (qucs::DrawingPrimitive *line: std::as_const(Lines)) {
         draw_primitive(line, p);
     }
 
-    for (qucs::DrawingPrimitive *pl: Polylines) {
+    for (qucs::DrawingPrimitive *pl: std::as_const(Polylines)) {
         draw_primitive(pl, p);
     }
 
-    for (qucs::DrawingPrimitive *arc: Arcs) {
+    for (qucs::DrawingPrimitive *arc: std::as_const(Arcs)) {
         draw_primitive(arc, p);
     }
 
-    for (qucs::DrawingPrimitive *rect: Rects) {
+    for (qucs::DrawingPrimitive *rect: std::as_const(Rects)) {
         draw_primitive(rect, p);
     }
 
-    for (qucs::DrawingPrimitive *ellips: Ellipses) {
+    for (qucs::DrawingPrimitive *ellips: std::as_const(Ellipses)) {
         draw_primitive(ellips, p);
     }
 
-    for (qucs::DrawingPrimitive *text: Texts) {
+    for (qucs::DrawingPrimitive *text: std::as_const(Texts)) {
         draw_primitive(text, p);
     }
 }
@@ -306,39 +306,39 @@ void Component::paintIcon(QPixmap* pixmap) {
     painter.save();
 
     painter.setPen(QPen{Qt::red});
-    for (auto* port : Ports) {
+    for (auto* port : std::as_const(Ports)) {
         painter.drawEllipse(port->x - 2, port->y - 2, 4, 4);
     }
 
-    for (qucs::Line* line : Lines) {
+    for (qucs::Line* line : std::as_const(Lines)) {
         painter.setPen(line->penHint());
         line->draw(&painter);
     }
 
-    for (qucs::Polyline* pl : Polylines) {
+    for (qucs::Polyline* pl : std::as_const(Polylines)) {
         painter.setPen(pl->penHint());
         pl->draw(&painter);
     }
 
-    for (qucs::Arc* arc : Arcs) {
+    for (qucs::Arc* arc : std::as_const(Arcs)) {
         painter.setPen(arc->penHint());
         arc->draw(&painter);
     }
 
-    for (qucs::Rect* rect : Rects) {
+    for (qucs::Rect* rect : std::as_const(Rects)) {
         painter.setPen(rect->penHint());
         painter.setBrush(rect->brushHint());
         rect->draw(&painter);
     }
 
-    for (qucs::Ellips* ellipse : Ellipses) {
+    for (qucs::Ellips* ellipse : std::as_const(Ellipses)) {
         painter.setPen(ellipse->penHint());
         painter.setBrush(ellipse->brushHint());
         ellipse->draw(&painter);
     }
     painter.restore();
 
-    for (Text* pt : Texts) {
+    for (Text* pt : std::as_const(Texts)) {
         pt->draw(&painter);
     }
 }
@@ -356,10 +356,10 @@ void Component::paintScheme(Schematic *p) {
     }
 
     // paint all lines
-    for (qucs::Line *p1: Lines)
+    for (qucs::Line *p1: std::as_const(Lines))
         p->PostPaintEvent(_Line, cx + p1->x1, cy + p1->y1, cx + p1->x2, cy + p1->y2);
 
-    for (auto* pl : Polylines) {
+    for (auto* pl : std::as_const(Polylines)) {
         for (size_t i = 1; i < pl->points.size(); i++) {
             auto& prev = pl->points.at(i - 1);
             auto& curr = pl->points.at(i);
@@ -368,7 +368,7 @@ void Component::paintScheme(Schematic *p) {
     }
 
     // paint all ports
-    for (Port *p2 : Ports)
+    for (Port *p2 : std::as_const(Ports))
       if (p2->avail) {
         Node *node = p2->Connection;
         if (!node) {
@@ -376,14 +376,14 @@ void Component::paintScheme(Schematic *p) {
         }
       }
 
-    for (qucs::Arc *p3: Arcs)   // paint all arcs
+    for (qucs::Arc *p3: std::as_const(Arcs))   // paint all arcs
         p->PostPaintEvent(_Arc, cx + p3->x, cy + p3->y, p3->w, p3->h, p3->angle, p3->arclen);
 
 
-    for (qucs::Rect *pa: Rects) // paint all rectangles
+    for (qucs::Rect *pa: std::as_const(Rects)) // paint all rectangles
         p->PostPaintEvent(_Rect, cx + pa->x, cy + pa->y, pa->w, pa->h);
 
-    for (qucs::Ellips *pa: Ellipses) // paint all ellipses
+    for (qucs::Ellips *pa: std::as_const(Ellipses)) // paint all ellipses
         p->PostPaintEvent(_Ellipse, cx + pa->x, cy + pa->y, pa->w, pa->h);
 }
 
@@ -392,7 +392,7 @@ bool Component::moveCenter(int dx, int dy) noexcept {
 
     if (moved) {
         // We also need to move every port node
-        for (auto* pp : Ports) {
+        for (auto* pp : std::as_const(Ports)) {
             setNodePortCenter(pp);
         }
     }
@@ -409,7 +409,7 @@ bool Component::rotate() noexcept {
     int tmp, dx, dy;
 
     // rotate all lines
-    for (qucs::Line *p1: Lines) {
+    for (qucs::Line *p1: std::as_const(Lines)) {
         tmp = -p1->x1;
         p1->x1 = p1->y1;
         p1->y1 = tmp;
@@ -419,7 +419,7 @@ bool Component::rotate() noexcept {
     }
 
     // rotate all ports
-    for (Port *p2: Ports) {
+    for (Port *p2: std::as_const(Ports)) {
         tmp = -p2->x;
         p2->x = p2->y;
         p2->y = tmp;
@@ -429,7 +429,7 @@ bool Component::rotate() noexcept {
     }
 
     // rotate all arcs
-    for (qucs::Arc *p3: Arcs) {
+    for (qucs::Arc *p3: std::as_const(Arcs)) {
         tmp = -p3->x;
         p3->x = p3->y;
         p3->y = tmp - p3->w;
@@ -441,7 +441,7 @@ bool Component::rotate() noexcept {
     }
 
     // rotate all rectangles
-    for (qucs::Rect *pa: Rects) {
+    for (qucs::Rect *pa: std::as_const(Rects)) {
         tmp = -pa->x;
         pa->x = pa->y;
         pa->y = tmp - pa->w;
@@ -451,7 +451,7 @@ bool Component::rotate() noexcept {
     }
 
     // rotate all ellipses
-    for (qucs::Ellips *pa: Ellipses) {
+    for (qucs::Ellips *pa: std::as_const(Ellipses)) {
         tmp = -pa->x;
         pa->x = pa->y;
         pa->y = tmp - pa->w;
@@ -462,7 +462,7 @@ bool Component::rotate() noexcept {
 
     // rotate all text
     float ftmp;
-    for (Text *pt: Texts) {
+    for (Text *pt: std::as_const(Texts)) {
         tmp = -pt->x;
         pt->x = pt->y;
         pt->y = tmp;
@@ -472,7 +472,7 @@ bool Component::rotate() noexcept {
         pt->mCos = ftmp;
     }
 
-    for (qucs::Polyline* pl : Polylines) {
+    for (qucs::Polyline* pl : std::as_const(Polylines)) {
         for (auto& pt : pl->points) {
             std::swap(pt.rx(), pt.ry());
             pt.ry() *= -1;
@@ -495,7 +495,7 @@ bool Component::rotate() noexcept {
         dx = metrics.boundingRect(Name).width();
         dy = metrics.lineSpacing();
     }
-    for (Property *pp : Props)
+    for (Property *pp : std::as_const(Props))
         if (pp->display) {
             // get width of text
             tmp = metrics.boundingRect(pp->Name + "=" + pp->Value).width();
@@ -524,20 +524,20 @@ bool Component::mirrorX() noexcept {
         if (Ports.count() < 1) return false;  // do not rotate components without ports
 
     // mirror all lines
-    for (qucs::Line *p1: Lines) {
+    for (qucs::Line *p1: std::as_const(Lines)) {
         p1->y1 = -p1->y1;
         p1->y2 = -p1->y2;
     }
 
     // mirror all ports
-    for (Port *p2: Ports) {
+    for (Port *p2: std::as_const(Ports)) {
         p2->y = -p2->y;
         // mirror node(s)
         setNodePortCenter(p2);
     }
 
     // mirror all arcs
-    for (qucs::Arc *p3: Arcs) {
+    for (qucs::Arc *p3: std::as_const(Arcs)) {
         p3->y = -p3->y - p3->h;
         if (p3->angle > 16 * 180) p3->angle -= 16 * 360;
         p3->angle = -p3->angle;    // mirror
@@ -546,16 +546,16 @@ bool Component::mirrorX() noexcept {
     }
 
     // mirror all rectangles
-    for (qucs::Rect *pa: Rects)
+    for (qucs::Rect *pa: std::as_const(Rects))
         pa->y = -pa->y - pa->h;
 
     // mirror all ellipses
-    for (qucs::Ellips *pa: Ellipses)
+    for (qucs::Ellips *pa: std::as_const(Ellipses))
         pa->y = -pa->y - pa->h;
 
     QFont f = QucsSettings.font;
     // mirror all text
-    for (Text *pt: Texts) {
+    for (Text *pt: std::as_const(Texts)) {
         f.setPixelSize(pt->Size);
         // use the screen-compatible metric
         QFontMetrics smallMetrics(f, 0);
@@ -563,7 +563,7 @@ bool Component::mirrorX() noexcept {
         pt->y = -pt->y - int(pt->mCos) * s.height() + int(pt->mSin) * s.width();
     }
 
-    for (qucs::Polyline* pl : Polylines) {
+    for (qucs::Polyline* pl : std::as_const(Polylines)) {
         for (auto& pt : pl->points) {
             pt.ry() *= -1;
         }
@@ -577,7 +577,7 @@ bool Component::mirrorX() noexcept {
     int dy = 0;
     if (showName)
         dy = metrics.lineSpacing();   // for "Name"
-    for (Property *pp : Props)
+    for (Property *pp : std::as_const(Props))
         if (pp->display) dy += metrics.lineSpacing();
     if ((tx > x1) && (tx < x2)) ty = -ty - dy;     // mirror text position
     else ty = y1 + ty + y2;
@@ -597,37 +597,37 @@ bool Component::mirrorY() noexcept {
         if (Ports.count() < 1) return false;  // do not rotate components without ports
 
     // mirror all lines
-    for (qucs::Line *p1: Lines) {
+    for (qucs::Line *p1: std::as_const(Lines)) {
         p1->x1 = -p1->x1;
         p1->x2 = -p1->x2;
     }
 
     // mirror all ports
-    for (Port *p2: Ports) {
+    for (Port *p2: std::as_const(Ports)) {
         p2->x = -p2->x;
         // mirror node(s)
         setNodePortCenter(p2);
     }
 
     // mirror all arcs
-    for (qucs::Arc *p3: Arcs) {
+    for (qucs::Arc *p3: std::as_const(Arcs)) {
         p3->x = -p3->x - p3->w;
         p3->angle = 16 * 180 - p3->angle - p3->arclen;  // mirror
         if (p3->angle < 0) p3->angle += 16 * 360;   // angle has to be > 0
     }
 
     // mirror all rectangles
-    for (qucs::Rect *pa: Rects)
+    for (qucs::Rect *pa: std::as_const(Rects))
         pa->x = -pa->x - pa->w;
 
     // mirror all ellipses
-    for (qucs::Ellips *pa: Ellipses)
+    for (qucs::Ellips *pa: std::as_const(Ellipses))
         pa->x = -pa->x - pa->w;
 
     int tmp;
     QFont f = QucsSettings.font;
     // mirror all text
-    for (Text *pt: Texts) {
+    for (Text *pt: std::as_const(Texts)) {
         f.setPixelSize(pt->Size);
         // use the screen-compatible metric
         QFontMetrics smallMetrics(f, 0);
@@ -635,7 +635,7 @@ bool Component::mirrorY() noexcept {
         pt->x = -pt->x - int(pt->mSin) * s.height() - int(pt->mCos) * s.width();
     }
 
-    for (qucs::Polyline* pl : Polylines) {
+    for (qucs::Polyline* pl : std::as_const(Polylines)) {
         for (auto& pt : pl->points) {
             pt.rx() *= -1;
         }
@@ -649,7 +649,7 @@ bool Component::mirrorY() noexcept {
     int dx = 0;
     if (showName)
         dx = metrics.boundingRect(Name).width();
-    for (Property *pp : Props)
+    for (Property *pp : std::as_const(Props))
         if (pp->display) {
             // get width of text
             tmp = metrics.boundingRect(pp->Name + "=" + pp->Value).width();
@@ -691,13 +691,13 @@ QString Component::netlist() {
     QString s = Model + ":" + Name;
 
     // output all node names
-    for (Port *p1: Ports)
+    for (Port *p1: std::as_const(Ports))
         s += " " + p1->Connection->Name;   // node names
 
     // output all properties
     QStringList no_sim_props;
     no_sim_props<<"Symbol"<<"UseGlobTemp"<<"LibName"<<"CompName";
-    for (const auto &p2 : Props) {
+    for (const auto &p2 : std::as_const(Props)) {
       if (!no_sim_props.contains(p2->Name)) {
         s += " " + p2->Name + "=\"" + p2->Value + "\"";
       }
@@ -723,7 +723,7 @@ QString Component::form_spice_param_list(QStringList &ignore_list, QStringList &
                 nam = Props.at(i)->Name;
             }
             QString val = spicecompat::normalize_value(Props.at(i)->Value);
-            par_str += QStringLiteral("%1=%2 ").arg(nam).arg(val);
+            par_str += QStringLiteral("%1=%2 ").arg(nam, val);
         }
 
     }
@@ -921,7 +921,7 @@ QString Component::save() {
     s += " " + QString::number(rotated);
 
     // write all properties
-    for (Property *p1 : Props) {
+    for (Property *p1 : std::as_const(Props)) {
         QString val = p1->Value; // enable newline in properties
         val.replace("\n", "\\n");
         val.replace("\"", "''");
@@ -1454,7 +1454,7 @@ QString Component::getSpiceSubstrateLine()
 
   if (sub == nullptr) return s;
 
-  for(Property *pp: sub->Props) {
+  for(Property *pp: std::as_const(sub->Props)) {
     QString vv = spicecompat::normalize_value(pp->Value);
     QString nn = pp->Name;
     s += QString(" %1=%2 ").arg(nn.toLower(), vv);
@@ -1523,7 +1523,7 @@ QString GateComponent::netlist() {
     QString s = Model + ":" + Name;
 
     // output all node names
-    for (Port *pp: Ports)
+    for (Port *pp: std::as_const(Ports))
         s += " " + pp->Connection->Name;   // node names
 
     // output all properties

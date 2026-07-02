@@ -917,7 +917,7 @@ DiagramDialog::DiagramDialog(Diagram *d, QWidget *parent, Graph *currentGraph)
   // ...........................................................
   // put all graphs into the ListBox
   Row = 0;
-  for (Graph *pg : Diag->Graphs) {
+  for (Graph *pg : std::as_const(Diag->Graphs)) {
     GraphList->setRowCount(Row + 1);
 
     // Populate the table row with graph properties
@@ -1842,7 +1842,7 @@ void DiagramDialog::slotSetGraphStyle(int style) {
  *
  */
 void DiagramDialog::copyDiagramGraphs() {
-  for (Graph *pg : Diag->Graphs)
+  for (Graph *pg : std::as_const(Diag->Graphs))
     Graphs.emplace_back(pg->sameNewOne());
 }
 

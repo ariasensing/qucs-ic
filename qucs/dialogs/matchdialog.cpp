@@ -1944,7 +1944,7 @@ void MatchDialog::SchematicParser(QString laddercode, int &x_pos, double Freq,
       componentstr +=
           QStringLiteral("<.SP SP1 1 0 100 0 67 0 0 \"lin\" 1 \"%1\" 1 \"%2\" 1 "
                   "\"300\" 1 \"no\" 0 \"1\" 0 \"2\" 0>\n")
-              .arg((val_freq_start), (val_freq_stop));
+              .arg(val_freq_start, val_freq_stop);
 
       if (laddercode.indexOf("P2") == -1) // One port simulation
         componentstr += QStringLiteral("<Eqn Eqn1 1 200 100 -28 15 0 0 "

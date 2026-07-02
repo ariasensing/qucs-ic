@@ -129,12 +129,12 @@ QString MOSFET::netlist()
   QString s = "MOSFET:"+Name;
 
   // output all node names
-  for (Port *p1 : Ports)
+  for (Port *p1 : std::as_const(Ports))
     s += " "+p1->Connection->Name;   // node names
   s += " "+Ports.at(2)->Connection->Name;  // connect substrate to source
 
   // output all properties
-  for(Property *p2 : Props)
+  for(Property *p2 : std::as_const(Props))
     s += " "+p2->Name+"=\""+p2->Value+"\"";
 
   return s + '\n';
@@ -146,7 +146,7 @@ QString MOSFET::spice_netlist(spicecompat::SpiceDialect dialect /* = spicecompat
     QList<int> pin_seq;
     pin_seq<<1<<0<<2<<2; // Pin sequence: DGS; coonect substrate to source
     // output all node names
-    for (int pin : pin_seq) {
+    for (int pin : std::as_const(pin_seq)) {
         QString nam = Ports.at(pin)->Connection->Name;
         if (nam=="gnd") nam = "0";
         s += " "+ nam;   // node names
@@ -166,7 +166,7 @@ QString MOSFET::spice_netlist(spicecompat::SpiceDialect dialect /* = spicecompat
     QStringList check_defaults_list;
     QString unit;
     check_defaults_list<<"Nsub"<<"Nss";
-    for (const QString& parnam : check_defaults_list) { // Check some parameters for default value (zero)
+    for (const QString& parnam : std::as_const(check_defaults_list)) { // Check some parameters for default value (zero)
         double val,fac;   // And reduce parameter list
         misc::str2num(getProperty(parnam)->Value,val,unit,fac);
         if ((val *= fac)==0.0) {

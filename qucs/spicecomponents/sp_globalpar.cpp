@@ -76,7 +76,7 @@ QString SpiceGlobalParam::getExpression(spicecompat::SpiceDialect dialect /* = s
 
     QString s;
     s.clear();
-    for (Property *pp : Props) {
+    for (Property *pp : std::as_const(Props)) {
         s += QStringLiteral(".%1PARAM %2 = %3\n")
             .arg(dialect == spicecompat::CDL ? "" : "GLOBAL_").arg(pp->Name, pp->Value);
     }

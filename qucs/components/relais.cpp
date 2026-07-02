@@ -128,7 +128,7 @@ QString Relais::spice_netlist(spicecompat::SpiceDialect dialect /* = spicecompat
       QList<int> seq; // nodes sequence
       seq<<1<<2<<0<<3;
       // output all node names
-      for (int i : seq) {
+      for (int i : std::as_const(seq)) {
         QString nam = spicecompat::normalize_node_name(Ports.at(i)->Connection->Name);
         s += " "+ nam;   // node names
       }
@@ -145,7 +145,7 @@ QString Relais::spice_netlist(spicecompat::SpiceDialect dialect /* = spicecompat
       QList<int> seq; // nodes sequence
       seq<<2<<1<<4<<0<<3;
       // output all node names
-      for (int i : seq) {
+      for (int i : std::as_const(seq)) {
         QString nam = spicecompat::normalize_node_name(Ports.at(i)->Connection->Name);
         s += " "+ nam;   // node names
       }

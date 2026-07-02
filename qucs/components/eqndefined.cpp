@@ -84,7 +84,7 @@ QString EqnDefined::netlist()
   QString e = "\n";
 
   // output all node names
-  for (Port *p1 : Ports)
+  for (Port *p1 : std::as_const(Ports))
     s += " "+p1->Connection->Name;   // node names
 
   // output all properties
@@ -130,7 +130,7 @@ QString EqnDefined::spice_netlist(spicecompat::SpiceDialect dialect /* = spiceco
             QString plus = Ports.at(2*i)->Connection->Name;
             QString minus = Ports.at(2*i+1)->Connection->Name;
             if (used_currents.contains(i)) { // if current is used add sensing source V=0
-                s += QStringLiteral("V_%1sens_%2 %3 %4 DC 0\n").arg(Name).arg(i).arg(plus).arg(plus+"_sens");
+                s += QStringLiteral("V_%1sens_%2 %3 %4 DC 0\n").arg(Name).arg(i).arg(plus, plus+"_sens");
                 plus = plus+"_sens";
             }
             s += QStringLiteral("B%1I%2 %3 %4 I=%5\n").arg(Name).arg(i).arg(plus, minus, Itokens.join(""));
@@ -172,7 +172,7 @@ QString EqnDefined::va_code()
                 spicecompat::splitEqn(Ieqn,Itokens);
                 vacompat::convert_functions(Itokens);
                 subsVoltages(Itokens,Nbranch);
-                if (plus=="gnd") s += QStringLiteral("%1 <+ -(%2);\n").arg(Ipm).arg(Itokens.join(""));
+                if (plus=="gnd") s += QStringLiteral("%1 <+ -(%2);\n").arg(Ipm, Itokens.join(""));
                 else s += QStringLiteral("%1 <+ %2;\n").arg(Ipm, Itokens.join(""));
             }
             QString Qeqn = Props.at(2*(i+1)+1)->Value; // parse charge equation only for Xyce
@@ -181,7 +181,7 @@ QString EqnDefined::va_code()
                 spicecompat::splitEqn(Qeqn,Qtokens);
                 vacompat::convert_functions(Qtokens);
                 subsVoltages(Qtokens,Nbranch);
-                if (plus=="gnd") s += QStringLiteral("%1 <+ -ddt( %2 );\n").arg(Ipm).arg(Qtokens.join(""));
+                if (plus=="gnd") s += QStringLiteral("%1 <+ -ddt( %2 );\n").arg(Ipm, Qtokens.join(""));
                 else s += QStringLiteral("%1 <+ ddt( %2 );\n").arg(Ipm, Qtokens.join(""));
             }
         }

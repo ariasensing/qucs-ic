@@ -648,7 +648,7 @@ bool QucsApp::populateLibTreeFromDir(const QString &LibDirPath, QList<QTreeWidge
     QDir LibDir(LibDirPath);
     QStringList LibFiles = LibDir.entryList(QStringList("*.lib"), QDir::Files, QDir::Name);
     QStringList blacklist = getBlacklistedLibraries(QucsSettings.LibDir);
-    for (const QString& ss: blacklist) { // exclude blacklisted files
+    for (const QString& ss: std::as_const(blacklist)) { // exclude blacklisted files
         LibFiles.removeAll(ss);
     }
     // create top level library items, base on the library names
@@ -768,7 +768,7 @@ int QucsApp::fillComboBox(bool setAll) {
         CompChoose->insertItem(CompChoose->count(), QObject::tr("paintings"));
     } else {
         QStringList cats = Category::getCategories();
-        for (const QString &it: cats) {
+        for (const QString &it: std::as_const(cats)) {
             CompChoose->insertItem(CompChoose->count(), it);
         }
         idx = CompChoose->findText(currentText);
@@ -1003,7 +1003,7 @@ void QucsApp::slotSearchComponent(const QString &searchText)
 
     QStringList cats = Category::getCategories ();
     int catIdx = 0;
-    for (const QString& it : cats) {
+    for (const QString& it : std::as_const(cats)) {
       // this will go also over the "verilog-a user devices" category, if present
       //   but since modules there have no 'info' function it won't handle them
       Comps = Category::getModules(it);
@@ -1362,7 +1362,7 @@ void QucsApp::slotCMenuDelete()
 
          // We only want column 0 items (file names)
   QSet<QString> filesToDelete; // Use QSet to avoid duplicates
-  for (const QModelIndex &index : selected) {
+  for (const QModelIndex &index : std::as_const(selected)) {
     if (index.column() == 0 && index.parent().isValid()) {
       QString filename = index.sibling(index.row(), 0).data().toString();
       filesToDelete.insert(filename);
@@ -1887,7 +1887,7 @@ bool QucsApp::saveAs()
               << tr("Any File")+" (*)";
       Filter = Filters.join("");
       bool found = false;
-      for (const auto &ss: Filters) {
+      for (const auto &ss: std::as_const(Filters)) {
         if (ss.contains(file_ext)) {
           found = true;
           selfilter = ss;
@@ -2943,7 +2943,7 @@ void QucsApp::slotOpenContent(const QModelIndex &idx)
     QSet<QString> openedFiles; // To avoid opening duplicates
 
      // We only want column 0 items (file names)
-    for (const QModelIndex &index : selected) {
+    for (const QModelIndex &index : std::as_const(selected)) {
       if (index.column() == 0 && index.parent().isValid()) {
         QString filename = index.sibling(index.row(), 0).data().toString();
         QString note = index.sibling(index.row(), 1).data().toString();
@@ -4077,7 +4077,7 @@ void QucsApp::runPostSimCommands(Schematic* sch)
         terms = {"konsole", "gnome-terminal", "xfce4-terminal", "lxterminal", "xterm", "qterminal", "ptyxis"};
       }
       bool launched = false;
-      for (const QString& term : terms) {
+      for (const QString& term : std::as_const(terms)) {
         QString exe = QStandardPaths::findExecutable(term);
         if (exe.isEmpty()) {
           continue;

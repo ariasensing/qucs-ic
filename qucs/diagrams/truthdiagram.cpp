@@ -154,7 +154,7 @@ int TruthDiagram::calcDiagram()
   firstGraph = g;
   // ................................................
   // all dependent variables
-  for (Graph *g : Graphs) {
+  for (Graph *g : std::as_const(Graphs)) {
     y = y2-tHeight-5;
 
     Str = g->Var;

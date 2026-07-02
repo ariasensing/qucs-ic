@@ -121,7 +121,7 @@ void Ngspice::createNetlist(
             QStringList osdi_ext;
             osdi_ext<<"*.osdi";
             QStringList osdi_files = QucsSettings.QucsWorkDir.entryList(osdi_ext,QDir::Files);
-            for(const auto &file : osdi_files) {
+            for(const auto &file : std::as_const(osdi_files)) {
                 QString abs_file = QucsSettings.QucsWorkDir.absolutePath() +
                         QDir::separator() + file;
                 stream<<QStringLiteral("pre_osdi '%1'\n").arg(abs_file);
@@ -164,7 +164,7 @@ void Ngspice::createNetlist(
         }
 
         QString nods;
-        for (const QString& nod : vars) {
+        for (const QString& nod : std::as_const(vars)) {
             if ( nod.endsWith("#branch") )
                 nods.append(QStringLiteral("i(%1) ").arg(nod.section('#', 0, 0)));
             else
@@ -227,7 +227,7 @@ void Ngspice::createNetlist(
             QRegularExpression pz_rx("^\\s*pz\\s.*", QRegularExpression::CaseInsensitiveOption);
 
             QStringList lines = pc->getSpiceNetlist().split('\n');
-            for ( const QString& line : lines ) {
+            for ( const QString& line : std::as_const(lines) ) {
                 if      ( ac_rx.match(line).hasMatch() )      freqSims++ ;
                 else if ( sp_rx.match(line).hasMatch() )      freqSims++ ;
                 else if ( noise_rx.match(line).hasMatch() )   freqSims++ ;

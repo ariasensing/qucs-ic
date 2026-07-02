@@ -527,7 +527,7 @@ void Schematic::drawPostPaintEvents(QPainter* painter) {
    * Paint actions can only be called from within the paint event, so they
    * are put into a QList (PostedPaintEvents) and processed here
    */
-    for (auto p : a_PostedPaintEvents) {
+    for (auto p : std::as_const(a_PostedPaintEvents)) {
         QPen pen(Qt::black);
         painter->setPen(Qt::black);
         switch (p.pe) {
@@ -605,7 +605,7 @@ void Schematic::contentsMouseMoveEvent(QMouseEvent *Event)
         // TODO: Currently only rectangular diagrams are supported.
         if (diagram->getSelected(xpos, ypos) && diagram->Name == "Rect") {
             bool hasY1, hasY2 = false;
-            for (auto graph: diagram->Graphs) {
+            for (auto graph: std::as_const(diagram->Graphs)) {
                 hasY1 |= graph->yAxisNo == 0;
                 hasY2 |= graph->yAxisNo == 1;
             }
@@ -846,12 +846,12 @@ void Schematic::paintSchToViewpainter(QPainter* painter, bool printAll) {
         }
 
         // if graph or marker is selected, deselect during printing
-        for (Graph* pg : diagram->Graphs) {
+        for (Graph* pg : std::as_const(diagram->Graphs)) {
             if (pg->isSelected) {
                 pg->Type |= 1; // remember selection
             }
             pg->isSelected = false;
-            for (Marker* pm : pg->Markers) {
+            for (Marker* pm : std::as_const(pg->Markers)) {
                 if (pm->isSelected) {
                     pm->Type |= 1; // remember selection
                 }
@@ -861,12 +861,12 @@ void Schematic::paintSchToViewpainter(QPainter* painter, bool printAll) {
         draw_preserve_selection(diagram, painter);
 
         // revert selection of graphs and markers
-        for (Graph* pg : diagram->Graphs) {
+        for (Graph* pg : std::as_const(diagram->Graphs)) {
             if (pg->Type & 1) {
                 pg->isSelected = true;
             }
             pg->Type &= -2;
-            for (Marker* pm : pg->Markers) {
+            for (Marker* pm : std::as_const(pg->Markers)) {
                 if (pm->Type & 1) {
                     pm->isSelected = true;
                 }
@@ -1142,8 +1142,8 @@ void Schematic::updateAllBoundingRect()
     for (auto* pd : *a_Diagrams) {
         internal::unite(totalBounds, pd->boundingRect());
 
-        for (auto* pg : pd->Graphs)
-            for (auto* pm : pg->Markers) {
+      for (auto* pg : std::as_const(pd->Graphs))
+            for (auto* pm : std::as_const(pg->Markers)) {
                 internal::unite(totalBounds, pm->boundingRect());
             }
     }
@@ -1206,8 +1206,8 @@ Schematic::Selection Schematic::currentSelection() const {
             internal::unite(totalBounds, pd->boundingRect());
         }
 
-        for (Graph* pg : pd->Graphs) {
-            for (Marker* pm : pg->Markers) {
+        for (Graph* pg : std::as_const(pd->Graphs)) {
+            for (Marker* pm : std::as_const(pg->Markers)) {
                 if (!pm->isSelected) continue;
                 selection.markers.push_back(pm);
                 internal::unite(totalBounds, pm->boundingRect());
@@ -1250,7 +1250,7 @@ Schematic::Selection Schematic::elementsToSelection(const std::list<Element*> &e
             if (auto* pc = dynamic_cast<Component*>(element)) {
                 addElement(pc, selection.components);
                 // add all port nodes to ownedNodes set
-                for (auto* port : pc->Ports) {
+                for (auto* port : std::as_const(pc->Ports)) {
                     ownedNodes.emplace(port->Connection);
                 }
             } else if (auto* pw = dynamic_cast<Wire*>(element)) {
@@ -2043,7 +2043,7 @@ void Schematic::contentsDropEvent(QDropEvent *Event)
     bool changed = d->getDocChanged();
     d->setDocChanged(true);
 
-    for (const QUrl &url : urls) {
+    for (const QUrl &url : std::as_const(urls)) {
       QString filePath = QDir::toNativeSeparators(url.toLocalFile());
       QString lower = filePath.toLower();
 

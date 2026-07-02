@@ -110,7 +110,7 @@ QString Diode::spice_netlist(spicecompat::SpiceDialect dialect /* = spicecompat:
     QList<int> pin_seq;
     pin_seq<<1<<0; // Pin sequence: CBE
     // output all node names
-    for (int pin : pin_seq) {
+    for (int pin : std::as_const(pin_seq)) {
         QString nam = Ports.at(pin)->Connection->Name;
         if (nam=="gnd") nam = "0";
         s += " "+ nam;   // node names
@@ -151,8 +151,7 @@ QString Diode::spice_netlist(spicecompat::SpiceDialect dialect /* = spicecompat:
     if (getProperty("UseGlobTemp")->Value == "yes") {
       s += QStringLiteral(" DMOD_%1 AREA=%2\n").arg(Name, getProperty("Area")->Value);
     } else {
-      s += QStringLiteral(" DMOD_%1 AREA=%2 Temp=%3\n").arg(Name, getProperty("Area")->Value)
-      .arg(getProperty("Temp")->Value);
+      s += QStringLiteral(" DMOD_%1 AREA=%2 Temp=%3\n").arg(Name, getProperty("Area")->Value, getProperty("Temp")->Value);
     }
 
     if (dialect != spicecompat::CDL)

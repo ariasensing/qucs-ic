@@ -82,7 +82,7 @@ QString qucs2spice::convert_netlist(QString netlist, bool xyce)
 
     QStringList EqnsAndVars;
 
-    for (QString line : net_lst) {  // Find equations
+    for (QString line : std::as_const(net_lst)) {  // Find equations
         if (eqn_pattern.match(line).hasMatch()) {
             line.remove(QRegularExpression("^[ \t]*Eqn:[A-Za-z]+\\w+\\s+"));
             ExtractVarsAndValues(line,EqnsAndVars);
@@ -258,7 +258,7 @@ QString qucs2spice::convert_bjt(const QString& line)
             Typ = "PNP";
         } else {
             bool is_incompat = false;
-            for (const QString& incompat : spice_incompat) {
+            for (const QString& incompat : std::as_const(spice_incompat)) {
                if (s1.startsWith(incompat)) {
                    is_incompat = true;
                    break;
@@ -360,7 +360,7 @@ QString qucs2spice::convert_edd(const QString& line, QStringList &EqnsAndVars)
     QStringList nods;
     QString nam = lst.takeFirst().remove(':');
 
-    for (const QString& str : lst) {
+    for (const QString& str : std::as_const(lst)) {
         if (!str.contains('=')) {
             //str.replace("gnd","0");
             nods.append(str);

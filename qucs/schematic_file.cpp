@@ -193,7 +193,7 @@ bool Schematic::pasteFromClipboard(QTextStream *stream, std::list<Element*> *pe)
   // Check for file URLs (drag and drop from file manager)
   if (mimeData->hasUrls()) {
     QList<QUrl> urls = mimeData->urls();
-    for (const QUrl& url : urls) {
+    for (const QUrl& url : std::as_const(urls)) {
       if (url.isLocalFile()) {
         QString filePath = url.toLocalFile();
         if (isImageFilePath(filePath)) {
@@ -941,7 +941,7 @@ bool Schematic::loadProperties(QTextStream *stream)
 void Schematic::simpleInsertComponent(Component *c)
 {
   // connect every node of component
-  for (Port *pp : c->Ports) {
+  for (Port *pp : std::as_const(c->Ports)) {
     Node* pn = provideNode(c->cx + pp->x, c->cy + pp->y);
 
     pn->connect(c);  // connect schematic node to component node
@@ -1573,7 +1573,7 @@ bool Schematic::throughAllComps(QTextStream *stream, int& countInit,
         {
           i = 0;
           // apply in/out signal types of subcircuit
-          for (Port *pp : pc->Ports)
+          for (Port *pp : std::as_const(pc->Ports))
           {
             pp->Type = it.value().PortTypes[i];
             pp->Connection->DType = pp->Type;
@@ -1611,7 +1611,7 @@ bool Schematic::throughAllComps(QTextStream *stream, int& countInit,
       {
         i = 0;
         // save in/out signal types of subcircuit
-        for (Port *pp : pc->Ports)
+        for (Port *pp : std::as_const(pc->Ports))
         {
             //if(i>=d->a_PortTypes.count())break;
             pp->Type = d->a_PortTypes[i];

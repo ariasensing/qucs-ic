@@ -122,7 +122,7 @@ Node* GenericPort::replaceNodeWith(Node* new_node)
 
             // Ensure that only this and no other port of the component
             // is connected to the new node.
-            for (auto* p : m_comp->Ports) {
+            for (auto* p : std::as_const(m_comp->Ports)) {
                 if (p->Connection == new_node && p != m_port) {
                     p->Connection = nullptr;
                 }
@@ -327,7 +327,7 @@ Healer::HealerImpl::HealerImpl(const std::list<Component*>* components, const st
     , m_affectedCount{affected_count}
 {
     for (auto* comp : *components) {
-        for (auto* port : comp->Ports) {
+        for (auto* port : std::as_const(comp->Ports)) {
             m_port_groups[port->Connection].push_back(std::make_unique<GenericPort>(port, comp));
         }
     }

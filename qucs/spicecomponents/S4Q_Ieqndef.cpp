@@ -92,7 +92,7 @@ QString S4Q_Ieqndef::spice_netlist(spicecompat::SpiceDialect dialect /* = spicec
     Q_UNUSED(dialect);
 
     QString s = spicecompat::check_refdes(Name,SpiceModel);
-    for (Port *p1 : Ports) {
+    for (Port *p1 : std::as_const(Ports)) {
         QString nam = p1->Connection->Name;
         if (nam=="gnd") nam = "0";
         s += " "+ nam  + " ";   // node names

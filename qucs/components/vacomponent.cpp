@@ -301,7 +301,7 @@ QString vacomponent::spice_netlist(spicecompat::SpiceDialect dialect /* = spicec
     if (dialect == spicecompat::SPICEXyce) return QString();
 
     QString s = SpiceModel + Name + " ";
-    for(const auto pp: Ports) {
+    for(const auto pp: std::as_const(Ports)) {
         s += pp->Connection->Name + " ";
     }
     QString tmp_model = QStringLiteral("mod_%1_%2").arg(Model, Name);
