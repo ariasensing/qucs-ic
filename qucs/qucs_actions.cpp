@@ -956,7 +956,7 @@ void QucsApp::launchTool(const QString &prog, const QString &progDesc,
 #endif
 
   // Validate if the file exists before attempting to execute
-  if (!QFileInfo(cmd).exists()) {
+  if (!QFileInfo::exists(cmd)) {
     QMessageBox::critical(
         this, tr("Error"),
         tr("Executable %1 not found! \n\n(%2)").arg(progDesc, cmd));
