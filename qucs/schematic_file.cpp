@@ -831,8 +831,19 @@ int Schematic::saveDocument()
       // Append _sym.json into _props.json, save into _symbol.json
       QFile f1(QucsSettings.QucsWorkDir.filePath(fileBase()+"_props.json"));
       QFile f2(QucsSettings.QucsWorkDir.filePath(fileBase()+"_sym.json"));
-      f1.open(QIODevice::ReadOnly | QIODevice::Text);
-      f2.open(QIODevice::ReadOnly | QIODevice::Text);
+
+      if (!f1.open(QIODevice::ReadOnly | QIODevice::Text)) {
+        QMessageBox::critical(this, tr("Error"),
+                              tr("Cannot open %1").arg(f1.fileName()));
+        return -1;
+      }
+
+      if (!f2.open(QIODevice::ReadOnly | QIODevice::Text)) {
+        QMessageBox::critical(this, tr("Error"),
+                              tr("Cannot open %1").arg(f2.fileName()));
+        f1.close();
+        return -1;
+      }
 
       QString dat1 = QString(f1.readAll());
       QString dat2 = QString(f2.readAll());
@@ -842,7 +853,14 @@ int Schematic::saveDocument()
       finalJSON = finalJSON.replace("}{", "");
 
       QFile f3(QucsSettings.QucsWorkDir.filePath(fileBase()+"_symbol.json"));
-      f3.open(QIODevice::WriteOnly | QIODevice::Text);
+      if (!f3.open(QIODevice::WriteOnly | QIODevice::Text)) {
+        QMessageBox::critical(this, tr("Error"),
+                              tr("Cannot write %1").arg(f3.fileName()));
+        f1.close();
+        f2.close();
+        return -1;
+      }
+
       QTextStream out(&f3);
       out << finalJSON;
 
