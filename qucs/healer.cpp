@@ -189,6 +189,7 @@ Node* GenericPort::node() const
     case PortType::Component:
       return m_port->Connection;
     }
+    return nullptr;
 }
 
 
