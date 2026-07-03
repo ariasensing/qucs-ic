@@ -247,11 +247,9 @@ void ChangeDialog::slotButtReplace()
         pc->textSize(dx, dy);   // correct text position
         if(tx_Dist != 0) {
           pc->tx += tx_Dist-dx;
-          tx_Dist = dx;
         }
         if(ty_Dist != 0) {
           pc->ty += ty_Dist-dy;
-          ty_Dist = dy;
         }
 
         // apply changes to schematic symbol
