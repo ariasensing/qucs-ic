@@ -182,7 +182,7 @@ QString MOSFET_sub::spice_netlist(spicecompat::SpiceDialect dialect /* = spiceco
     for (const QString& parnam : std::as_const(check_defaults_list)) { // Check some parameters for default value (zero)
         double val,fac;   // And reduce parameter list
         misc::str2num(getProperty(parnam)->Value,val,unit,fac);
-        if ((val *= fac)==0.0) {
+        if ((val * fac)==0.0) {
             spice_incompat.append(parnam);
         }
     }
