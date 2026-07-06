@@ -259,7 +259,7 @@ bool allComponentsAreConsistent(const std::list<Component*>* components)
 {
     bool is_ok = true;
     for (auto* c : *components) {
-        for (auto* p : c->Ports) {
+        for (auto* p : std::as_const(c->Ports)) {
             if (p->Connection == nullptr) {
                 qCritical() << "Incostistent component is found!"
                             << "port->Connection == nullptr"
@@ -284,7 +284,7 @@ bool geometryIsInOrder(const std::list<Component*>* components, const std::list<
 {
     bool is_ok = true;
     for (auto* c : *components) {
-        for (auto* p : c->Ports) {
+        for (auto* p : std::as_const(c->Ports)) {
             auto port_loc = c->center() + QPoint{p->x, p->y};
             if (p->Connection->center() != port_loc) {
                 qCritical() << "Crooked geometry! Port and node locations don't match."
@@ -921,10 +921,10 @@ Element* Schematic::selectElement(float fX, float fY, bool flag, int *index)
     for (Diagram* pd : *a_Diagrams)
     {
 
-        for (Graph *pg : pd->Graphs)
+      for (Graph *pg : std::as_const(pd->Graphs))
         {
             // test markers of graphs
-            for (Marker *pm : pg->Markers)
+        for (Marker *pm : std::as_const(pg->Markers))
             {
                 if(pm->getSelected(x-pd->cx, y-pd->cy))
                 {
@@ -988,7 +988,7 @@ Element* Schematic::selectElement(float fX, float fY, bool flag, int *index)
             }
 
             // test graphs of diagram
-            for (Graph *pg : pd->Graphs)
+            for (Graph *pg : std::as_const(pd->Graphs))
             {
                 if(pg->getSelected(x-pd->cx, pd->cy-y) >= 0)
                 {
@@ -1269,12 +1269,12 @@ int Schematic::selectElements(const QRect& selection_rect, bool append, bool ent
     }
 
     for (Diagram *diagram : *a_Diagrams) {
-        for (Graph *graph: diagram->Graphs) {
+        for (Graph *graph: std::as_const(diagram->Graphs)) {
             if (graph->isSelected &= append) {
                 selected_count++;
             }
 
-            for (Marker *marker: graph->Markers) {
+            for (Marker *marker: std::as_const(graph->Markers)) {
                 if (select_element(marker, marker->boundingRect())) {
                     selected_count++;
                 }
@@ -1300,8 +1300,8 @@ int Schematic::selectElements(const QRect& selection_rect, bool append, bool ent
 void Schematic::selectMarkers() const
 {
     for(Diagram *pd : *a_Diagrams)
-        for (Graph *pg : pd->Graphs)
-            for (Marker *pm : pg->Markers)
+    for (Graph *pg : std::as_const(pd->Graphs))
+            for (Marker *pm : std::as_const(pg->Markers))
                 pm->isSelected = true;
 }
 
@@ -1909,7 +1909,7 @@ void Schematic::decoupleElements(Selection selection, bool keepNodeLabel)
     // decouple all components and save nodes
     for (auto* pc : selection.components) {
         decoupleComp(pc, keepNodeLabel);
-        for (auto* port : pc->Ports) {
+        for (auto* port : std::as_const(pc->Ports)) {
             nodeSet.insert(port->Connection);
         }
     }
@@ -1966,7 +1966,7 @@ void Schematic::insertComponentNodes(Component *component, bool noOptimize)
     if (component->Ports.empty()) return;
 
     // connect every node of the component to corresponding schematic node
-    for (Port *pp : component->Ports) {
+    for (Port *pp : std::as_const(component->Ports)) {
         pp->Connection = provideNode(pp->x+component->cx, pp->y+component->cy);
         pp->Connection->connect(component);
     }
@@ -1975,11 +1975,11 @@ void Schematic::insertComponentNodes(Component *component, bool noOptimize)
 
     // if component over wire then delete this wire
     QListIterator<Port *> iport(component->Ports);
-    // omit the first element
-    Port *component_port = iport.next();
+
+    iport.next(); // omit the first element
     std::vector<Wire*> dead_wires;
     while (iport.hasNext()) {
-        component_port = iport.next();
+        Port *component_port = iport.next();
 
         // At first iterate over all port's connections to find wires
         // connecting this port to another port of the same component.
@@ -2028,7 +2028,7 @@ void Schematic::recreateComponent(Component* comp)
 {
     auto qpoint_hash = [](const QPoint& p) { return std::hash<int>{}(p.x()) ^ std::hash<int>{}(p.y()); };
     std::unordered_map<QPoint,std::unique_ptr<WireLabel>,decltype(qpoint_hash)> saved_labels(10, qpoint_hash);
-    for (auto* port : comp->Ports) {
+    for (auto* port : std::as_const(comp->Ports)) {
         if (port->Connection->hasLabel() && port->Connection->conn_count() == 1) {
             saved_labels[port->Connection->center()] = port->Connection->releaseLabel();
         }
@@ -2065,7 +2065,7 @@ void Schematic::recreateComponent(Component* comp)
     comp->tx = tx;
     comp->ty = ty;
 
-    for (auto* port : comp->Ports) {
+    for (auto* port : std::as_const(comp->Ports)) {
         if (saved_labels.contains(port->Connection->center())) {
             port->Connection->acquireLabel(std::move(saved_labels[port->Connection->center()]));
         }
@@ -2254,7 +2254,7 @@ void Schematic::detachComp(Component *c, bool remove_orphans, bool keepNodeLabel
     auto compStatus = disconnectComp(c, remove_orphans, keepNodeLabel);
 
     // loop over all ports, and delete if orphan
-    for (size_t i = 0; i < c->Ports.size(); ++i) {
+    for (auto i = 0; i < c->Ports.size(); ++i) {
         if (compStatus.ports[i].removed) {
             delete c->Ports[i]->Connection;
         }
@@ -2282,7 +2282,7 @@ void Schematic::deleteComp(Component *c, bool remove_orphans)
 Schematic::CompDisconnectResult Schematic::disconnectComp(Component* component, bool remove_orphans, bool keepNodeLabel)
 {
     CompDisconnectResult result;
-    for (auto* port : component->Ports) {
+    for (auto* port : std::as_const(component->Ports)) {
         result.ports.push_back(disconnectNode(port->Connection,  component, remove_orphans, keepNodeLabel));
     }
     return result;
@@ -2299,14 +2299,14 @@ void Schematic::decoupleComp(Component* component, bool keepNodeLabel)
 {
     // store all port position
     std::vector<QPoint> portPos;
-    for (auto* port : component->Ports) {
+    for (auto* port : std::as_const(component->Ports)) {
         portPos.push_back(port->Connection->center());
     }
 
     auto compStatus = disconnectComp(component, /*remove_orphans=*/true, keepNodeLabel);
 
     // Loop over all ports, and create new (isolated) nodes for all ports that got disconnected
-    for (size_t i = 0; i < component->Ports.size(); ++i) {
+    for (auto i = 0; i < component->Ports.size(); ++i) {
         if (compStatus.ports[i].disconnected) {
             Node* new_node = createNode(portPos[i]);
             new_node->connect(component);
@@ -2415,7 +2415,6 @@ int Schematic::placeNodeLabel(WireLabel *pl)
 // labeled element.
 Element* Schematic::getWireLabel(Node *pn_)
 {
-    Wire *pw;
     Node *pNode;
     std::list<Node*> Cons;
 

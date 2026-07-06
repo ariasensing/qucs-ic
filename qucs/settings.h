@@ -42,7 +42,7 @@ public:
       return value(key).value<T>();
     }
 
-    for (auto alias : m_Aliases[key]) {
+    for (const auto &alias : m_Aliases[key]) {
       if (contains(alias)) {
         // qDebug() << "Found alias: " << alias;
         return value(alias).value<T>();

@@ -497,8 +497,8 @@ DiagramDialog::DiagramDialog(Diagram *d, QWidget *parent, Graph *currentGraph)
       GridOn->setChecked(Diag->xAxis.GridOn);
       if (!Diag->xAxis.GridOn)
         slotSetGridBox(0);
-      connect(GridOn, &QCheckBox::stateChanged, this,
-              &DiagramDialog::slotSetGridBox);
+        // connect(GridOn, &QCheckBox::checkStateChanged, this, &DiagramDialog::slotSetGridBox); - Use this after moving macOS to Qt > 6.7
+      connect(GridOn, &QCheckBox::stateChanged, this, &DiagramDialog::slotSetGridBox); // Drop this after moving macOS to Qt > 6.7
     } else {
       GridOn = 0;
       GridColorButt = 0;
@@ -676,8 +676,8 @@ DiagramDialog::DiagramDialog(Diagram *d, QWidget *parent, Graph *currentGraph)
     manualX = new QCheckBox(tr("manual")); //, VBox1);
     VBox1Layout->addWidget(manualX);
     VBox1->setLayout(VBox1Layout);
-    connect(manualX, QOverload<int>::of(&QCheckBox::stateChanged), this,
-            &DiagramDialog::slotManualX);
+    // connect(manualX, &QCheckBox::checkStateChanged, this, &DiagramDialog::slotManualX); - Use this after moving macOS to Qt > 6.7
+    connect(manualX, &QCheckBox::stateChanged, this, &DiagramDialog::slotManualX); // Drop this after moving macOS to Qt > 6.7
 
     QWidget *VBox2 = new QWidget();
     axisXLayout->addWidget(VBox2);
@@ -719,8 +719,8 @@ DiagramDialog::DiagramDialog(Diagram *d, QWidget *parent, Graph *currentGraph)
     VBox5Layout->addStretch();
     manualY = new QCheckBox(tr("manual"));
     VBox5Layout->addWidget(manualY);
-    connect(manualY, QOverload<int>::of(&QCheckBox::stateChanged), this,
-            &DiagramDialog::slotManualY);
+    // connect(manualY, &QCheckBox::checkStateChanged, this, &DiagramDialog::slotManualY); - Use this after moving macOS to Qt > 6.7
+    connect(manualY, &QCheckBox::stateChanged, this, &DiagramDialog::slotManualY); // Drop this after moving macOS to Qt > 6.7
 
     VBox5->setLayout(VBox5Layout);
 
@@ -768,8 +768,8 @@ DiagramDialog::DiagramDialog(Diagram *d, QWidget *parent, Graph *currentGraph)
     VBox9Layout->addStretch();
     manualZ = new QCheckBox(tr("manual"));
     VBox9Layout->addWidget(manualZ);
-    connect(manualZ, QOverload<int>::of(&QCheckBox::stateChanged), this,
-            &DiagramDialog::slotManualZ);
+    // connect(manualZ, &QCheckBox::checkStateChanged, this, &DiagramDialog::slotManualZ); - Use this after moving macOS to Qt > 6.7
+    connect(manualZ, &QCheckBox::stateChanged, this, &DiagramDialog::slotManualZ); // Drop this after moving macOS to Qt > 6.7
 
     VBox9->setLayout(VBox9Layout);
 
@@ -917,7 +917,7 @@ DiagramDialog::DiagramDialog(Diagram *d, QWidget *parent, Graph *currentGraph)
   // ...........................................................
   // put all graphs into the ListBox
   Row = 0;
-  for (Graph *pg : Diag->Graphs) {
+  for (Graph *pg : std::as_const(Diag->Graphs)) {
     GraphList->setRowCount(Row + 1);
 
     // Populate the table row with graph properties
@@ -1842,7 +1842,7 @@ void DiagramDialog::slotSetGraphStyle(int style) {
  *
  */
 void DiagramDialog::copyDiagramGraphs() {
-  for (Graph *pg : Diag->Graphs)
+  for (Graph *pg : std::as_const(Diag->Graphs))
     Graphs.emplace_back(pg->sameNewOne());
 }
 

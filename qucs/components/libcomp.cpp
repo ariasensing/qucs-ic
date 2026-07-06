@@ -312,7 +312,7 @@ QString LibComp::netlist()
   QString s = "Sub:"+Name;   // output as subcircuit
 
   // output all node names
-  for (Port *p1 : Ports)
+  for (Port *p1 : std::as_const(Ports))
     s += " "+p1->Connection->Name;   // node names
 
   // output property
@@ -366,7 +366,7 @@ QString LibComp::spice_netlist(spicecompat::SpiceDialect dialect /* = spicecompa
     Q_UNUSED(dialect);
 
     QString s = SpiceModel + Name + " " + "0"; // connect ground of subckt to circuit ground
-    for (Port *p1 : Ports)
+    for (Port *p1 : std::as_const(Ports))
       s += " "  + spicecompat::normalize_node_name(p1->Connection->Name);   // node names
     s += " " + createType();
 
@@ -395,7 +395,7 @@ QString LibComp::getSpiceLibrary()
   if (r<0) {
     return QString();
   }
-  for (const auto &file : attach) {
+  for (const auto &file : std::as_const(attach)) {
     if (file.endsWith(".cir", Qt::CaseInsensitive) ||
         file.endsWith(".ckt", Qt::CaseInsensitive) ||
         file.endsWith(".lib", Qt::CaseInsensitive) ||

@@ -89,7 +89,7 @@ Diode::Diode()
   Props.append(new Property("CompName", "Generic", false,
                             QObject::tr("Component name in library")));
 
-  createSymbol();
+  Diode::createSymbol();
   tx = x1+4;
   ty = y2+4;
   Model = "Diode";
@@ -110,7 +110,7 @@ QString Diode::spice_netlist(spicecompat::SpiceDialect dialect /* = spicecompat:
     QList<int> pin_seq;
     pin_seq<<1<<0; // Pin sequence: CBE
     // output all node names
-    for (int pin : pin_seq) {
+    for (int pin : std::as_const(pin_seq)) {
         QString nam = Ports.at(pin)->Connection->Name;
         if (nam=="gnd") nam = "0";
         s += " "+ nam;   // node names
@@ -149,15 +149,14 @@ QString Diode::spice_netlist(spicecompat::SpiceDialect dialect /* = spicecompat:
     }
 
     if (getProperty("UseGlobTemp")->Value == "yes") {
-      s += QStringLiteral(" DMOD_%1 AREA=%2\n").arg(Name).arg(getProperty("Area")->Value);
+      s += QStringLiteral(" DMOD_%1 AREA=%2\n").arg(Name, getProperty("Area")->Value);
     } else {
-      s += QStringLiteral(" DMOD_%1 AREA=%2 Temp=%3\n").arg(Name).arg(getProperty("Area")->Value)
-      .arg(getProperty("Temp")->Value);
+      s += QStringLiteral(" DMOD_%1 AREA=%2 Temp=%3\n").arg(Name, getProperty("Area")->Value, getProperty("Temp")->Value);
     }
 
     if (dialect != spicecompat::CDL)
     {
-      s += QStringLiteral(".MODEL DMOD_%1 D (%2)\n").arg(Name).arg(par_str);
+      s += QStringLiteral(".MODEL DMOD_%1 D (%2)\n").arg(Name, par_str);
     }
 
     return s;

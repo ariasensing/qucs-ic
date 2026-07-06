@@ -54,7 +54,7 @@ QStringList getOptionsFromString(const QString& description)
   if (start != -1 && end != -1)
   {
     list = description.mid(start + 1, end - start - 1).split(',');
-    for(auto entry : list)
+    for(const auto &entry : std::as_const(list))
       options << entry.trimmed(); // QString::trimmed flagged by valgrind leak check
   }
 
@@ -92,7 +92,7 @@ public:
     setLayout(layout);
 
     if (func)
-      connect(mButton, &QPushButton::released, [=]() { if (dialog) (dialog->*func)(mEdit); });    
+      connect(mButton, &QPushButton::released, [this, dialog, func]() { if (dialog) (dialog->*func)(mEdit); });
   }
   ~CompoundWidget()
   {
@@ -189,7 +189,7 @@ class ParamLineEdit : public QLineEdit, public ParamWidget
       setValidator(validator);
       
       if (func)
-        connect(this, &QLineEdit::textEdited, [=]() { if (dialog) (dialog->*func)(mParam); });
+        connect(this, &QLineEdit::textEdited, [this, dialog, func]() { if (dialog) (dialog->*func)(mParam); });
     }
 
     void setEnabled(bool enabled) override
@@ -229,7 +229,7 @@ class ParamCombo : public QComboBox, public ParamWidget
       layout->addWidget(this, layout->rowCount() - 1, 1);
       
       if (func)
-        connect(this, &QComboBox::currentTextChanged, [=]() { if (dialog) (dialog->*func)(mParam); });
+        connect(this, &QComboBox::currentTextChanged, [this, dialog, func]() { if (dialog) (dialog->*func)(mParam); });
     }
 
     void setEnabled(bool enabled) override
@@ -565,7 +565,7 @@ ComponentDialog::ComponentDialog(Component* schematicComponent, Schematic* schem
       sweepTypeEnabledParams["lin"] = QStringList{"Sim", "Type", "Param", "Start", "Stop", "Step", "Points"};    
       sweepTypeEnabledParams["log"] = QStringList{"Sim", "Type", "Param", "Start", "Stop", "Step", "Points"};
       sweepTypeEnabledParams["list"] = QStringList{"Sim", "Type", "Param", "Values"};
-      sweepTypeSpecialLabels[qMakePair(QString("log"),QString("Step"))] = {"Points per decade"};
+      sweepTypeSpecialLabels[qMakePair(QString("log"),QString("Step"))] = "Points per decade";
 
       // Setup the widgets as per the stored type.
       sweepParamWidget["Sim"]->setOptions(getSimulationList(false));
@@ -637,7 +637,7 @@ ComponentDialog::ComponentDialog(Component* schematicComponent, Schematic* schem
 
     // Try to move the cursor to the editable cell if any cell is clicked.
     connect(propertyTable, &QTableWidget::cellClicked, 
-                [=](int row, int column) { (void)column; propertyTable->setCurrentCell(row, 1); } );
+                [this](int row, int column) { (void)column; propertyTable->setCurrentCell(row, 1); } );
   }
 
   // Add the dialog button widgets.
@@ -713,7 +713,7 @@ void ComponentDialog::updateSweepProperty(const QString& property)
 
   if (property == "All")
   {
-    for (auto property : component->Props)
+    for (auto property : std::as_const(component->Props))
     {
       // qDebug() << "Property name " << property->Name;
       if (sweepParamWidget.contains(property->Name))
@@ -865,7 +865,7 @@ void ComponentDialog::updateEqnEditor()
   // Save plain text components (e.g. systemcommand component)
   if (isPlainText)
   {
-    for (auto prop : qAsConst(component->Props)) {
+    for (auto prop : std::as_const(component->Props)) {
       if (prop->Name == "cmd"){
         eqnEditor->setPlainText(prop->Value);
       }
@@ -884,7 +884,7 @@ void ComponentDialog::updateEqnEditor()
 
   QString eqnList;
 
-  for (auto property : component->Props)
+  for (auto property : std::as_const(component->Props))
   {
     if (eqnSimCombo && property->Name == "Simulation")
       eqnSimCombo->setCurrentText(property->Value);
@@ -912,7 +912,7 @@ void ComponentDialog::writeEquation()
     // The command text is stored as-is — no parsing or transformation is applied,
     // preserving multi-line scripts, comments, and blank lines exactly as the user typed them.
 
-    for (auto prop : qAsConst(component->Props)) {
+    for (auto prop : std::as_const(component->Props)) {
       if (prop->Name == "cmd") {
         prop->Value = eqnEditor->document()->toPlainText().trimmed();
       }
@@ -955,7 +955,7 @@ void ComponentDialog::writeEquation()
   QString text = eqnEditor->document()->toPlainText();
   QStringList lines = text.split('\n', Qt::SkipEmptyParts);
   
-  for (const QString& line : qAsConst(lines))
+  for (const QString& line : std::as_const(lines))
   {
     QString LHS = line.section('=',0,0).trimmed();
     QString RHS = line.section('=',1).trimmed();
@@ -1005,7 +1005,7 @@ void ComponentDialog::slotApplyButton()
       // Note: Order is very important here. The component expects parameters in a 
       // specific order depending on which sweep parameters are valid for the component
       // type.
-      for (auto param : sweepProperties) 
+      for (const auto &param : std::as_const(sweepProperties))
       {
         /* TODO: ***HACK*** to be fixed */
         QString temp = param;
@@ -1022,7 +1022,7 @@ void ComponentDialog::slotApplyButton()
     }
 
     row = 0;
-    for (Property* property : component->Props)
+    for (Property* property : std::as_const(component->Props))
     {
       if ((property->simulators & QucsSettings.DefaultSimulator) != QucsSettings.DefaultSimulator) {
         continue;
@@ -1266,7 +1266,7 @@ void ComponentDialog::slotFillFromSpice()
   // Make a copy of the componenty type and properties.
   Component tempComponent;
   tempComponent.SpiceModelcards = component->SpiceModelcards;
-  for (auto property : component->Props)
+  for (auto property : std::as_const(component->Props))
     tempComponent.Props.append(new Property(property->Name, property->Value, property->display, property->Description));
 
   // Populate the temporary component from the spice model.
@@ -1279,7 +1279,7 @@ void ComponentDialog::slotFillFromSpice()
   }
 
   // Cleanup.
-  for (auto property : tempComponent.Props)
+  for (auto property : std::as_const(tempComponent.Props))
     delete property; 
 
   delete dlg;

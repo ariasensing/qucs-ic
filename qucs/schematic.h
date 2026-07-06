@@ -116,7 +116,7 @@ public:
 
   void setName(const QString&);
   void setChanged(bool, bool fillStack=false, char Op='*');
-  void print(QPrinter*, QPainter*, bool printAll, bool fitToPage, QMargins margins={});
+  void print(QPrinter*, QPainter*, bool printAll, bool fitToPage, QMargins margins={}) override;
 
   void paintSchToViewpainter(QPainter* painter, bool printAll);
 

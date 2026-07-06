@@ -1246,6 +1246,7 @@ void QucsSettingsDialog::slotAddPathWithSubFolders()
   layout->addWidget(pathList);
 
   // Keep "Select all" checkbox in sync with individual items
+  // Replace QCheckBox::stateChanged by QCheckBox::checkStateChanged when moving macOS build to Qt >= 6.7
   connect(selectAllCheck, &QCheckBox::stateChanged, [pathList](int state) {
     if (state == Qt::PartiallyChecked){
       return;

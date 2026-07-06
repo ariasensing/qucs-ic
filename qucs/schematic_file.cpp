@@ -39,7 +39,6 @@
 #include "components/vhdlfile.h"
 #include "components/verilogfile.h"
 #include "components/libcomp.h"
-#include "components/sparamfile.h"
 #include "module.h"
 #include "misc.h"
 #include "extsimkernels/abstractspicekernel.h"
@@ -194,7 +193,7 @@ bool Schematic::pasteFromClipboard(QTextStream *stream, std::list<Element*> *pe)
   // Check for file URLs (drag and drop from file manager)
   if (mimeData->hasUrls()) {
     QList<QUrl> urls = mimeData->urls();
-    for (const QUrl& url : urls) {
+    for (const QUrl& url : std::as_const(urls)) {
       if (url.isLocalFile()) {
         QString filePath = url.toLocalFile();
         if (isImageFilePath(filePath)) {
@@ -832,8 +831,19 @@ int Schematic::saveDocument()
       // Append _sym.json into _props.json, save into _symbol.json
       QFile f1(QucsSettings.QucsWorkDir.filePath(fileBase()+"_props.json"));
       QFile f2(QucsSettings.QucsWorkDir.filePath(fileBase()+"_sym.json"));
-      f1.open(QIODevice::ReadOnly | QIODevice::Text);
-      f2.open(QIODevice::ReadOnly | QIODevice::Text);
+
+      if (!f1.open(QIODevice::ReadOnly | QIODevice::Text)) {
+        QMessageBox::critical(this, tr("Error"),
+                              tr("Cannot open %1").arg(f1.fileName()));
+        return -1;
+      }
+
+      if (!f2.open(QIODevice::ReadOnly | QIODevice::Text)) {
+        QMessageBox::critical(this, tr("Error"),
+                              tr("Cannot open %1").arg(f2.fileName()));
+        f1.close();
+        return -1;
+      }
 
       QString dat1 = QString(f1.readAll());
       QString dat2 = QString(f2.readAll());
@@ -843,7 +853,14 @@ int Schematic::saveDocument()
       finalJSON = finalJSON.replace("}{", "");
 
       QFile f3(QucsSettings.QucsWorkDir.filePath(fileBase()+"_symbol.json"));
-      f3.open(QIODevice::WriteOnly | QIODevice::Text);
+      if (!f3.open(QIODevice::WriteOnly | QIODevice::Text)) {
+        QMessageBox::critical(this, tr("Error"),
+                              tr("Cannot write %1").arg(f3.fileName()));
+        f1.close();
+        f2.close();
+        return -1;
+      }
+
       QTextStream out(&f3);
       out << finalJSON;
 
@@ -942,7 +959,7 @@ bool Schematic::loadProperties(QTextStream *stream)
 void Schematic::simpleInsertComponent(Component *c)
 {
   // connect every node of component
-  for (Port *pp : c->Ports) {
+  for (Port *pp : std::as_const(c->Ports)) {
     Node* pn = provideNode(c->cx + pp->x, c->cy + pp->y);
 
     pn->connect(c);  // connect schematic node to component node
@@ -1516,7 +1533,6 @@ void Schematic::propagateNode(QStringList& Collect,
   Cons.clear();
 }
 
-#include <iostream>
 
 /*!
  * \brief Schematic::throughAllComps
@@ -1575,7 +1591,7 @@ bool Schematic::throughAllComps(QTextStream *stream, int& countInit,
         {
           i = 0;
           // apply in/out signal types of subcircuit
-          for (Port *pp : pc->Ports)
+          for (Port *pp : std::as_const(pc->Ports))
           {
             pp->Type = it.value().PortTypes[i];
             pp->Connection->DType = pp->Type;
@@ -1613,7 +1629,7 @@ bool Schematic::throughAllComps(QTextStream *stream, int& countInit,
       {
         i = 0;
         // save in/out signal types of subcircuit
-        for (Port *pp : pc->Ports)
+        for (Port *pp : std::as_const(pc->Ports))
         {
             //if(i>=d->a_PortTypes.count())break;
             pp->Type = d->a_PortTypes[i];
@@ -1719,8 +1735,7 @@ bool Schematic::throughAllComps(QTextStream *stream, int& countInit,
       s = pc->Props.front()->Value;
       if(s.isEmpty()) {
         ErrText->appendPlainText(QObject::tr("ERROR: No file name in %1 component \"%2\".").
-          arg(pc->Model).
-          arg(pc->Name));
+          arg(pc->Model, pc->Name));
         return false;
       }
       QString f = pc->getSubcircuitFile();
@@ -2149,7 +2164,7 @@ bool Schematic::createSubNetlist(QTextStream *stream, int& countInit,
       if (!kern->checkSchematic(err_lst)) {
           QString s = QStringLiteral("Subcircuit %1 contains SPICE-incompatible components.\n"
                               "Check these components: %2 \n")
-                  .arg(this->a_DocName).arg(err_lst.join("; "));
+                  .arg(this->a_DocName, err_lst.join("; "));
           ErrText->insertPlainText(s);
           return false;
       }
