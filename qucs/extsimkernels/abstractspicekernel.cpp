@@ -1756,6 +1756,8 @@ QString AbstractSpiceKernel::collectSpiceLibs(Schematic* sch)
   QStringList collected_spicelib;
   for(Component *pc : sch->a_DocComps) {
     if (pc->Model == "Sub") {
+      // skip if component is disabled
+      if (pc->isActive != COMP_IS_ACTIVE) continue;
       Schematic *sub = new Schematic(0, ((Subcircuit *)pc)->getSubcircuitFile());
       if(!sub->loadDocument())      // load document if possible
       {
