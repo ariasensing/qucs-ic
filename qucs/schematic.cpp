@@ -487,6 +487,12 @@ void Schematic::drawDcBiasPoints(QPainter* painter) {
         if (pn->Name.isEmpty())
             continue;
 
+        // Skip render labels on voltage probe pins
+        // because probe pin labels duplicates node voltage
+        if (pn->components().size() ==  1) {
+          if (pn->components().front()->Model == "VProbe") continue;
+        }
+
         QString value = misc::formatValue(pn->Name, 4);
 
         x = pn->cx;
