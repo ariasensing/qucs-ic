@@ -5,6 +5,7 @@
 #include <QFrame>
 #include <qucsdoc.h>
 
+
 namespace Ui {
 class icLayout;
 }
@@ -15,12 +16,12 @@ class icLayout : public QDialog, public QucsDoc {
   Q_OBJECT
 
 public:
-  explicit icLayout(QucsApp*, const QString&);
+  explicit icLayout(QucsApp*, class Schematic*, const QString&);
   ~icLayout();
 
   void  setName(const QString&);
-  bool  load() { return true; }
-  int   save() { return 0; }
+  bool  load() override;
+  int   save() override;
   void  print(QPrinter*, QPainter*, bool, bool, QMargins) {}
   void  becomeCurrent(bool) {}
   double zoomBy(double) { return 1.0; }

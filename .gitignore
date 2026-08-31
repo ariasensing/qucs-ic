@@ -65,4 +65,6 @@ qucs-s-spar-viewer/html/
 
 qucs-s-spar-viewer/latex/
 
+OpenVAF-Reloaded/*
+
 *.bak

@@ -941,7 +941,7 @@ bool Schematic::loadProperties(QTextStream *stream)
     else if (cstr == "Layout")
     {
       // We create the layout doc
-      icLayout* layout = ( new icLayout(a_App, nstr));
+      icLayout* layout = ( new icLayout(a_App, this, nstr));
       if (layout==nullptr)
       {
         QMessageBox::critical(nullptr, QObject::tr("Error"),

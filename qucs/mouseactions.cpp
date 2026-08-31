@@ -674,6 +674,7 @@ void MouseActions::rightPressMenu(Schematic *Doc, QMouseEvent *Event, float fX, 
             //to QucsMain->symEdit->addTo(ComponentMenu);
             // see http://qt-project.org/doc/qt-4.8/qaction-qt3.html#addTo
             ComponentMenu->addAction(QucsMain->symEdit);
+            ComponentMenu->addAction(QucsMain->layoutEdit);
             ComponentMenu->addAction(QucsMain->fileSettings);
         }
         if (!QucsMain->moveText->isChecked())

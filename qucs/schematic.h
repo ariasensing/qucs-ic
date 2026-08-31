@@ -363,6 +363,7 @@ protected slots:
 
 private:
   // Associates an icLayout to the current schematic
+  QString   a_LayoutFile;
   icLayout  *a_Layout;
 
   // Flag to define which view to use for simulation
@@ -608,6 +609,17 @@ public:
    * associated layout, it does nothing
    */
   void      setSimulationView(SIM_VIEW view);
+  /**
+   * @brief getLayoutFilename
+   * @return The layout file. If the layout file is missing it is empty
+   */
+
+  QString   getLayoutFilename() {return a_LayoutFile;}
+  /**
+   * @brief setLayoutFilename Set the name of the current layout file
+   * @param fname
+   */
+  void      setLayoutFilename(QString& fname) {a_LayoutFile = fname;}
 private:
   int  saveDocument();
 

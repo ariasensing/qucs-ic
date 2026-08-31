@@ -543,7 +543,7 @@ void  Schematic::rebuildAll()
       if (w==nullptr) continue;
       QVector<Conductor*> connected_to_labeled_wire;
       w->getConnectedConductors(connected_to_labeled_wire);
-      for (Conductor* connw : connected_to_labeled_wire)
+      for (const auto& connw : std::as_const(connected_to_labeled_wire))
       {
         if (connw==nullptr) continue;
 
@@ -632,7 +632,7 @@ void  Schematic::rebuildConnectionAfterLabelEdit(Conductor* cond)
   {
     // Create a new set
     other_id = get_available_id();
-    for (const auto&c : connection_set)
+    for (const auto&c : std::as_const(connection_set))
       if (c!=nullptr) c->setNetID(other_id);
 
     m_connection_set[other_id] = connection_set;
@@ -640,7 +640,7 @@ void  Schematic::rebuildConnectionAfterLabelEdit(Conductor* cond)
   }
 
   // We must join the current set to the previous one
-  for (const auto& c : connection_set)
+  for (const auto& c : std::as_const(connection_set))
     if (c!=nullptr)
       c->setNetID(other_id);
   m_connection_set[other_id].append(connection_set);

@@ -113,5 +113,6 @@
         <file>bitmaps/svg/nocore.svg</file>
         <file>bitmaps/svg/ImagePainting.svg</file>
         <file>bitmaps/svg/systemcommand.svg</file>
+        <file>bitmaps/svg/iclayout.svg</file>
     </qresource>
 </RCC>

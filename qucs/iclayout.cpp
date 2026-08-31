@@ -3,24 +3,55 @@
 #include "schematic.h"
 #include "dbManager.h"          // optional, for undo/redo
 
-
-icLayout::icLayout(QucsApp* app, const QString& fname) : QDialog(nullptr), QucsDoc(app, fname, LAYOUT),
+/**
+ * @brief icLayout::icLayout
+ * @param app
+ * @param owner
+ * @param fname
+ */
+icLayout::icLayout(QucsApp* app, Schematic* owner, const QString& fname) : QDialog(nullptr), QucsDoc(app, fname, LAYOUT),
   ui(new Ui::icLayout),
   a_Schematic(nullptr)
 {
+  QString filename = fname;
   ui->setupUi(this);
   this->setProperty("DOC_TYPE",(uint16_t)(doc_type));
-}
 
+  attachToSchematic(owner);
+
+  if (fname.isEmpty())
+    if ((owner!=nullptr)&&(!owner->getDocName().isEmpty()))
+    {
+      QFileInfo Info(owner->getDocName());
+      QString base = Info.completeBaseName();
+      filename = base.append(".lay");
+    }
+
+  if (fname.isEmpty())
+      filename = QString("[NONAME]");
+
+  if (!filename.isEmpty())
+  {
+    icLayout::load();
+  }
+}
+/**
+ * @brief icLayout::~icLayout
+ */
 icLayout::~icLayout() {
   delete ui;
   if (a_Schematic!=nullptr)
     a_Schematic->attachLayoutView();
 }
-
+/**
+ * @brief icLayout::setName
+ * @param Name_
+ */
 void  icLayout::setName(const QString& Name_)
 {
   a_DocName = Name_;
+  if (a_Schematic!=nullptr)
+    a_Schematic->setLayoutFilename(a_DocName);
 }
 
 /**
@@ -49,4 +80,32 @@ void icLayout::attachToSchematic(Schematic *schematic)
     a_Schematic = schematic;
     a_Schematic->attachLayoutView(this);
   }
+}
+
+/**
+ * @brief icLayout::load
+ * @return
+ */
+bool  icLayout::load()
+{
+
+  return false;
+
+  // If everything was ok, we may signal the owner that we have a valid filename
+  if (a_Schematic!=nullptr)
+    a_Schematic->setLayoutFilename(a_DocName);
+
+  return true;
+}
+
+/**
+ * @brief icLayout::save
+ * @return
+ */
+int   icLayout::save()
+{
+
+  // update name according to saved file
+  if (a_Schematic!=nullptr) a_Schematic->setLayoutFilename(a_DocName);
+  return 0;
 }

@@ -139,6 +139,7 @@ protected:
 public slots:
   void slotFileNew();         // generate a new schematic in the view TabBar
   void slotLayoutNew();       // generate a new layout in the view Tabbar
+  void slotLayoutEdit();      // edit the layout for the current schematic
   void slotTextNew();         // generate a new text editor in the view TabBar
   void slotSymbolNew();       // create new symbol
   void slotFileOpen();        // open a document
@@ -281,7 +282,7 @@ public:
       *fileCloseAllLeft, *fileCloseAllRight, *fileCloseAll, *fileExamples,
       *fileSettings, *filePrint, *fileQuit, *projNew, *projOpen, *projDel,
       *projClose, *applSettings, *refreshSchPath, *editCut, *editCopy, *magAll,
-      *magSel, *magOne, *magMinus, *filePrintFit, *tune, *symEdit, *intoH,
+      *magSel, *magOne, *magMinus, *filePrintFit, *tune, *symEdit, *layoutEdit, *intoH,
       *popH, *simulate, *save_netlist, *dpl_sch, *undo, *redo, *dcbias,
       *saveCdlNetlist, *cdlSettings;
   //Layout

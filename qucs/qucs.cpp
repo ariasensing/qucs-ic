@@ -87,6 +87,7 @@
 #include "symbolwidget.h"
 #include "diagram.h"
 #include "extsimkernels/CdlSettingsDialog.h"
+#include "schematic.h"
 
 QucsApp::QucsApp(bool netlist2Console) :
   a_netlist2Console(netlist2Console)
@@ -1668,14 +1669,14 @@ void QucsApp::slotButtonProjDel()
 
 // ################################################################
 // #####  Functions that handle the file operations for the   #####
-// #####  documents.                                          #####
+// #####  documents.   LAYOUT SECTION                         #####
 // ################################################################
 void QucsApp::slotLayoutNew()
 {
   statusBar()->showMessage(tr("Creating new layout..."));
   slotHideEdit(); // disable text edit of component property
 
-  icLayout *d = new icLayout(this, "");
+  icLayout *d = new icLayout(this, nullptr, "");
   int i = addDocumentTab(d);
   DocumentTab->setCurrentIndex(i);
 
@@ -1683,6 +1684,66 @@ void QucsApp::slotLayoutNew()
 
 }
 
+void QucsApp::slotLayoutEdit()
+{
+  QWidget *w = DocumentTab->currentWidget();
+  if (w==nullptr) return;
+
+  if (!isSchematicDocument(w)) return;
+
+  Schematic*  SchDoc = (Schematic*)(w);
+  // We may have
+  // 1. File and layout view
+  // 2. File and no layout view
+  // 3. No file -> create layout file and layout view
+
+  QString layoutFile = SchDoc->getLayoutFilename();
+
+  icLayout* schLayout = SchDoc->getLayoutView();
+
+  // We may have a view with no file name (if it wasn't saved)
+  if (schLayout!=nullptr)
+  {
+    for (int z = 0; z < DocumentTab->count(); z++)
+      if (DocumentTab->widget(z)==schLayout)
+      {
+        DocumentTab->setCurrentIndex(z);
+        SchDoc->becomeCurrent(true);
+        SchDoc->viewport()->update();
+        return;
+      }
+  }
+
+  if (layoutFile.isEmpty())
+  {
+    if (QMessageBox::question(this,
+                              tr("Create Layout?"),
+                              tr("Current schematic does not have a layout view. Do you want to create one?"))==QMessageBox::No)
+          return;
+  }
+  // Here we need to create a view
+  SchDoc->createLayoutView();
+
+  schLayout = SchDoc->getLayoutView();
+
+  if (schLayout==nullptr)
+  {
+    QMessageBox::critical(this,"Error","Error while creating layout view.");
+    return;
+  }
+
+
+  int i = DocumentTab->addTab(schLayout, SchDoc->getLayoutFilename());
+  DocumentTab->setCurrentIndex(i);
+//    SchDoc->becomeCurrent(true);
+//    SchDoc->viewport()->update();
+    statusBar()->showMessage(tr("Ready."));
+
+}
+// ################################################################
+// #####  Functions that handle the file operations for the   #####
+// #####  documents.                                          #####
+// ################################################################
 void QucsApp::slotFileNew()
 {
   statusBar()->showMessage(tr("Creating new schematic..."));

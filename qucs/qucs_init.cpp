@@ -66,7 +66,7 @@ void QucsApp::initActions() {
   connect(symNew, SIGNAL(triggered()), SLOT(slotSymbolNew()));
 
   layoutNew =
-      new QAction(QIcon((":/bitmaps/svg/symnew.svg")), tr("New layout"), this);
+      new QAction(QIcon((":/bitmaps/svg/iclayout.svg")), tr("New layout"), this);
   layoutNew->setStatusTip(tr("Creates a new layout"));
   layoutNew->setWhatsThis(tr("New\n\nCreates a new schematic symbol document"));
   connect(layoutNew, SIGNAL(triggered()), SLOT(slotLayoutNew()));
@@ -173,6 +173,16 @@ void QucsApp::initActions() {
   connect(TabLastAction, SIGNAL(triggered()), SLOT(slotLastTab()));
   this->addAction(TabLastAction);
   ////////////////////////////////////////////////////////////////////////
+  /// LAYOUT EDITING
+  ///
+  layoutEdit = new QAction(QIcon(":/bitmaps/svg/iclayout.svg"), tr("Edit &Layout"),this);
+  layoutEdit->setShortcut(Qt::Key_F10);
+  layoutEdit->setStatusTip("Create or Edit the layout for the current schematic");
+  layoutEdit->setWhatsThis(
+      tr("Edit Circuit Layout\n\nEdits the layout view for this schematic"));
+  connect(layoutEdit, SIGNAL(triggered()), SLOT(slotLayoutEdit()));
+
+
 
   symEdit = new QAction(tr("&Edit Circuit Symbol"), this);
   symEdit->setShortcut(Qt::Key_F9);

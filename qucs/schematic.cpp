@@ -90,6 +90,7 @@ Schematic::Schematic(QucsApp *App_, const QString &Name_) :
     a_undoSymbolIdx(0),
     // The 'i' means state for being unchanged.
     a_undoSymbol((QVector<QString*>() << new QString(" i\n</>\n</>\n</>\n</>\n"))),
+    a_LayoutFile(""),
     a_Layout(nullptr),
     a_simulationView(NETLIST),
     a_previousCursorPosition(),
@@ -2233,10 +2234,11 @@ bool Schematic::checkDplAndDatNames()
  * @brief Schematic::createLayoutView
  * @return
  */
-bool  Schematic::createLayoutView()
+bool  Schematic:: createLayoutView()
 {
   if (a_Layout!=nullptr) return false;
-  a_Layout = new icLayout(a_App, a_DocName);
+  a_Layout = new icLayout(a_App, this, a_LayoutFile);
+
   return (a_Layout != nullptr);
 }
 /**
