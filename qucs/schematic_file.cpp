@@ -45,6 +45,7 @@
 #include "extsimkernels/s2spice.h"
 #include "osdi/osdi_0_3.h"
 
+#include "iclayout.h"
 
 // Here the subcircuits, SPICE components etc are collected. It must be
 // global to also work within the subcircuits.
@@ -703,7 +704,7 @@ int Schematic::saveDocument()
   stream << "  <Script=" << a_Script << ">\n";
   stream << "  <RunScript=" << a_SimRunScript << ">\n";
   stream << "  <showFrame=" << static_cast<int>(a_showFrame) << ">\n";
-
+  stream << "  <Layout=" << (a_Layout == nullptr ? "" : a_Layout->getDocName()) << ">\n";
   QString t;
   misc::convert2ASCII(t = a_Frame_Text0);
   stream << "  <FrameText0=" << t << ">\n";
@@ -937,6 +938,21 @@ bool Schematic::loadProperties(QTextStream *stream)
     else if(cstr == "FrameText1") misc::convert2Unicode(a_Frame_Text1 = nstr);
     else if(cstr == "FrameText2") misc::convert2Unicode(a_Frame_Text2 = nstr);
     else if(cstr == "FrameText3") misc::convert2Unicode(a_Frame_Text3 = nstr);
+    else if (cstr == "Layout")
+    {
+      // We create the layout doc
+      icLayout* layout = ( new icLayout(a_App, nstr));
+      if (layout==nullptr)
+      {
+        QMessageBox::critical(nullptr, QObject::tr("Error"),
+                              QObject::tr("Unable to open layout file"));
+        // Allow reading to continue. We may still open a schematic if
+        // the layout file went wrong
+      }
+
+      else
+      attachLayoutView(layout);
+    }
     else {
       QMessageBox::critical(nullptr, QObject::tr("Error"),
       QObject::tr("Format Error:\nUnknown property: ")+cstr);
@@ -1036,6 +1052,8 @@ bool Schematic::loadWires(QTextStream *stream, std::list<Element*> *List)
     if(Line.isEmpty()) continue;
 
     w = new Wire();
+    w->setSchematicOwner(this);
+
     if(!w->load(Line)) {
       QMessageBox::critical(nullptr, QObject::tr("Error"),
       QObject::tr("Format Error:\nWrong 'wire' line format!"));
@@ -1263,7 +1281,8 @@ bool Schematic::loadDocument()
     if(Line == "<Paintings>") {
       if (!loadPaintings(&stream, &a_DocPaints)) { file.close(); return false; }
     }
-    else {
+    else
+    {
        qDebug() << Line;
        QMessageBox::critical(nullptr, QObject::tr("Error"),
       QObject::tr("File Format Error:\nUnknown field!"));
@@ -1336,6 +1355,7 @@ bool Schematic::rebuild(QString *s)
   a_DocDiags.clear();
   a_DocPaints.clear();
 
+
   QString Line;
   QTextStream stream(s, QIODevice::ReadOnly);
   Line = stream.readLine();  // skip identity byte
@@ -1345,6 +1365,8 @@ bool Schematic::rebuild(QString *s)
   if(!loadWires(&stream))  return false;
   if (!loadDiagrams(&stream, &a_DocDiags)) return false;
   if (!loadPaintings(&stream, &a_DocPaints)) return false;
+  // Rebuild the connection set.
+  rebuildAll();
 
   return true;
 }

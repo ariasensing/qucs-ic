@@ -33,6 +33,7 @@
 #include "textdoc.h"
 
 #include "misc.h"
+#include "iclayout.h"
 
 // just dummies for empty lists
 std::list<Wire*> SymbolWires;
@@ -52,7 +53,7 @@ inline QRect includePoint(const QRect& rect, const QPoint& point) {
 }
 
 Schematic::Schematic(QucsApp *App_, const QString &Name_) :
-    QucsDoc(App_, Name_),
+    QucsDoc(App_, Name_, SCHEMATIC_SYMBOL),
     a_Wires(&a_DocWires),
     a_DocWires(),
     a_Nodes(&a_DocNodes),
@@ -89,6 +90,8 @@ Schematic::Schematic(QucsApp *App_, const QString &Name_) :
     a_undoSymbolIdx(0),
     // The 'i' means state for being unchanged.
     a_undoSymbol((QVector<QString*>() << new QString(" i\n</>\n</>\n</>\n</>\n"))),
+    a_Layout(nullptr),
+    a_simulationView(NETLIST),
     a_previousCursorPosition(),
     a_dragIsOkay(false),
     a_FileInfo(),
@@ -96,8 +99,11 @@ Schematic::Schematic(QucsApp *App_, const QString &Name_) :
     a_PortTypes(),
     a_isAnalog(false),
     a_isVerilog(false),
-    a_creatingLib(false)
+    a_creatingLib(false),
+    m_connection_set()
+
 {
+    this->setProperty("DOC_TYPE",(uint16_t)(doc_type));
     setFont(QucsSettings.font);
     a_GridColor = _settings::Get().item<QString>("GridColor");
 
@@ -1369,6 +1375,8 @@ bool Schematic::load()
 
     showAll();
     a_tmpViewX1 = a_tmpViewY1 = -200; // was used as temporary cache
+
+    rebuildAll();
     return true;
 }
 
@@ -1602,8 +1610,8 @@ int Schematic::adjustPortNumbers()
             // search for matching port symbol
             Painting* pp = nullptr;
             for (auto* painting : a_SymbolPaints)
-                if (painting->Name == ".PortSym ")
-                    if (((PortSymbol *) pp)->numberStr == Str) {
+                if (painting->Name == ".PortSym ") // it was pp)->number
+                    if (((PortSymbol *) painting)->numberStr == Str) {
                         pp = painting;
                         break;
                     }
@@ -2219,3 +2227,81 @@ bool Schematic::checkDplAndDatNames()
     }
     return false;
 }
+
+
+/**
+ * @brief Schematic::createLayoutView
+ * @return
+ */
+bool  Schematic::createLayoutView()
+{
+  if (a_Layout!=nullptr) return false;
+  a_Layout = new icLayout(a_App, a_DocName);
+  return (a_Layout != nullptr);
+}
+/**
+ * @brief deleteLayoutView. Detach the schematic from the corresponding layout
+ */
+void  Schematic::deleteLayoutView()
+{
+  if (a_Layout==nullptr) return;
+  a_Layout->attachToSchematic();
+  delete a_Layout;
+  a_Layout = nullptr;
+}
+/**
+ * @brief Schematic::attachLayoutView assign a layout view. If a previous one was present, it
+ * can be only reset
+ */
+void Schematic::attachLayoutView(icLayout* layout)
+{
+  if ((a_Layout!=nullptr)&&(layout==nullptr))
+  {
+    icLayout* oldlayout = a_Layout;
+    if (oldlayout == nullptr) return;
+    a_Layout = nullptr;
+    oldlayout->attachToSchematic();
+    return;
+  }
+
+  if ((a_Layout!=nullptr)&&(layout!=nullptr))
+    return;
+
+  if ((a_Layout==nullptr)&&(layout==nullptr))
+    return;
+
+  if ((a_Layout==nullptr)&&(layout!=nullptr))
+  {
+    a_Layout = layout;
+    a_Layout->attachToSchematic(this);
+  }
+}
+/**
+ * @brief getLayoutView: Get the pointer to the layout view
+ * @return the pointer of the layout view
+ */
+icLayout* Schematic::getLayoutView() const
+{
+  return a_Layout;
+}
+/**
+ * @brief Schematic::getSimulationView
+ * @return Get the current simulation view flag
+ */
+SIM_VIEW  Schematic::getSimulationView()
+{
+  return a_simulationView;
+}
+/**
+ * @brief setSimulationView Set the simulation view. If we don't have an
+ * associated layout, it does nothing
+ */
+void      Schematic::setSimulationView(SIM_VIEW view)
+{
+  if (a_Layout == nullptr)
+    a_simulationView = NETLIST;
+  else
+    a_simulationView = view;
+}
+
+

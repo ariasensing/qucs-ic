@@ -26,10 +26,11 @@ class QString;
 
 
 class Wire : public Conductor {
+private:
+  static unsigned int nMax_;
 public:
-  Wire(int _x1=0, int _y1=0, int _x2=0, int _y2=0);
-  Wire(Node* n1, Node* n2);
-
+  Wire(int _x1=0, int _y1=0, int _x2=0, int _y2=0, class Schematic* owner = nullptr);
+  Wire(Node* n1, Node* n2, class Schematic* owner = nullptr);
   void paint(QPainter* painter) const;
   void paintScheme(Schematic* sch) override;
 
@@ -59,12 +60,38 @@ public:
 
   void connectPort1(Node* n);
   void connectPort2(Node* n);
+  void connectPorts(Node* n1, Node* n2);
+
 
 private:
   void updateCenter() noexcept;
   void updateP1() noexcept;
   void updateP2() noexcept;
   void updatePorts() noexcept;
+
+
+public:
+  void        propagateNetId(unsigned int id,bool init)  override;
+  bool        is_connected_physically(Wire* wire, bool init)  override;
+  bool        is_connected_physically(Node* node, bool init)  override;
+  WireLabel*  has_global_label(bool init)               override;
+  void        getConnectedConductors(QVector<Conductor*>& current, bool init) override;
+
+  bool        is_connected_physically(Wire* wire) override;
+  bool        is_connected_physically(Node* node) override;
+  WireLabel*  has_global_label()             override;
+  void        getConnectedConductors(QVector<Conductor*>& current) override;
+  void        propagateNetId(unsigned int id)  override;
+  void        propagateVisitFlag(NodeVisit nv) override;
+
+  bool        isGnd(bool init) override;
+  bool        isGnd()          override;
+
+  void        dropLabel()      override;
+  bool        isNodeConnectedToGnd()  override {return false;}
+  bool        isNodeConnectedToComp() override {return false;}
+
+
 };
 
 #endif

@@ -34,6 +34,7 @@
 #include "qt3_compat/q3scrollview.h"
 #include <QVector>
 #include <QStringList>
+#include <QHash>
 
 class QTextStream;
 class QTextEdit;
@@ -106,8 +107,17 @@ enum class FrameSize : int {
     Letter_Portrait   = 8,
 };
 
+class icLayout;
 
-class Schematic : public Q3ScrollView, public QucsDoc {
+enum SIM_VIEW
+{
+  NETLIST,
+  EM_EXTRACTED
+};
+
+
+
+class Schematic : public Q3ScrollView, public QucsDoc  {
   Q_OBJECT
 
 public:
@@ -152,7 +162,7 @@ public:
   QPoint setOnGrid(const QPoint& p);
   void  setOnGrid(int&, int&);
   bool  elementsOnGrid();
-  bool  elementsOnGrid(Selection selection, bool doHeal=true);
+  bool  elementsOnGrid(Selection selection, bool doHeal=true);  
 
   /**
     Zoom around a "zooming center". Zooming center is a point on the canvas,
@@ -352,6 +362,13 @@ protected slots:
   void slotScrollRight();
 
 private:
+  // Associates an icLayout to the current schematic
+  icLayout  *a_Layout;
+
+  // Flag to define which view to use for simulation
+  SIM_VIEW   a_simulationView;
+
+
   // Describes the area occupied by all elements of schematic, i.e. it is
   // the union of bounding rectangles of all elements.
   // This rectangle exists in the same coordinate system as View*-rectangle
@@ -557,7 +574,40 @@ public:
 
   /// @brief Get the type of simulation from the schematic
   QString getSimType() const { return m_simType; }
-
+  /**
+   * @brief createLayoutView Create a new layout view. If a layout is already
+   * present, it does nothing
+   * @return false if a view was already present
+   */
+  bool  createLayoutView();
+  /**
+   * @brief deleteLayoutView. Detach the schematic from the corresponding layout which is deleted
+   */
+  void  deleteLayoutView();
+  /**
+   * @brief attachLayoutView. Attach this to a layout view
+   */
+  void attachLayoutView(icLayout* layout=nullptr);
+  /**
+   * @brief getLayoutView: Get the pointer to the layout view
+   * @return the pointer of the layout view
+   */
+  icLayout* getLayoutView() const;
+  /**
+   * @brief getEMLayoutView
+   * @return the pointer of the EM extracted layout view
+   */
+  icLayout* getEMLayoutView() const;
+  /**
+   * @brief getSimulationView
+   * @return The current view to be simulated
+   */
+  SIM_VIEW  getSimulationView();
+  /**
+   * @brief setSimulationView Set the simulation view. If we don't have an
+   * associated layout, it does nothing
+   */
+  void      setSimulationView(SIM_VIEW view);
 private:
   int  saveDocument();
 
@@ -594,6 +644,40 @@ private:
   bool a_creatingLib;
 
   QString m_simType; // Simulation type. Needed for the Pac (constant AC power source) to determine with network to build with Qucsator-RF
+
+
+public:
+  void                      addConductor(Conductor* );
+  void                      addConductorWithConnectionCheck(Conductor* );
+  void                      removeConductor(Conductor*);
+  QList<QVector<Conductor*>>splitSetAccordingToConnections(QVector<Conductor*>);
+
+  void                      rebuildConnectionAfterDelete(Conductor* );
+  void                      rebuildConnectionAfterInsertion(Conductor* );
+  void                      rebuildConnectionAfterSplitting(Conductor* );
+  void                      rebuildConnectionAfterLabelInsertion(Conductor* );
+  void                      rebuildConnectionAfterLabelRemoval(Conductor* );
+  void                      rebuildConnectionAfterGndInsertion(Conductor* );
+  void                      rebuildConnectionAfterGndRemoval(Conductor* );
+  void                      rebuildConnectionAfterLabelEdit(Conductor* );
+  void                      rebuildAll();
+
+  void                      setNameId(unsigned int, QString="");
+
+private:
+  QHash<unsigned int, QVector<Conductor*>>    m_connection_set;
+  // Fwd and reverse mapping
+  QHash<QString, unsigned int>                m_mapped_names;
+  QHash<unsigned int, QString>                m_mapped_ids;
+
+
+  unsigned int                                get_available_id();
+
+  typedef QHash<unsigned int, QVector<Conductor*>>::iterator connected_iterator;
+
+  QString         getMappedName(unsigned int id) const;
 };
+
+
 
 #endif

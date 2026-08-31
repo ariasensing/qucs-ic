@@ -324,6 +324,7 @@ bool geometryIsInOrder(const std::list<Component*>* components, const std::list<
 Node* Schematic::createNode(int x, int y) const
 {
     Node* node = new Node(x, y);
+
     a_Nodes->push_back(node);
     return node;
 }
@@ -350,7 +351,7 @@ Node* Schematic::provideNode(int x, int y)
 
     // Create new node, if no existing one at given coordinates
     Node* new_node = createNode(x, y);
-
+    if (new_node != nullptr) new_node->setSchematicOwner(this);
     // Check if the new node lies upon an existing wire
     for (auto* wire : *a_Wires)
     {
@@ -515,6 +516,7 @@ bool Schematic::optimizeWires() {
         assert(redundant_node->conn_count() == 0);
 
         a_Wires->remove(obsolete_wire);
+
         delete obsolete_wire;
 
         a_Nodes->remove(redundant_node);
@@ -579,7 +581,7 @@ Wire* Schematic::splitWire(Wire *source_wire, Node *splitter_node)
     assert(qucs_s::geom::is_between(splitter_node, source_wire->P1(), source_wire->P2()));
 
     // Create new wire
-    Wire *new_wire = new Wire(splitter_node, source_wire->Port2);
+    Wire *new_wire = new Wire(splitter_node, source_wire->Port2, this);
     new_wire->isSelected = source_wire->isSelected;
     a_Wires->push_back(new_wire);
 
@@ -596,15 +598,17 @@ Wire* Schematic::splitWire(Wire *source_wire, Node *splitter_node)
     if (label != nullptr) {
         if (qucs_s::geom::is_between(label->root(), new_wire->P1(), new_wire->P2())) {
             new_wire->acquireLabel(std::move(label));
+
         }
         else if (qucs_s::geom::is_between(label->root(), source_wire->P1(), source_wire->P2())) {
-            source_wire->acquireLabel(std::move(label));
+            source_wire->acquireLabel(std ::move(label));
         }
         else if (!splitter_node->hasLabel() && label->root() == splitter_node->center()) {
             splitter_node->acquireLabel(std::move(label));
         }
     }
-
+    // Check if this is the right place
+    rebuildConnectionAfterSplitting(new_wire);
     return new_wire;
 }
 
@@ -622,7 +626,9 @@ void Schematic::deleteWire(Wire *w, bool remove_orphans)
         delete w->Port2;
     }
 
+
     a_Wires->remove(w);
+    rebuildConnectionAfterDelete(w);
     delete w;
 }
 
@@ -652,6 +658,8 @@ Schematic::WireDisconnectResult Schematic::disconnectWire(Wire* wire, bool remov
  */
 void Schematic::decoupleWire(Wire* wire, bool keepNodeLabel)
 {
+
+    // Check this
     // Store coordinates for ports
     QPoint P1 = wire->P1();
     QPoint P2 = wire->P2();
@@ -662,11 +670,13 @@ void Schematic::decoupleWire(Wire* wire, bool keepNodeLabel)
     // Create and connect new isolated port to Port1 if it was disconnected
     if (wireStatus.port1.disconnected) {
         wire->connectPort1(createNode(P1));
+        wire->Port1->setSchematicOwner(this);
     }
 
     // Create and connect new isolated port to Port2 if it was disconnected
     if (wireStatus.port2.disconnected) {
         wire->connectPort2(createNode(P2));
+        wire->Port2->setSchematicOwner(this);
     }
 }
 
@@ -682,6 +692,7 @@ void Schematic::decoupleWire(Wire* wire, bool keepNodeLabel)
  */
 Schematic::NodeDisconnectResult Schematic::disconnectNode(Node* node, Element* elem, bool remove_orphans, bool keepNodeLabel) const
 {
+  // check this
     if (node == nullptr) return {false, false};
 
     // Preserve nodes with labels if requested
@@ -2309,6 +2320,7 @@ void Schematic::decoupleComp(Component* component, bool keepNodeLabel)
     for (auto i = 0; i < component->Ports.size(); ++i) {
         if (compStatus.ports[i].disconnected) {
             Node* new_node = createNode(portPos[i]);
+            new_node->setSchematicOwner(this);
             new_node->connect(component);
             component->Ports[i]->Connection = new_node;
         }
@@ -2479,7 +2491,7 @@ std::pair<bool,Node*> Schematic::connectWithWire(const QPoint& a, const QPoint& 
     for (std::size_t i = 1; i < points.size(); i++) {
         auto m = points[i-1];
         auto n = points[i];
-        auto [ch, node] = installWire(new Wire(m.x(), m.y(), n.x(), n.y()));
+        auto [ch, node] = installWire(new Wire(m.x(), m.y(), n.x(), n.y(), this));
         hasChanges = hasChanges || ch;
     }
 
@@ -2488,6 +2500,7 @@ std::pair<bool,Node*> Schematic::connectWithWire(const QPoint& a, const QPoint& 
     const auto lastPoint = points.back();
     for (auto* node : *a_Nodes) {
         if (node->cx == lastPoint.x() && node->cy == lastPoint.y()) {
+            rebuildConnectionAfterInsertion(node);
             return {hasChanges, node};
         }
     }
@@ -2507,6 +2520,8 @@ std::pair<bool,Node*> Schematic::connectWithWire(const QPoint& a, const QPoint& 
     //
     //   M               B
     //   o---------------o
+
+
     return {hasChanges, nullptr};
 }
 
@@ -2593,16 +2608,19 @@ std::pair<bool,Node*> Schematic::installWire(Wire* wire)
 
         if (!has_been_used) {
             // … the given wire hasn't been used yet. Fill the gap with it.
-            wire->connectPort1(node_pair.first);
-            wire->connectPort2(node_pair.second);
+            wire->connectPorts(node_pair.first, node_pair.second);
+          /*  wire->connectPort1(node_pair.first);
+            wire->connectPort2(node_pair.second);*/
             a_Wires->push_back(wire);
+
             has_been_used = true;
             has_changes = true;
         } else {
             // … the given wire has been already used to fill another gap.
             // Fill this gap with a brand new wire.
-	        auto* w = new Wire(node_pair.first, node_pair.second);
+                auto* w = new Wire(node_pair.first, node_pair.second, this);
             a_Wires->push_back(w);
+
             has_changes = true;
         }
     }
@@ -2636,13 +2654,18 @@ std::pair<bool,Node*> Schematic::installWire(Wire* wire)
 
         // And delete it
         a_Wires->remove(existing_wire);
+
+
         delete existing_wire;
 
         // Put the given wire in place of deleted one
-        wire->connectPort1(last_pair.first);
-        wire->connectPort2(last_pair.second);
+        //wire->connectPort1(last_pair.first);
+        //wire->connectPort2(last_pair.second);
+        wire->connectPorts(last_pair.first, last_pair.second);
 
         a_Wires->push_back(wire);
+
+        rebuildConnectionAfterInsertion(wire);
     }
 
 
@@ -2878,6 +2901,8 @@ bool Schematic::heal(const HealingParams* params) {
     assert(invariants::noNodesOnWires(a_Nodes, a_Wires));
     assert(invariants::noDuplicateWires(a_Wires));
     assert(invariants::geometryIsInOrder(a_Components, a_Wires));
+
+    if (thereWereChanges) rebuildAll();
     return thereWereChanges;
 }
 
@@ -2890,7 +2915,7 @@ void Schematic::dumbConnectWithWire(const QPoint& a, const QPoint& b) noexcept {
         auto m = points[i-1];
         auto n = points[i];
 
-        auto* wire = new Wire(new Node(m.x(), m.y()), new Node(n.x(), n.y()));
+        auto* wire = new Wire(new Node(m.x(), m.y(), this), new Node(n.x(), n.y(), this), this);
         a_Wires->push_back(wire);
         a_Nodes->push_back(wire->Port1);
         a_Nodes->push_back(wire->Port2);

@@ -21,7 +21,7 @@
 #include "qucs.h"
 
 
-QucsDoc::QucsDoc(QucsApp *App_, const QString& Name_) :
+QucsDoc::QucsDoc(QucsApp *App_, const QString& Name_, DocType dt = UNKNOWN) :
   a_DocName(Name_),
   a_DataSet(),
   a_DataDisplay(),
@@ -36,7 +36,9 @@ QucsDoc::QucsDoc(QucsApp *App_, const QString& Name_) :
   a_showBias(-1),   // don't show DC bias (currently for "Schematic" only)
   a_GridOn(true),
   a_tmpPosX(0),
-  a_tmpPosY(0)
+  a_tmpPosY(0),
+  doc_type(dt)
+
 {
   QFileInfo Info(a_DocName);
   if(!a_DocName.isEmpty()) {

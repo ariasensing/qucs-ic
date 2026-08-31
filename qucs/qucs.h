@@ -107,6 +107,8 @@ public:
   QucsDoc *findDoc(QString, int *Pos = 0);
   QString fileType(const QString &);
   static bool isTextDocument(QWidget *);
+  static bool isSchematicDocument(QWidget *);
+  static bool isLayoutDocument(QWidget *);
 
   QString ProjName; // name of the project, that is open
   // QHash<QString,QString> schNameHash; // QHash for the schematic files lookup
@@ -136,6 +138,7 @@ protected:
 
 public slots:
   void slotFileNew();         // generate a new schematic in the view TabBar
+  void slotLayoutNew();       // generate a new layout in the view Tabbar
   void slotTextNew();         // generate a new text editor in the view TabBar
   void slotSymbolNew();       // create new symbol
   void slotFileOpen();        // open a document
@@ -196,6 +199,8 @@ public slots:
   void slotSimulateWithSpice();
   void slotAbortTuningSimulation();
   void slotTune(bool checked);
+
+
 
 private slots:
   void slotMenuProjOpen();
@@ -279,7 +284,8 @@ public:
       *magSel, *magOne, *magMinus, *filePrintFit, *tune, *symEdit, *intoH,
       *popH, *simulate, *save_netlist, *dpl_sch, *undo, *redo, *dcbias,
       *saveCdlNetlist, *cdlSettings;
-
+  //Layout
+  QAction* layoutNew;
   // Navigate tabs
   QAction *TabFirstAction;    /// Action for raising the first document tab
   QAction *TabLastAction;     /// Action for raising the last document tab
@@ -319,7 +325,7 @@ private:
   void initView();
   void initCursorMenu();
 
-  int addDocumentTab(QFrame *widget, const QString &title = QString());
+  int addDocumentTab(QWidget *widget, const QString &title = QString());
   void setDocumentTabChanged(int index, bool changed);
   void printCurrentDocument(bool);
   bool saveFile(QucsDoc *Doc = 0);
@@ -331,6 +337,7 @@ private:
   void fillSimulatorsComboBox();
   void switchSchematicDoc(bool);
   void switchEditMode(bool);
+  void switchLayoutMode();
   void changeSchematicSymbolMode(Schematic *);
   static bool recurRemove(const QString &);
   void closeFile(int);

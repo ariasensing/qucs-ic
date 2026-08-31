@@ -43,10 +43,10 @@ Copyright (C) 2014 by Guilherme Brondani Torri <guitorri@gmail.com>
  * \param App_ is the parent object
  * \param Name_ is the initial text document name
  */
-TextDoc::TextDoc(QucsApp *App_, const QString& Name_) : QPlainTextEdit(), QucsDoc(App_, Name_)
+TextDoc::TextDoc(QucsApp *App_, const QString& Name_) : QPlainTextEdit(), QucsDoc(App_, Name_, TEXT)
 {
   setFont(QucsSettings.textFont);
-
+  this->setProperty("DOC_TYPE",(uint16_t)(doc_type));
   simulation = true;
   Library = "";
   Libraries = "";

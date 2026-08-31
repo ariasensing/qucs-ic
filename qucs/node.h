@@ -27,7 +27,7 @@ class Wire;
 
 class Node : public Conductor {
 public:
-  Node(int x, int y);
+  Node(int x, int y, class Schematic* owner = nullptr);
 
   void  paint(QPainter* painter) const;
   bool  getSelected(int, int);
@@ -35,17 +35,16 @@ public:
 
   // Add an element to the node's connections.
   // No-op if element is already connected.
-  void connect(Wire* wire) { if (!is_connected(wire)) m_wires.emplace_front(wire); }
-  void connect(Component* comp) { if (!is_connected(comp)) m_components.emplace_front(comp); }
+  void connect(Wire* wire);
+  void connect(Component* comp);
 
   // Remove element from the node's connections.
-  void disconnect(Wire* wire) { m_wires.remove(wire); }
-  void disconnect(Component* comp) { m_components.remove(comp); }
+  void disconnect(Wire* wire);
+  void disconnect(Component* comp);
 
   // Tells if an element is among node's connections.
   bool is_connected(Wire* wire) const { return std::ranges::find(m_wires, wire) != m_wires.end(); }
   bool is_connected(Component* comp) const { return std::ranges::find(m_components, comp) != m_components.end(); }
-
   bool isOverlapping(int, int) const;
   bool isOverlapping(const Node*) const;
 
@@ -77,6 +76,7 @@ public:
 
   Node* merge(Node* other);
 
+
 private:
   // Nodes usually have quite a few connections. In ideal case, when all wire
   // placement optimizations work properly, there can be at most four connections
@@ -88,6 +88,26 @@ private:
   // A node doesn't claim ownership of any connected object, storing raw pointers is OK.
   std::list<Wire*> m_wires;
   std::list<Component*> m_components;
+
+
+public:
+
+  void        propagateNetId(unsigned int id,bool init)       override;
+  bool        is_connected_physically(Wire* wire, bool init)  override;
+  bool        is_connected_physically(Node* node, bool init)  override;
+  WireLabel*  has_global_label(bool init)                     override;
+  void        getConnectedConductors(QVector<Conductor*>& current, bool init) override;
+  bool        is_connected_physically(Wire* wire) override;
+  bool        is_connected_physically(Node* node) override;
+  WireLabel*  has_global_label()                  override;
+  void        getConnectedConductors(QVector<Conductor*>& current) override;
+  void        propagateNetId(unsigned int id)     override;
+  void        propagateVisitFlag(NodeVisit nv)                override;
+  bool        isGnd(bool init) override;
+  bool        isGnd()          override;
+  bool        isNodeConnectedToGnd() override;
+  void        dropLabel()      override;
+  bool        isNodeConnectedToComp() override;
 };
 
 #endif

@@ -49,6 +49,7 @@
 #include "qucsdoc.h"
 #include "textdoc.h"
 #include "schematic.h"
+#include "iclayout.h"
 #include "mouseactions.h"
 #include "messagedock.h"
 #include "settings.h"
@@ -724,7 +725,11 @@ QucsDoc* QucsApp::getDoc(int No)
     if(isTextDocument (w))
       return (QucsDoc*) ((TextDoc*)w);
     else
-      return (QucsDoc*) ((Schematic*)w);
+      if (isSchematicDocument(w))
+        return (QucsDoc*) ((Schematic*)w);
+      else
+        if (isLayoutDocument(w))
+          return (QucsDoc*)((icLayout*)w);
   }
 
   return 0;
@@ -1665,6 +1670,18 @@ void QucsApp::slotButtonProjDel()
 // #####  Functions that handle the file operations for the   #####
 // #####  documents.                                          #####
 // ################################################################
+void QucsApp::slotLayoutNew()
+{
+  statusBar()->showMessage(tr("Creating new layout..."));
+  slotHideEdit(); // disable text edit of component property
+
+  icLayout *d = new icLayout(this, "");
+  int i = addDocumentTab(d);
+  DocumentTab->setCurrentIndex(i);
+
+  statusBar()->showMessage(tr("Ready."));
+
+}
 
 void QucsApp::slotFileNew()
 {
@@ -2220,28 +2237,43 @@ void QucsApp::slotChangeView()
     magSel->setDisabled(true);
     if(cursorLeft->isEnabled())
       switchSchematicDoc (false);
+
+    Doc->becomeCurrent(true);
   }
   // for schematic documents
-  else {
-    Schematic *d = (Schematic*)w;
-    Doc = (QucsDoc*)d;
-    magAll->setDisabled(false);
-    magSel->setDisabled(false);
-    // already in schematic?
-    if(cursorLeft->isEnabled()) {
-      // which mode: schematic or symbol editor ?
-      if((CompChoose->count() > 1) == d->getSymbolMode())
-        changeSchematicSymbolMode (d);
-    }
-    else {
-      switchSchematicDoc(true);
-      changeSchematicSymbolMode(d);
-    }
+  else
+    if (isSchematicDocument(w))
+    {
+      Schematic *d = (Schematic*)w;
+      Doc = (QucsDoc*)d;
+      magAll->setDisabled(false);
+      magSel->setDisabled(false);
+      // already in schematic?
+      if(cursorLeft->isEnabled()) {
+        // which mode: schematic or symbol editor ?
+        if((CompChoose->count() > 1) == d->getSymbolMode())
+          changeSchematicSymbolMode (d);
+      }
+      else
+      {
+        switchSchematicDoc(true);
+        changeSchematicSymbolMode(d);
+      }
 
-    showGrid->setChecked(d->getGridOn());
-  }
+      showGrid->setChecked(d->getGridOn());
 
-  Doc->becomeCurrent(true);
+      Doc->becomeCurrent(true);
+
+    } // if isSchematic
+    else // layout
+    {
+      icLayout *d = (icLayout*)w;
+      Doc = (QucsDoc*)d;
+      magAll->setDisabled(false);
+      magSel->setDisabled(false);
+      switchLayoutMode();
+      Doc->becomeCurrent(true);
+    }
 
 //  TODO proper window title
 //  QFileInfo Info (Doc-> getDocName());
@@ -2362,7 +2394,7 @@ void QucsApp::updatePortNumber(QucsDoc *currDoc, int No)
 }
 
 // --------------------------------------------------------------
-int QucsApp::addDocumentTab(QFrame* widget, const QString& title)
+int QucsApp::addDocumentTab(QWidget* widget, const QString& title)
 {
   int index = DocumentTab->addTab(widget, title.isEmpty() ? tr("untitled") : title);
 #if __APPLE__
@@ -3189,6 +3221,11 @@ void QucsApp::slotSelectLibComponent(QTreeWidgetItem *item)
 
 }
 
+void QucsApp::switchLayoutMode()
+{
+  switchEditMode(false);
+  switchSchematicDoc(true);
+}
 
 // ---------------------------------------------------------
 // This function is called if the document type changes, i.e.
@@ -3293,7 +3330,32 @@ void QucsApp::changeSchematicSymbolMode(Schematic *Doc)
 
 // ---------------------------------------------------------
 bool QucsApp::isTextDocument(QWidget *w) {
-  return w->inherits("QPlainTextEdit");
+
+  QVariant v = w->property("DOC_TYPE");
+  if (!v.isValid()) return false;
+  DocType dt = (DocType(v.toUInt()));
+  return (dt==TEXT);
+
+  //return w->inherits("QPlainTextEdit");
+}
+// ---------------------------------------------------------
+bool QucsApp::isSchematicDocument(QWidget *w) {
+
+  QVariant v = w->property("DOC_TYPE");
+  if (!v.isValid()) return false;
+  DocType dt = (DocType(v.toUInt()));
+  return (dt==SCHEMATIC_SYMBOL);
+  //return w->inherits("QPlainTextEdit");
+}
+// ---------------------------------------------------------
+bool QucsApp::isLayoutDocument(QWidget *w) {
+
+  QVariant v = w->property("DOC_TYPE");
+  if (!v.isValid()) return false;
+  DocType dt = (DocType(v.toUInt()));
+  return (dt==LAYOUT);
+
+  //return w->inherits("QPlainTextEdit");
 }
 
 // ---------------------------------------------------------

@@ -18,10 +18,10 @@
 
 #include "component.h"
 #include "wire.h"
-
+#include "schematic.h"
 #include <QPainter>
 
-Node::Node(int x, int y)
+Node::Node(int x, int y, Schematic* owner)
   : DType("")
   , State(0)
 {
@@ -29,6 +29,8 @@ Node::Node(int x, int y)
 
   cx = x;
   cy = y;
+
+  setSchematicOwner(owner);
 }
 
 void Node::paint(QPainter* painter) const {
@@ -127,4 +129,307 @@ bool Node::isOverlapping(const Node* other) const {
   }
 
   return isOverlapping(other->x(), other->y());
+}
+
+
+void Node::connect(Wire* wire)
+{
+  if (!is_connected(wire))
+  {
+    m_wires.emplace_front(wire);
+  }
+}
+
+
+void Node::connect(Component* comp)
+{
+  if (!is_connected(comp)) m_components.emplace_front(comp);
+
+  if ((comp->Model=="GND")&&(getSchematicOwner()!=nullptr))
+    getSchematicOwner()->rebuildConnectionAfterGndInsertion(this);
+
+
+}
+
+
+void Node::disconnect(Component* comp)
+{
+  m_components.remove(comp);
+  if ((comp->Model=="GND")&&(getSchematicOwner()!=nullptr))
+    getSchematicOwner()->rebuildConnectionAfterGndRemoval(this);
+
+}
+
+void  Node::disconnect(Wire* wire)
+{
+  m_wires.remove(wire);
+  // We may have other wires that are still connected to this Node thru other routes
+}
+
+
+
+/**
+ * @brief propagateVisitFlag
+ * @param nv
+ */
+void    Node::propagateVisitFlag(NodeVisit nv)
+{
+  if (getVisitFlag()==nv) return;
+  setVisitFlag(nv);
+  for (auto w: m_wires)
+    if (w)
+      w->propagateVisitFlag(nv);
+}
+
+/**
+ * @brief Node::propagateNetId
+ * @param id
+ */
+void  Node::propagateNetId(unsigned int id)
+{
+  propagateNetId(id,true);
+}
+/**
+ * @brief Node::propagateNetId
+ * @param id
+ * @param init
+ */
+void    Node::propagateNetId(unsigned int id,bool init)
+{
+  // If init, we set every cond as NEED_VISIT
+  if (init)
+    propagateVisitFlag(NEED_VISIT);
+
+  if (getVisitFlag()==VISITED) return;
+
+  setVisitFlag(VISITED);
+
+  setNetID(id);
+
+  for (auto w: m_wires)
+    if(w!=nullptr)
+      w->propagateNetId(id, false);
+}
+
+/**
+ * @brief Node::is_connected_physically
+ * @param wire
+ * @param init
+ * @return
+ */
+bool Node::is_connected_physically(Wire* wire, bool init)
+{
+  if (init)
+    propagateVisitFlag(NEED_VISIT);
+
+  if (getVisitFlag()==VISITED) return false;
+
+  setVisitFlag(VISITED);
+
+  for (auto w: m_wires)
+    if (w)
+    {
+      // Beware: this way we may end up with some of the tree with VISITED (the initial part, til the wire
+      // found) and the remaining with "NEED_VISIT".
+      if (w == wire)
+        return true;
+
+      if (w->is_connected_physically(wire, false))
+        return true;
+    }
+  return false;
+}
+
+/**
+ * @brief Node::is_connected_physically
+ * @param node
+ * @param init
+ * @return
+ */
+bool Node::is_connected_physically(Node* node, bool init)
+{
+  if (init)
+    propagateVisitFlag(NEED_VISIT);
+
+  if (getVisitFlag()==VISITED) return false;
+
+  setVisitFlag(VISITED);
+
+  if (this==node) return true;
+
+  for (auto w: m_wires)
+    if (w)
+    {
+      // Beware: this way we may end up with some of the tree with VISITED (the initial part, til the wire
+      // found) and the remaining with "NEED_VISIT".
+
+      if (w->is_connected_physically(node, false))
+        return true;
+    }
+  return false;
+}
+/**
+ * @brief Node::is_connected_physically
+ * @param wire
+ * @return
+ */
+bool Node::is_connected_physically(Wire* wire)
+{
+  bool bres = is_connected_physically(wire, true);
+
+  propagateVisitFlag(DEFAULT_STATE);
+
+  return bres;
+}
+/**
+ * @brief Node::is_connected_physically
+ * @param node
+ * @return
+ */
+bool Node::is_connected_physically(Node* node)
+{
+  bool bres = is_connected_physically(node, true);
+
+  propagateVisitFlag(DEFAULT_STATE);
+
+  return bres;
+
+}
+/**
+ * @brief Node::has_global_label
+ * @param init
+ * @return
+ */
+WireLabel*  Node::has_global_label(bool init)
+{
+  if (init)
+    propagateVisitFlag(NEED_VISIT);
+
+  if (getVisitFlag()==VISITED)
+    return nullptr;
+
+  setVisitFlag(VISITED);
+
+  if (hasLabel())
+    return label();
+
+  for (auto w: m_wires)
+    if (w)
+    {
+      WireLabel* wire_label = w->has_global_label(false);
+      if (wire_label!=nullptr) return wire_label;
+    }
+
+  return nullptr;
+}
+/**
+ * @brief Node::has_global_label
+ * @return
+ */
+WireLabel* Node::has_global_label()
+{
+  WireLabel* res = has_global_label(true);
+
+  propagateVisitFlag(DEFAULT_STATE);
+
+  return res;
+}
+
+/**
+ * @brief Node::getConnectedConductors
+ * @param current
+ * @param init
+ * @return
+ */
+
+void Node::getConnectedConductors(QVector<Conductor*>& current, bool init)
+{
+  if (init)
+      propagateVisitFlag(NEED_VISIT);
+
+  if (getVisitFlag()==VISITED)
+    return;
+
+  setVisitFlag(VISITED);
+
+  current.emplace_back(this);
+
+  for (auto w : m_wires)
+    if (w)
+      w->getConnectedConductors(current, false);
+}
+
+/**
+ * @brief Node::getConnectedConductors
+ * @param current
+ */
+void  Node::getConnectedConductors(QVector<Conductor*>& current)
+{
+  getConnectedConductors(current, true);
+}
+
+/**
+ * @brief Node::isGnd
+ * @param init
+ * @return
+ */
+bool Node::isGnd(bool init)
+{
+  if (init)
+    propagateVisitFlag(NEED_VISIT);
+
+  if (getVisitFlag()==VISITED)
+    return false;
+
+  setVisitFlag(VISITED);
+
+  for (auto c: m_components)
+    if (c!=nullptr)
+    {
+      if (c->Model=="GND")
+        return true;
+    }
+
+  for (auto w: m_wires)
+    if (w!=nullptr)
+      if (w->isGnd(false)) return true;
+
+  return false;
+}
+/**
+ * @brief Node::isGnd
+ * @return
+ */
+bool        Node::isGnd()
+{
+  bool bres = isGnd(true);
+
+  propagateVisitFlag(DEFAULT_STATE);
+  return bres;
+}
+
+/**
+ * @brief Node::dropLabel
+ */
+void  Node::dropLabel()
+{
+  Conductor::dropLabel();
+  if (getSchematicOwner()!=nullptr) getSchematicOwner()->rebuildConnectionAfterLabelRemoval(this);
+}
+/**
+ * @brief Node::isNodeConnectedToGnd
+ * @return
+ */
+bool  Node::isNodeConnectedToGnd()
+{
+  for (auto c: m_components)
+    if (c!=nullptr)
+      if (c->Model=="GND") return true;
+
+  return false;
+}
+
+bool  Node::isNodeConnectedToComp()
+{
+  return !(m_components.empty());
 }

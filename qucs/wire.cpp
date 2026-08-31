@@ -22,8 +22,10 @@
 
 #include <QPainter>
 
-Wire::Wire(int _x1, int _y1, int _x2, int _y2)
+
+Wire::Wire(int _x1, int _y1, int _x2, int _y2, Schematic* owner)
 {
+
   x1 = _x1;
   y1 = _y1;
   x2 = _x2;
@@ -36,13 +38,21 @@ Wire::Wire(int _x1, int _y1, int _x2, int _y2)
 
   Type = isWire;
   isSelected = false;
+
+  setSchematicOwner(owner);
 }
 
-Wire::Wire(Node* n1, Node* n2)
+
+Wire::Wire(Node* n1, Node* n2, Schematic* owner)
   : Wire(n1->x(), n1->y(), n2->x(), n2->y())
 {
-  connectPort1(n1);
-  connectPort2(n2);
+  setSchematicOwner(owner);
+  connectPorts(n1,n2);
+  //connectPort2(n2);
+
+  // This wire has no name
+  // Check about names of n1 and n2
+
 }
 
 bool Wire::rotate() noexcept
@@ -97,6 +107,7 @@ void Wire::paint(QPainter *painter) const {
   else {
     painter->setPen(QPen(Qt::darkBlue,2));
     painter->drawLine(x1, y1, x2, y2);
+    painter->drawText((x1+x2)>>1, (y1+y2)>>1, QString::number(getNetID()));
   }
   painter->restore();
 }
@@ -153,6 +164,10 @@ void Wire::setName(const QString& Name_, const QString& Value_, int root_x, int 
     label()->initValue = Value_;
   }
   else label()->setName(Name_);
+
+  if (getSchematicOwner()!=nullptr)
+    getSchematicOwner()->rebuildConnectionAfterLabelInsertion(this);
+
 }
 
 // Converts all necessary data of the wire into a string. This can be used to
@@ -165,9 +180,11 @@ QString Wire::save()
           s += " \""+label()->Name+"\" ";
           s += QString::number(label()->x1)+" "+QString::number(label()->y1)+" ";
           s += QString::number(static_cast<int>(qucs_s::geom::distance(QPoint{x1, y1}, label()->root())));
-          s += " \""+label()->initValue+"\">";
+          s += " \""+label()->initValue+"\"" + ' ' + QString::number(getNetID())+ " >";
   }
-  else { s += R"( "" 0 0 0 "">)"; }
+  else { s += R"( "" 0 0 0 ")";
+    s+=' ' + QString::number(getNetID())+ ">";
+    }
   return s;
 }
 
@@ -227,6 +244,11 @@ bool Wire::load(const QString& _s)
 
     setName(delta, nx, ny, n, s.section('"',3,3));  // Wire Label
   }
+  bool bok;
+  unsigned int nid = s.section(' ',8,8).toInt(&bok);
+  if (!bok) nid = 0;
+  setNetID(nid);
+  if (getSchematicOwner()!=nullptr) getSchematicOwner()->addConductor(this);
 
   return true;
 }
@@ -309,6 +331,45 @@ bool Wire::setP2(const QPoint& new_p2)
   return true;
 }
 
+void Wire::connectPorts(Node* n1, Node* n2)
+{
+  assert((n1 != nullptr)&&(n2 != nullptr));
+  // Check which is which
+  // We may have n1 = Port1 -> Port1 do nothing --> target_p1 = n1, target_p2 = n2
+  // We may have n2 = Port1 -> Port1 do nothing --> target_p1 = n2, target_p2 = n1
+
+  // We may have n1 = Port2 -> Port2 do nothing --> target_p2 = n1, target_p1 = n2
+  // We may have n2 = Port2 -> Port2 do nothing --> target_p2 = n2, target_p1 = n1
+  Node *target_p1 = n1, *target_p2 = n2;
+  if (Port1 == n2)
+  {
+    target_p1 = n2;
+    target_p2 = n1;
+  }
+
+  if (Port2 == n1)
+  {
+    target_p1 = n2;
+    target_p2 = n1;
+  }
+
+  if ((Port1 != nullptr)&&(Port1 != target_p1)) Port1->disconnect(this);
+  if ((Port2 != nullptr)&&(Port2 != target_p2)) Port2->disconnect(this);
+
+  if (Port1 != target_p1)
+  {
+    target_p1->connect(this);
+    Port1 = target_p1;
+    setP1(Port1->center());
+  }
+  if (Port2 != target_p2)
+  {
+    target_p2->connect(this);
+    Port2 = target_p2;
+    setP2(Port2->center());
+  }
+}
+
 void Wire::connectPort1(Node* n)
 {
   assert(n != nullptr);
@@ -324,6 +385,7 @@ void Wire::connectPort1(Node* n)
   n->connect(this);
   Port1 = n;
   setP1(Port1->center());
+
 }
 
 void Wire::connectPort2(Node* n)
@@ -341,6 +403,7 @@ void Wire::connectPort2(Node* n)
   n->connect(this);
   Port2 = n;
   setP2(Port2->center());
+
 }
 
 inline void Wire::updateCenter() noexcept {
@@ -366,3 +429,244 @@ void Wire::updatePorts() noexcept {
   updateP1();
   updateP2();
 }
+
+
+/**
+ * @brief Wire::propagateVisitFlag
+ * @param nv
+ */
+void    Wire::propagateVisitFlag(NodeVisit nv)
+{
+  if (getVisitFlag()==nv) return;
+  setVisitFlag(nv);
+  if (Port1!=nullptr) Port1->propagateVisitFlag(nv);
+  if (Port2!=nullptr) Port2->propagateVisitFlag(nv);
+
+}
+/**
+ * @brief Wire::propagateNetId
+ * @param id
+ */
+void    Wire::propagateNetId(unsigned int id)
+{
+  propagateNetId(id,true);
+}
+
+/**
+ * @brief Wire::propagateNetId
+ * @param id
+ * @param init
+ */
+void    Wire::propagateNetId(unsigned int id,bool init)
+{
+  if (init)
+    propagateVisitFlag(NEED_VISIT);
+
+  setVisitFlag(VISITED);
+
+  setNetID(id);
+
+  if (Port1!=nullptr) Port1->propagateNetId(id,false);
+  if (Port2!=nullptr) Port2->propagateNetId(id,false);
+
+}
+
+
+/**
+ * @brief Wire::getConnectedConductors
+ * @param current
+ * @param init
+ * @return
+ */
+
+void Wire::getConnectedConductors(QVector<Conductor*>& current, bool init)
+{
+  if (init)
+    propagateVisitFlag(NEED_VISIT);
+
+  if (getVisitFlag()==VISITED)
+    return;
+
+  setVisitFlag(VISITED);
+
+  current.emplace_back(this);
+
+  if (Port1!=nullptr) Port1->getConnectedConductors(current, false);
+  if (Port2!=nullptr) Port2->getConnectedConductors(current, false);
+}
+
+/**
+ * @brief Node::getConnectedConductors
+ * @param current
+ */
+void  Wire::getConnectedConductors(QVector<Conductor*>& current)
+{
+  getConnectedConductors(current, true);
+}
+
+
+/**
+ * @brief Wire::has_global_label
+ * @param init
+ * @return
+ */
+WireLabel*  Wire::has_global_label(bool init)
+{
+  if (init)
+    propagateVisitFlag(NEED_VISIT);
+
+  if (getVisitFlag()==VISITED)
+    return nullptr;
+
+  setVisitFlag(VISITED);
+
+  if (hasLabel())
+    return label();
+
+  if (Port1!=nullptr)
+  {
+    WireLabel* port_label = Port1->has_global_label(false);
+    if (port_label!=nullptr) return port_label;
+  }
+
+  if (Port2!=nullptr)
+  {
+    WireLabel* port_label = Port2->has_global_label(false);
+    if (port_label!=nullptr) return port_label;
+  }
+  return nullptr;
+}
+/**
+ * @brief Wire::has_global_label
+ * @return
+ */
+WireLabel* Wire::has_global_label()
+{
+  WireLabel* res = has_global_label(true);
+
+  propagateVisitFlag(DEFAULT_STATE);
+
+  return res;
+}
+
+/**
+ * @brief Wire::is_connected_physically
+ * @param wire
+ * @return
+ */
+bool Wire::is_connected_physically(Wire* wire)
+{
+  bool bres = is_connected_physically(wire, true);
+
+  propagateVisitFlag(DEFAULT_STATE);
+
+  return bres;
+}
+/**
+ * @brief Wire::is_connected_physically
+ * @param node
+ * @return
+ */
+bool Wire::is_connected_physically(Node* node)
+{
+  bool bres = is_connected_physically(node, true);
+
+  propagateVisitFlag(DEFAULT_STATE);
+
+  return bres;
+
+}
+
+
+/**
+ * @brief Wire::is_connected_physically
+ * @param wire
+ * @param init
+ * @return
+ */
+bool Wire::is_connected_physically(Wire* wire, bool init)
+{
+  if (init)
+    propagateVisitFlag(NEED_VISIT);
+
+  if (getVisitFlag()==VISITED) return false;
+
+  setVisitFlag(VISITED);
+
+  if (this == wire)
+    return true;
+
+  if (Port1!=nullptr) if (Port1->is_connected_physically(wire)) return true;
+  if (Port2!=nullptr) if (Port2->is_connected_physically(wire)) return true;
+
+  return false;
+}
+
+/**
+ * @brief Node::is_connected_physically
+ * @param node
+ * @param init
+ * @return
+ */
+bool Wire::is_connected_physically(Node* node, bool init)
+{
+  if (init)
+    propagateVisitFlag(NEED_VISIT);
+
+  if (getVisitFlag()==VISITED) return false;
+
+  setVisitFlag(VISITED);
+
+  if ((Port1!=nullptr)&&(Port1==node)) return true;
+  if ((Port2!=nullptr)&&(Port2==node)) return true;
+
+  if (Port1!=nullptr) if (Port1->is_connected_physically(node)) return true;
+  if (Port2!=nullptr) if (Port2->is_connected_physically(node)) return true;
+
+
+  return false;
+}
+
+/**
+ * @brief Wire::isGnd
+ * @param init
+ * @return
+ */
+bool Wire::isGnd(bool init)
+{
+  if (init)
+    propagateVisitFlag(NEED_VISIT);
+
+  if (getVisitFlag()==VISITED)
+    return false;
+
+  setVisitFlag(VISITED);
+
+  if ((Port1!=nullptr)&&(Port1->isGnd(false))) return true;
+  if ((Port2!=nullptr)&&(Port2->isGnd(false))) return true;
+
+  return false;
+}
+/**
+ * @brief Wire::isGnd
+ * @return
+ */
+bool        Wire::isGnd()
+{
+  bool bres = isGnd(true);
+
+  propagateVisitFlag(DEFAULT_STATE);
+  return bres;
+}
+
+
+
+/**
+ * @brief Wire::dropLabel
+ */
+void  Wire::dropLabel()
+{
+  Conductor::dropLabel();
+  if (getSchematicOwner()!=nullptr) getSchematicOwner()->rebuildConnectionAfterLabelRemoval(this);
+}
+

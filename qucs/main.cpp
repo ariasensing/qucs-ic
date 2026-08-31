@@ -66,6 +66,7 @@
 #define executableSuffix ""
 #endif
 
+
 tQucsSettings QucsSettings;
 
 QucsApp *QucsMain = nullptr;  // the Qucs application itself
@@ -166,6 +167,8 @@ bool loadSettings()
     settings.endArray();
 
     QucsSettings.numRecentDocs = 0;
+
+
 
     return true;
 }

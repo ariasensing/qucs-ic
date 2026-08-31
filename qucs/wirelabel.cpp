@@ -23,6 +23,7 @@
 #include <QMargins>
 #include <QString>
 #include <QPainter>
+#include "schematic.h"
 
 WireLabel::WireLabel(const QString& _Name, int _cx, int _cy,
                      int _x1, int _y1)
@@ -114,6 +115,9 @@ void WireLabel::setName(const QString& Name_)
   textSize = metrics.size(0, Name);
   x2 = x1 + textSize.width();
   y2 = y1 + textSize.height();
+
+  if ((owner()!=nullptr))
+    owner()->getSchematicOwner()->rebuildConnectionAfterLabelEdit(owner());
 }
 
 // Converts all necessary data of the wire into a string. This can be used to

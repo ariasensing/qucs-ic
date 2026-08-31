@@ -65,6 +65,13 @@ void QucsApp::initActions() {
   symNew->setWhatsThis(tr("New\n\nCreates a new schematic symbol document"));
   connect(symNew, SIGNAL(triggered()), SLOT(slotSymbolNew()));
 
+  layoutNew =
+      new QAction(QIcon((":/bitmaps/svg/symnew.svg")), tr("New layout"), this);
+  layoutNew->setStatusTip(tr("Creates a new layout"));
+  layoutNew->setWhatsThis(tr("New\n\nCreates a new schematic symbol document"));
+  connect(layoutNew, SIGNAL(triggered()), SLOT(slotLayoutNew()));
+
+
   fileOpen =
       new QAction(QIcon((":/bitmaps/fileopen.png")), tr("&Open..."), this);
   fileOpen->setShortcut(QKeySequence::Open);
@@ -866,6 +873,7 @@ void QucsApp::initMenuBar() {
   fileMenu->addAction(textNew);
   fileMenu->addAction(symNew);
   fileMenu->addAction(fileOpen);
+  fileMenu->addAction(layoutNew);
 
   QMenu *closeFileMenu = new QMenu(tr("Close"), fileMenu);
   closeFileMenu->addAction(fileClose);

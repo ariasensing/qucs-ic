@@ -26,20 +26,23 @@ class QucsApp;
 class QPrinter;
 class QPainter;
 
+enum DocType{UNKNOWN, LAYOUT, SCHEMATIC_SYMBOL, EMLAYOUT, TEXT};
+
 class QucsDoc {
 public:
-  QucsDoc(QucsApp*, const QString&);
-  virtual ~QucsDoc() {};
+  QucsDoc(QucsApp*, const QString&, DocType);
+  virtual ~QucsDoc() {}
 
-  virtual void  setName(const QString&) {};
-  virtual bool  load() { return true; };
-  virtual int   save() { return 0; };
+  virtual void  setName(const QString&) {}
+  virtual bool  load() { return true; }
+  virtual int   save() { return 0; }
   virtual void print(QPrinter*, QPainter*, bool, bool, QMargins) {}
-  virtual void  becomeCurrent(bool) {};
-  virtual double zoomBy(double) { return 1.0; };
-  virtual void  showAll() {};
-  virtual void  zoomToSelection() {};
-  virtual void  showNoZoom() {};
+  virtual void  becomeCurrent(bool) {}
+  virtual double zoomBy(double) { return 1.0; }
+  virtual void  showAll() {}
+  virtual void  zoomToSelection() {}
+  virtual void  showNoZoom() {}
+  DocType  docType() {return doc_type;}
 
   static QString fileSuffix (const QString&);
   QString fileSuffix (void);
@@ -78,7 +81,6 @@ protected:
   QString a_Script;
   QString a_SimTime;     // used for VHDL simulation, but stored in datadisplay
   QDateTime a_lastSaved;
-
   double a_Scale;
   QucsApp* a_App;
   bool a_DocChanged;
@@ -88,6 +90,8 @@ protected:
   bool a_GridOn;
   int a_tmpPosX;
   int a_tmpPosY;
+  DocType doc_type;
+
 };
 
 #endif

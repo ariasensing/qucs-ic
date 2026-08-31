@@ -259,12 +259,20 @@ ADD_EXECUTABLE( ${QUCS_NAME} MACOSX_BUNDLE WIN32
   ${QUCS_MOC_SRCS}
   ${RESOURCES_SRCS}
   ${app_icon_resource_windows}
+  iclayout.h iclayout.cpp iclayout.ui
+  conductor.cpp
+  schematic_net.cpp
+
+
+
+
+
  )
 
 #
 # Tell CMake which libraries we need to link our executable against.
 #
-TARGET_LINK_LIBRARIES( ${QUCS_NAME}
+TARGET_LINK_LIBRARIES( ${QUCS_NAME} PRIVATE
     components diagrams dialogs geometry paintings extsimkernels spicecomponents magnetics qt3_compat
     Qt6::Core  Qt6::Gui  Qt6::Widgets Qt6::Svg  Qt6::SvgWidgets Qt6::Xml  Qt6::PrintSupport )
 SET_TARGET_PROPERTIES(${QUCS_NAME} PROPERTIES POSITION_INDEPENDENT_CODE TRUE)
@@ -353,6 +361,36 @@ INSTALL( FILES ${SCRIPTS} PERMISSIONS OWNER_EXECUTE OWNER_WRITE OWNER_READ
 # And then there's ways to customize this as well
 #set(CPACK_BINARY_DRAGNDROP ON)
 #include(CPack)
+# The following include paths work only if
+# klayout headers are properly copied to the installation folder:
+# e.g.
+# export PREFIX="/usr/local/share/klayout"
+# in the klayout folder run
+# ./build.sh -j4 -qmake /home/alessioc/Qt/6.9.3/gcc_64/bin/qmake -bin $PREFIX
+# cp ./src/tl/tl/*.h "$PREFIX/include/tl/"
+# cp ./src/tl/tl/*.h "$PREFIX/include/lay/"
+# cp ./src/tl/tl/*.h "$PREFIX/include/layui/"
+# cp ./src/tl/tl/*.h "$PREFIX/include/db/"
+# cp ./src/tl/tl/*.h "$PREFIX/include/gsi/"
+
+set(KLAYOUT_HOME "/usr/local/share/klayout")
+target_include_directories(${QUCS_NAME} PRIVATE ${KLAYOUT_HOME}/include/lay)
+target_include_directories(${QUCS_NAME} PRIVATE ${KLAYOUT_HOME}/include/layui)
+target_include_directories(${QUCS_NAME} PRIVATE ${KLAYOUT_HOME}/include/db)
+target_include_directories(${QUCS_NAME} PRIVATE ${KLAYOUT_HOME}/include/tl)
+target_include_directories(${QUCS_NAME} PRIVATE ${KLAYOUT_HOME}/include/gsi)
+target_link_directories(${QUCS_NAME} PRIVATE ${KLAYOUT_HOME})
+
+
+target_link_libraries(${QUCS_NAME} PRIVATE klayout_lay)
+target_link_libraries(${QUCS_NAME} PRIVATE klayout_laybasic)
+target_link_libraries(${QUCS_NAME} PRIVATE klayout_layview)
+target_link_libraries(${QUCS_NAME} PRIVATE klayout_db)
+target_link_libraries(${QUCS_NAME} PRIVATE klayout_rdb)
+target_link_libraries(${QUCS_NAME} PRIVATE klayout_tl)
+target_link_libraries(${QUCS_NAME} PRIVATE klayout_gsi)
 
 
 
+set(CMAKE_INSTALL_RPATH ${KLAYOUT_HOME})
+set(CMAKE_BUILD_WITH_INSTALL_RPATH TRUE)
