@@ -104,3 +104,36 @@ add_custom_target(uninstall
     COMMAND ${CMAKE_COMMAND} -P ${CMAKE_CURRENT_BINARY_DIR}/uninstall.cmake)
 
 
+# 1. Define custom search locations or look for environment variables
+set(KLAYOUT_SEARCH_PATHS
+    "/usr/local/lib"
+    "/usr/lib"
+    "/usrLocal/share/klayout"
+#    "$ENV{KLAYOUT_LIBS}" # Supports custom environment variable setups
+)
+
+# 2. Find individual core KLayout shared libraries
+find_library(KLAYOUT_TL_LIB NAMES klayout_tl HINTS ${KLAYOUT_SEARCH_PATHS})
+find_library(KLAYOUT_DB_LIB NAMES klayout_db HINTS ${KLAYOUT_SEARCH_PATHS})
+find_library(KLAYOUT_LAY_LIB NAMES klayout_lay HINTS ${KLAYOUT_SEARCH_PATHS})
+
+# 3. Consolidate into a KLAYOUT_LIBS variable
+if(KLAYOUT_TL_LIB AND KLAYOUT_DB_LIB AND KLAYOUT_LAY_LIB)
+    set(KLAYOUT_LIBS
+        ${KLAYOUT_TL_LIB}
+        ${KLAYOUT_DB_LIB}
+        ${KLAYOUT_LAY_LIB}
+    )
+    set(KLAYOUT_FOUND TRUE)
+    message(STATUS "Found KLayout libraries: ${KLAYOUT_LIBS}")
+else()
+    set(KLAYOUT_FOUND FALSE)
+    message(WARNING "Could not find all KLayout core libraries.")
+endif()
+
+# 4. Link against your target if found
+if(KLAYOUT_FOUND)
+    add_executable(my_app main.cpp)
+    target_link_libraries(my_app PRIVATE ${KLAYOUT_LIBS})
+endif()
+

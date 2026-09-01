@@ -4,6 +4,9 @@
 #include <QDialog>
 #include <QFrame>
 #include <qucsdoc.h>
+#include "layLayoutView.h"
+#include "dbLayout.h"
+#include "dbCell.h"
 
 
 namespace Ui {
@@ -31,10 +34,14 @@ public:
 
 
   void  attachToSchematic(Schematic *schematic = nullptr);
+
+  bool  initKlayoutWidget();
 private:
   Ui::icLayout* ui;
   Schematic   *a_Schematic;
-
+  lay::LayoutView* m_layoutView;
+  db::Manager*     m_dbManager;
+  lay::Plugin*     m_layPlugin;
 
 };
 

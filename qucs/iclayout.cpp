@@ -14,7 +14,12 @@ icLayout::icLayout(QucsApp* app, Schematic* owner, const QString& fname) : QDial
   a_Schematic(nullptr)
 {
   QString filename = fname;
+
   ui->setupUi(this);
+
+  initKlayoutWidget();
+
+  // Documents
   this->setProperty("DOC_TYPE",(uint16_t)(doc_type));
 
   attachToSchematic(owner);
@@ -34,6 +39,13 @@ icLayout::icLayout(QucsApp* app, Schematic* owner, const QString& fname) : QDial
   {
     icLayout::load();
   }
+}
+
+bool  icLayout::initKlayoutWidget()
+{
+  m_dbManager = new db::Manager(true);
+  m_layPlugin = new lay::Plugin();
+  m_layoutView = new lay::LayoutView(m_dbManager, true,m_layPlugin);
 }
 /**
  * @brief icLayout::~icLayout

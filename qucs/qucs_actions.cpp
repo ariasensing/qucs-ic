@@ -80,6 +80,7 @@ bool QucsApp::performToggleAction(bool on, QAction *Action,
                                   pMouseFunc2 MousePress) {
   slotHideEdit(); // disable text edit of component property
   Schematic *Doc = (Schematic *)DocumentTab->currentWidget();
+  if (isLayoutDocument(Doc)) return false;
 
   // Perform toggle release clean up.
   if (!on) {

@@ -704,7 +704,7 @@ int Schematic::saveDocument()
   stream << "  <Script=" << a_Script << ">\n";
   stream << "  <RunScript=" << a_SimRunScript << ">\n";
   stream << "  <showFrame=" << static_cast<int>(a_showFrame) << ">\n";
-  stream << "  <Layout=" << (a_Layout == nullptr ? "" : a_Layout->getDocName()) << ">\n";
+  stream << "  <LayoutFile=" << (a_Layout == nullptr ? "" : a_LayoutFile) << ">\n";
   QString t;
   misc::convert2ASCII(t = a_Frame_Text0);
   stream << "  <FrameText0=" << t << ">\n";
@@ -938,21 +938,7 @@ bool Schematic::loadProperties(QTextStream *stream)
     else if(cstr == "FrameText1") misc::convert2Unicode(a_Frame_Text1 = nstr);
     else if(cstr == "FrameText2") misc::convert2Unicode(a_Frame_Text2 = nstr);
     else if(cstr == "FrameText3") misc::convert2Unicode(a_Frame_Text3 = nstr);
-    else if (cstr == "Layout")
-    {
-      // We create the layout doc
-      icLayout* layout = ( new icLayout(a_App, this, nstr));
-      if (layout==nullptr)
-      {
-        QMessageBox::critical(nullptr, QObject::tr("Error"),
-                              QObject::tr("Unable to open layout file"));
-        // Allow reading to continue. We may still open a schematic if
-        // the layout file went wrong
-      }
-
-      else
-      attachLayoutView(layout);
-    }
+    else if (cstr == "LayoutFile") a_LayoutFile = nstr;
     else {
       QMessageBox::critical(nullptr, QObject::tr("Error"),
       QObject::tr("Format Error:\nUnknown property: ")+cstr);

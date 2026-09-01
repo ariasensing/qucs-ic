@@ -376,6 +376,8 @@ INSTALL( FILES ${SCRIPTS} PERMISSIONS OWNER_EXECUTE OWNER_WRITE OWNER_READ
 set(KLAYOUT_HOME "/usr/local/share/klayout")
 target_include_directories(${QUCS_NAME} PRIVATE ${KLAYOUT_HOME}/include/lay)
 target_include_directories(${QUCS_NAME} PRIVATE ${KLAYOUT_HOME}/include/layui)
+target_include_directories(${QUCS_NAME} PRIVATE ${KLAYOUT_HOME}/include/layview)
+target_include_directories(${QUCS_NAME} PRIVATE ${KLAYOUT_HOME}/include/laybasic)
 target_include_directories(${QUCS_NAME} PRIVATE ${KLAYOUT_HOME}/include/db)
 target_include_directories(${QUCS_NAME} PRIVATE ${KLAYOUT_HOME}/include/tl)
 target_include_directories(${QUCS_NAME} PRIVATE ${KLAYOUT_HOME}/include/gsi)

@@ -116,6 +116,7 @@ QucsApp::QucsApp(bool netlist2Console) :
     tr("Schematic") + " (*.sch);;" +
     tr("Symbol only") + " (*.sym);;" +
     tr("Data Display") + " (*.dpl);;" +
+    tr("Layout file")+" (*.lay);;" +
     tr("Qucs Documents") + " (*.sch *.dpl);;" +
     tr("VHDL Sources") + " (*.vhdl *.vhd);;" +
     tr("Verilog Sources") + " (*.v);;" +
@@ -1733,7 +1734,7 @@ void QucsApp::slotLayoutEdit()
   }
 
 
-  int i = DocumentTab->addTab(schLayout, SchDoc->getLayoutFilename());
+  int i = addDocumentTab(schLayout, SchDoc->getLayoutFilename());
   DocumentTab->setCurrentIndex(i);
 //    SchDoc->becomeCurrent(true);
 //    SchDoc->viewport()->update();
@@ -1996,8 +1997,9 @@ bool QucsApp::saveAs()
     if(ext.isEmpty() || !extlist.contains(ext))
     {
       // if no extension was specified or is unknown
-      if (!isTextDocument (w))
+      if ((!isTextDocument (w))&&(!isLayoutDocument(w)))
       {
+
         // if it's a symbol, we add .sym
         Schematic *sch = dynamic_cast<Schematic*>(Doc);
         if (sch != nullptr && sch->getIsSymbolOnly()) {
@@ -2436,6 +2438,8 @@ void QucsApp::updatePortNumber(QucsDoc *currDoc, int No)
 
   while((w=DocumentTab->widget(No++)) != nullptr) {
     if(isTextDocument (w))  continue;
+    if (isLayoutDocument(w)) continue;
+
 
     Schematic* Doc = dynamic_cast<Schematic*>(w);
     assert(Doc != nullptr);
