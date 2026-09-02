@@ -69,6 +69,7 @@
 #include "config.h"
 #endif
 
+#include "iclayout.h"
 // for editing component name on schematic
 QRegularExpression Expr_CompProp;
 QRegularExpressionValidator Val_CompProp(Expr_CompProp, 0);
@@ -711,6 +712,12 @@ void QucsApp::slotSelectAll() {
   slotHideEdit(); // disable text edit of component property
 
   QWidget *Doc = DocumentTab->currentWidget();
+  if (isLayoutDocument(Doc))
+  {
+    ((icLayout*)Doc)->selectAll();
+    return;
+
+  }
   if (isTextDocument(Doc)) {
     ((TextDoc *)Doc)->viewport()->setFocus();
     //((TextDoc*)Doc)->selectAll(true);

@@ -4,7 +4,8 @@
 #include <QDialog>
 #include <QFrame>
 #include <qucsdoc.h>
-#include "layLayoutView.h"
+
+#include "layLayoutView_qt.h"
 #include "dbLayout.h"
 #include "dbCell.h"
 
@@ -32,16 +33,24 @@ public:
   void  zoomToSelection() {}
   void  showNoZoom() {}
 
-
+  void  loadLayout();
   void  attachToSchematic(Schematic *schematic = nullptr);
 
   bool  initKlayoutWidget();
 private:
-  Ui::icLayout* ui;
-  Schematic   *a_Schematic;
-  lay::LayoutView* m_layoutView;
-  db::Manager*     m_dbManager;
-  lay::Plugin*     m_layPlugin;
+  Ui::icLayout*           ui;
+  Schematic               *a_Schematic;
+  QString                 m_LayoutFile;
+
+  lay::LayoutViewWidget*  m_layoutWidget;
+  lay::LayoutView*        m_layoutView;
+  db::Manager*            m_dbManager;
+  unsigned int            m_canvas_id;
+public slots:
+  void                    loadLayoutClicked();
+  void                    saveLayoutClicked();
+  void                    selectAll();
+
 
 };
 

@@ -114,5 +114,8 @@
         <file>bitmaps/svg/ImagePainting.svg</file>
         <file>bitmaps/svg/systemcommand.svg</file>
         <file>bitmaps/svg/iclayout.svg</file>
+        <file>bitmaps/svg/file-download-icon.svg</file>
+        <file>bitmaps/svg/save-file-icon.svg</file>
+        <file>bitmaps/svg/open-file-folder-icon.svg</file>
     </qresource>
 </RCC>

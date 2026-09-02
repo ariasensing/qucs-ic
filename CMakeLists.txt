@@ -137,3 +137,4 @@ if(KLAYOUT_FOUND)
     target_link_libraries(my_app PRIVATE ${KLAYOUT_LIBS})
 endif()
 
+add_subdirectory(ictech/ictech)

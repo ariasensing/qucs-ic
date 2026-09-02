@@ -66,7 +66,8 @@
 #define executableSuffix ""
 #endif
 
-#include "layApplication.h"
+#include "layLayoutView.h"
+#include "layLayoutView_qt.h"
 
 tQucsSettings QucsSettings;
 
@@ -1242,14 +1243,14 @@ int main(int argc, char *argv[])
             return doPrint(inputfile, outputfile, page, dpi, color, orientation);
         }
     }
-    // Initialize klayout
-    lay::GuiApplication klayout_app(argc, argv)
 
     QucsMain = new QucsApp(netlist2Console);
     //1a.setMainWidget(QucsMain);
 
+
     QucsMain->show();
-        int result = app.exec();
+
+    int result = app.exec();
     //saveApplSettings(QucsMain);
     return result;
 }

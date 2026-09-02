@@ -59,7 +59,7 @@ endif()
 add_compile_definitions(HAVE_CONFIG_H)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
-find_package(Qt6 REQUIRED COMPONENTS Core Gui Widgets Svg SvgWidgets Xml PrintSupport)
+find_package(Qt6 REQUIRED COMPONENTS Core Gui Widgets Svg SvgWidgets Xml PrintSupport Core5Compat)
 include_directories(
       ${Qt6Core_INCLUDE_DIRS}
       ${Qt6Widgets_INCLUDE_DIRS}
@@ -67,6 +67,7 @@ include_directories(
       ${Qt6SvgWidgets_INCLUDE_DIRS}
       ${Qt6Xml_INCLUDE_DIRS}
       ${Qt6PrintSupport_INCLUDE_DIRS}
+      ${Qt6Core5Compat_INCLUDE_DIRS}
       )
 
 
@@ -262,6 +263,7 @@ ADD_EXECUTABLE( ${QUCS_NAME} MACOSX_BUNDLE WIN32
   iclayout.h iclayout.cpp iclayout.ui
   conductor.cpp
   schematic_net.cpp
+  technologyeditor.h technologyeditor.cpp technologyeditor.ui
 
 
 
@@ -274,7 +276,7 @@ ADD_EXECUTABLE( ${QUCS_NAME} MACOSX_BUNDLE WIN32
 #
 TARGET_LINK_LIBRARIES( ${QUCS_NAME} PRIVATE
     components diagrams dialogs geometry paintings extsimkernels spicecomponents magnetics qt3_compat
-    Qt6::Core  Qt6::Gui  Qt6::Widgets Qt6::Svg  Qt6::SvgWidgets Qt6::Xml  Qt6::PrintSupport )
+    Qt6::Core  Qt6::Gui  Qt6::Widgets Qt6::Svg  Qt6::SvgWidgets Qt6::Xml  Qt6::PrintSupport Qt6::Core5Compat)
 SET_TARGET_PROPERTIES(${QUCS_NAME} PROPERTIES POSITION_INDEPENDENT_CODE TRUE)
 #
 # Prepare the installation
@@ -373,16 +375,21 @@ INSTALL( FILES ${SCRIPTS} PERMISSIONS OWNER_EXECUTE OWNER_WRITE OWNER_READ
 # cp ./src/tl/tl/*.h "$PREFIX/include/db/"
 # cp ./src/tl/tl/*.h "$PREFIX/include/gsi/"
 
-set(KLAYOUT_HOME "/usr/local/share/klayout")
-target_include_directories(${QUCS_NAME} PRIVATE ${KLAYOUT_HOME}/include/lay)
-target_include_directories(${QUCS_NAME} PRIVATE ${KLAYOUT_HOME}/include/layui)
-target_include_directories(${QUCS_NAME} PRIVATE ${KLAYOUT_HOME}/include/layview)
-target_include_directories(${QUCS_NAME} PRIVATE ${KLAYOUT_HOME}/include/laybasic)
-target_include_directories(${QUCS_NAME} PRIVATE ${KLAYOUT_HOME}/include/db)
-target_include_directories(${QUCS_NAME} PRIVATE ${KLAYOUT_HOME}/include/tl)
-target_include_directories(${QUCS_NAME} PRIVATE ${KLAYOUT_HOME}/include/gsi)
-target_link_directories(${QUCS_NAME} PRIVATE ${KLAYOUT_HOME})
+add_compile_definitions(HAVE_QT)
 
+set(KLAYOUT_INCLUDE_HOME "/usr/local/share/klayout")
+target_include_directories(${QUCS_NAME} PRIVATE ${KLAYOUT_INCLUDE_HOME}/include/lay)
+target_include_directories(${QUCS_NAME} PRIVATE ${KLAYOUT_INCLUDE_HOME}/include/layui)
+target_include_directories(${QUCS_NAME} PRIVATE ${KLAYOUT_INCLUDE_HOME}/include/layview)
+target_include_directories(${QUCS_NAME} PRIVATE ${KLAYOUT_INCLUDE_HOME}/include/laybasic)
+target_include_directories(${QUCS_NAME} PRIVATE ${KLAYOUT_INCLUDE_HOME}/include/db)
+target_include_directories(${QUCS_NAME} PRIVATE ${KLAYOUT_INCLUDE_HOME}/include/tl)
+target_include_directories(${QUCS_NAME} PRIVATE ${KLAYOUT_INCLUDE_HOME}/include/gsi)
+
+set(KLAYOUT_LIBRARY_HOME "/home/alessioc/projects/qucs_s/klayout/bin-release/")
+target_link_directories(${QUCS_NAME} PRIVATE ${KLAYOUT_LIBRARY_HOME})
+target_link_directories(${QUCS_NAME} PRIVATE ${KLAYOUT_LIBRARY_HOME}/db_plugins)
+target_link_directories(${QUCS_NAME} PRIVATE ${KLAYOUT_LIBRARY_HOME}/lay_plugins)
 
 target_link_libraries(${QUCS_NAME} PRIVATE klayout_lay)
 target_link_libraries(${QUCS_NAME} PRIVATE klayout_laybasic)
@@ -391,6 +398,13 @@ target_link_libraries(${QUCS_NAME} PRIVATE klayout_db)
 target_link_libraries(${QUCS_NAME} PRIVATE klayout_rdb)
 target_link_libraries(${QUCS_NAME} PRIVATE klayout_tl)
 target_link_libraries(${QUCS_NAME} PRIVATE klayout_gsi)
+
+target_link_libraries(${QUCS_NAME} PRIVATE gds2)
+target_link_libraries(${QUCS_NAME} PRIVATE lefdef)
+target_link_libraries(${QUCS_NAME} PRIVATE lstream)
+target_link_libraries(${QUCS_NAME} PRIVATE oasis)
+target_link_libraries(${QUCS_NAME} PRIVATE net_tracer)
+
 
 
 
