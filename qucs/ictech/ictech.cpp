@@ -18,13 +18,17 @@ tech::tech(QString filename) :
                                m_fileName(),
                                m_modelCorners(),
                                m_substrateCorners(),
-                               m_Substrates()
+                               m_Substrates(),
+                               m_lastError()
 {
   if (filename.isEmpty()) return;
-  // Check if we already have a tech with the same filename
+  // Check if we already have a tech with the same filename. If so copy data from the existing
   QHash<QString,tech*>::iterator it = m_availableTechs.find(filename);
   if (it!=m_availableTechs.end())
+  {
+    copyFrom(*it);
     return;
+  }
 
   m_fileName = filename;
   // Should we keep a copy? For now, just clean
@@ -58,21 +62,9 @@ tech::~tech()
  */
 void    tech::copyFrom(const tech& t2)
 {
-  // When copying from another technology, add a new unique name
-  QString t2name = t2.m_techName;
-  unsigned int next_id = 1;
-  do
-  {
-    QString testname = t2name + "_" + QString::number(next_id);
-    if (m_mapNameToFiles.find(testname)==m_mapNameToFiles.end())
-      break;
-
-    next_id++;
-  } while(1);
-
   m_isEmpty               = t2.m_isEmpty;
-  m_techName              = t2name;
-  m_fileName              = ""; // Filename must be set empty to guarantee 1Tech1File rule
+  m_techName              = t2.m_techName;
+  m_fileName              = t2.m_fileName;
   m_modelCorners          = t2.m_modelCorners;
   m_substrateCorners      = t2.m_substrateCorners;
   m_Substrates            = t2.m_Substrates;
@@ -224,7 +216,7 @@ bool tech::saveToFile(const QString& filename)
   // We cannot save to a filename already associated with another tech
   removeThisFromAvailable();
   m_fileName = filename;
-  bool bres = save();
+  return save();
 }
 /**
  * @brief tech::load

@@ -29,6 +29,8 @@ public:
   bool  load();
   bool  saveToFile(const QString& filename);
   QString getFilename();
+  QString getLastError() {return m_lastError;}
+  QString getTechname()    {return m_techName;}
 private:
   void        copyFrom(const tech& t2);
   void        clean();
@@ -41,6 +43,7 @@ private:
   QStringList m_modelCorners;
   QStringList m_substrateCorners;
   QHash<QString,Substrate*> m_Substrates;
+  QString     m_lastError;
   // Here we keep the list of saved technologies
   //            filename, tech*
   static QHash<QString,tech*> m_availableTechs;
