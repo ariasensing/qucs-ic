@@ -60,16 +60,15 @@ tech::~tech()
  * @brief tech::copyFrom
  * @param t2
  */
-void    tech::copyFrom(const tech& t2)
+void    tech::copyFrom(tech* t2)
 {
-  m_isEmpty               = t2.m_isEmpty;
-  m_techName              = t2.m_techName;
-  m_fileName              = t2.m_fileName;
-  m_modelCorners          = t2.m_modelCorners;
-  m_substrateCorners      = t2.m_substrateCorners;
-  m_Substrates            = t2.m_Substrates;
-
-  m_availableTechs[m_fileName] = this;
+  if (t2==nullptr) return;
+  m_isEmpty               = t2->m_isEmpty;
+  m_techName              = t2->m_techName;
+  m_fileName              = t2->m_fileName;
+  m_modelCorners          = t2->m_modelCorners;
+  m_substrateCorners      = t2->m_substrateCorners;
+  m_Substrates            = t2->m_Substrates;
 }
 
 /**
@@ -92,16 +91,17 @@ void   tech::removeThisFromAvailable()
 
 }
 /**
- * @brief tech::renameThisInAvailable
+ * @brief tech::rename
  * @param newname
  */
-void   tech::renameThis(const QString& newname)
+void   tech::rename(const QString& newname)
 {
-
+  if (newname==m_techName) return;
   m_mapNameToFiles[newname] = m_mapNameToFiles[m_techName];
   m_mapNameToFiles.remove(m_techName);
   m_techName = newname;
 }
+
 
 /**
  * @brief tech::addModelCorner
@@ -229,6 +229,16 @@ bool  tech::load()
 }
 
 /**
+ * @brief tech::load
+ * @param filename
+ * @return
+ */
+bool tech::load(const QString& filename)
+{
+
+}
+
+/**
  * @brief tech::getFilename
  * @return
  */
@@ -243,7 +253,7 @@ QString tech::getFilename()
  * @param filename
  * @return The set of tech object attached to
  */
-tech*  tech::getTechFromFilename(QString& filename)
+tech*  tech::getTechFromFilename(const QString& filename)
 {
   QHash<QString, tech*>::iterator it = m_availableTechs.find(filename);
   if (it == m_availableTechs.end()) return nullptr;
@@ -255,7 +265,7 @@ tech*  tech::getTechFromFilename(QString& filename)
  * @param techname
  * @return
  */
-tech*  tech::getTechFromName(QString& techname)
+tech*  tech::getTechFromName(const QString& techname)
 {
   QHash<QString, QString>::iterator file_it = m_mapNameToFiles.find(techname);
   if (file_it==m_mapNameToFiles.end()) return nullptr;
@@ -295,7 +305,7 @@ QString tech::getFilenameFromTech(const QString &tech)
  * @param filname
  * @return
  */
-QString tech::getTechFromFilename(const QString &filename)
+QString tech::getTechnameFromFilename(const QString &filename)
 {
   QHash<QString, QString>::iterator file_it;
   for (file_it = m_mapNameToFiles.begin(); file_it != m_mapNameToFiles.end(); file_it++)

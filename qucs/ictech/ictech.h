@@ -27,12 +27,14 @@ public:
   bool  loadSubstrateData(const QString& corner, const QString& filename);
   bool  save();
   bool  load();
+  bool  load(const QString& filename);
   bool  saveToFile(const QString& filename);
   QString getFilename();
   QString getLastError() {return m_lastError;}
   QString getTechname()    {return m_techName;}
+  void   copyFrom(tech* t2);
 private:
-  void        copyFrom(const tech& t2);
+
   void        clean();
 
   bool        m_isEmpty;
@@ -52,15 +54,16 @@ private:
 
   void   appendThisToAvailable();
   void   removeThisFromAvailable();
-  void   renameThis(const QString& newname);
+
 
 public:
-
-  static tech*  getTechFromFilename(QString& filename);
-  static tech*  getTechFromName(QString& techname);
+  void          rename(const QString& newname);
+  void          setNewTechname(const QString& techname);
+  static tech*  getTechFromFilename(const QString& filename);
+  static tech*  getTechFromName(const QString& techname);
   static QStringList getAvailableTechs();
   static QString getFilenameFromTech(const QString &tech);
-  static QString getTechFromFilename(const QString &filename);
+  static QString getTechnameFromFilename(const QString &filename);
 
 };
 
