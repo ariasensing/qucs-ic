@@ -177,8 +177,15 @@
            <string>Model (FEOL) Corners</string>
           </property>
           <layout class="QGridLayout" name="gridLayout_3">
-           <item row="0" column="0">
+           <item row="1" column="0">
             <widget class="QTableWidget" name="tblModelCorners"/>
+           </item>
+           <item row="0" column="0">
+            <widget class="QPushButton" name="btnSetFromDeck">
+             <property name="text">
+              <string>Set from spice deck</string>
+             </property>
+            </widget>
            </item>
           </layout>
          </widget>
@@ -300,6 +307,54 @@
          <property name="text">
           <string>Import EM ...</string>
          </property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+     <widget class="QWidget" name="tabModels">
+      <attribute name="title">
+       <string>SPICE Models</string>
+      </attribute>
+      <layout class="QGridLayout" name="gridLayout_12">
+       <item row="0" column="0">
+        <widget class="QSplitter" name="splitter_2">
+         <property name="orientation">
+          <enum>Qt::Orientation::Horizontal</enum>
+         </property>
+         <widget class="QGroupBox" name="groupBox_5">
+          <property name="title">
+           <string>SPICE Decks</string>
+          </property>
+          <layout class="QGridLayout" name="gridLayout_14">
+           <item row="0" column="0">
+            <widget class="QPushButton" name="btnAddDeck">
+             <property name="text">
+              <string>Add</string>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="0" colspan="2">
+            <widget class="QTableWidget" name="tblDecks"/>
+           </item>
+           <item row="0" column="1">
+            <widget class="QPushButton" name="btnRemoveDeck">
+             <property name="text">
+              <string>Remove</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+         <widget class="QGroupBox" name="groupBox_6">
+          <property name="title">
+           <string>Subckts and Models</string>
+          </property>
+          <layout class="QGridLayout" name="gridLayout_13">
+           <item row="0" column="0">
+            <widget class="QTableWidget" name="tblSubckts"/>
+           </item>
+          </layout>
+         </widget>
         </widget>
        </item>
       </layout>

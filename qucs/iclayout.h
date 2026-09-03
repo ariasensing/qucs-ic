@@ -9,6 +9,7 @@
 #include "dbLayout.h"
 #include "dbCell.h"
 
+#include "ictech.h"
 
 namespace Ui {
 class icLayout;
@@ -20,7 +21,7 @@ class icLayout : public QDialog, public QucsDoc {
   Q_OBJECT
 
 public:
-  explicit icLayout(QucsApp*, class Schematic*, const QString&);
+  explicit icLayout(QucsApp* owner, class Schematic* schemowner, const QString& layoutfile, const QString& techfile);
   ~icLayout();
 
   void  setName(const QString&);
@@ -37,15 +38,19 @@ public:
   void  attachToSchematic(Schematic *schematic = nullptr);
 
   bool  initKlayoutWidget();
+//----------------------------------
+// Technology
+  tech* getTechnology();
+  void  setTechnology(tech* ict);
 private:
   Ui::icLayout*           ui;
   Schematic               *a_Schematic;
-  QString                 m_LayoutFile;
 
   lay::LayoutViewWidget*  m_layoutWidget;
   lay::LayoutView*        m_layoutView;
   db::Manager*            m_dbManager;
   unsigned int            m_canvas_id;
+  tech*                   m_technology;
 public slots:
   void                    loadLayoutClicked();
   void                    saveLayoutClicked();

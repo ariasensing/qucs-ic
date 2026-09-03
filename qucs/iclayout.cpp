@@ -2,6 +2,10 @@
 #include "ui_iclayout.h"
 #include "schematic.h"
 #include "dbManager.h"          // optional, for undo/redo
+#include "main.h"
+
+extern QString TechFileFilter;
+extern QString LayoutImportFilter;
 
 /**
  * @brief icLayout::icLayout
@@ -9,9 +13,10 @@
  * @param owner
  * @param fname
  */
-icLayout::icLayout(QucsApp* app, Schematic* owner, const QString& fname) : QDialog(nullptr), QucsDoc(app, fname, LAYOUT),
+icLayout::icLayout(QucsApp* app, Schematic* owner, const QString& fname,const QString& techfile) : QDialog(nullptr), QucsDoc(app, fname, LAYOUT),
   ui(new Ui::icLayout),
-  a_Schematic(nullptr)
+  a_Schematic(nullptr),
+  m_technology(nullptr)
 {
 
   QString filename = fname;
@@ -22,17 +27,6 @@ icLayout::icLayout(QucsApp* app, Schematic* owner, const QString& fname) : QDial
   this->setProperty("DOC_TYPE",(uint16_t)(doc_type));
 
   attachToSchematic(owner);
-
-  if (fname.isEmpty())
-    if ((owner!=nullptr)&&(!owner->getDocName().isEmpty()))
-    {
-      QFileInfo Info(owner->getDocName());
-      QString base = Info.completeBaseName();
-      filename = base.append(".lay");
-    }
-
-  if (fname.isEmpty())
-      filename = QString("[NONAME]");
 
   if (!filename.isEmpty())
   {
@@ -126,8 +120,6 @@ void icLayout::attachToSchematic(Schematic *schematic)
 bool  icLayout::load()
 {
 
-  return false;
-
   // If everything was ok, we may signal the owner that we have a valid filename
   if (a_Schematic!=nullptr)
     a_Schematic->setLayoutFilename(a_DocName);
@@ -151,7 +143,7 @@ int   icLayout::save()
  */
 void icLayout::loadLayoutClicked()
 {
-  QString layoutFile = QFileDialog::getOpenFileName(this,"Load layout file");
+  QString layoutFile = QFileDialog::getOpenFileName(this,"Load layout file",lastDir, LayoutImportFilter);
   if (layoutFile.isEmpty()) return;
 
   if ((m_layoutWidget==nullptr)||(m_layoutView==nullptr)) return;
@@ -168,7 +160,7 @@ void icLayout::loadLayoutClicked()
     return;
   }
 
-  m_LayoutFile = layoutFile;
+  a_DocName = layoutFile;
 }
 /**
  * @brief icLayout::saveLayoutClicked
@@ -176,7 +168,7 @@ void icLayout::loadLayoutClicked()
 
 void icLayout::saveLayoutClicked()
 {
-  QString layoutFile = QFileDialog::getSaveFileName(this,"Save layout");
+  QString layoutFile = QFileDialog::getSaveFileName(this,"Save layout",lastDir, LayoutImportFilter);
   if (layoutFile.isEmpty()) return;
 
 
@@ -189,4 +181,20 @@ void icLayout::selectAll()
   if (m_layoutView==nullptr) return;
   m_layoutView->select_all();
 }
+
+/**
+ * @brief icLayout::getTechnology
+ * @return
+ */
+tech* icLayout::getTechnology() {return m_technology;}
+/**
+ * @brief icLayout::setTechnology
+ * @param ict Pointer to the technology object
+ */
+void  icLayout::setTechnology(tech* ict)
+{
+  m_technology=ict;
+
+}
+
 

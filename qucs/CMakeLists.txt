@@ -123,6 +123,7 @@ INCLUDE_DIRECTORIES(
   #${qucs_SOURCE_DIR}/octave ->no sources here
   ${PROJECT_SOURCE_DIR}/paintings
   ${PROJECT_SOURCE_DIR}/third_party
+  ${PROJECT_SOURCE_DIR}/ictech
   )
 
 #ADD_SUBDIRECTORY( bitmaps ) -> added as resources
@@ -137,6 +138,7 @@ ADD_SUBDIRECTORY( python )
 ADD_SUBDIRECTORY( paintings )
 ADD_SUBDIRECTORY( extsimkernels )
 ADD_SUBDIRECTORY( spicecomponents )
+ADD_SUBDIRECTORY( ictech )
 
 SET(QUCS_SRCS
   element.cpp	octave_window.cpp	qucsdoc.cpp
@@ -264,6 +266,7 @@ ADD_EXECUTABLE( ${QUCS_NAME} MACOSX_BUNDLE WIN32
   conductor.cpp
   schematic_net.cpp
   technologyeditor.h technologyeditor.cpp technologyeditor.ui
+  dlgselecttech.h dlgselecttech.cpp dlgselecttech.ui
 
 
 
@@ -275,7 +278,7 @@ ADD_EXECUTABLE( ${QUCS_NAME} MACOSX_BUNDLE WIN32
 # Tell CMake which libraries we need to link our executable against.
 #
 TARGET_LINK_LIBRARIES( ${QUCS_NAME} PRIVATE
-    components diagrams dialogs geometry paintings extsimkernels spicecomponents magnetics qt3_compat
+    components diagrams dialogs geometry paintings extsimkernels spicecomponents magnetics qt3_compat ictech
     Qt6::Core  Qt6::Gui  Qt6::Widgets Qt6::Svg  Qt6::SvgWidgets Qt6::Xml  Qt6::PrintSupport Qt6::Core5Compat)
 SET_TARGET_PROPERTIES(${QUCS_NAME} PROPERTIES POSITION_INDEPENDENT_CODE TRUE)
 #

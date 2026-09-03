@@ -87,6 +87,7 @@ ProjectView::refresh()
   appendRow(m_model->invisibleRootItem(), tr("Schematics"), QString(""));
   appendRow(m_model->invisibleRootItem(), tr("Symbols"), QString(""));
   appendRow(m_model->invisibleRootItem(), tr("SPICE"), QString(""));
+  appendRow(m_model->invisibleRootItem(), tr("Technology"), QString(""));
   appendRow(m_model->invisibleRootItem(), tr("Others"), QString(""));
 
   setExpanded(m_model->index(6, 0), true);
@@ -145,8 +146,13 @@ ProjectView::refresh()
              (extName=="sp")) {
         appendChild(8,columnData);
     }
-    else {
+    else if ((extName == "tech"))
+    {
       appendChild(9, columnData);
+    }
+    else
+    {
+      appendChild(10, columnData);
     }
   }
 

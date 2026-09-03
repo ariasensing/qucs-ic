@@ -364,6 +364,8 @@ protected slots:
 private:
   // Associates an icLayout to the current schematic
   QString   a_LayoutFile;
+  QString   a_TechnologyFile; // We don't need to create the layout object when opening a schematic.
+  // Let's store the technology file here and use it only if needed
   icLayout  *a_Layout;
 
   // Flag to define which view to use for simulation
@@ -616,10 +618,20 @@ public:
 
   QString   getLayoutFilename() {return a_LayoutFile;}
   /**
+   * @brief getTechFilename
+   * @return The technology associated with the layout file
+   */
+  QString   getTechFilename() {return a_TechnologyFile;}
+  /**
    * @brief setLayoutFilename Set the name of the current layout file
    * @param fname
    */
   void      setLayoutFilename(QString& fname) {a_LayoutFile = fname;}
+  /**
+   * @brief setTechFilename
+   * @param fname
+   */
+  void      setTechFilename(QString& fname ) {a_TechnologyFile = fname;}
 private:
   int  saveDocument();
 
@@ -630,6 +642,7 @@ private:
   bool loadWires(QTextStream*, std::list<Element*> *List=0);
   bool loadDiagrams(QTextStream*, std::list<Diagram*>*);
   bool loadPaintings(QTextStream*, std::list<Painting*>*);
+  bool loadLayout(QTextStream* );
   bool loadIntoNothing(QTextStream*);
 
   QString createClipboardFile();

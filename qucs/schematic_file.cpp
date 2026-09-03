@@ -705,6 +705,7 @@ int Schematic::saveDocument()
   stream << "  <RunScript=" << a_SimRunScript << ">\n";
   stream << "  <showFrame=" << static_cast<int>(a_showFrame) << ">\n";
   stream << "  <LayoutFile=" << (a_Layout == nullptr ? "" : a_LayoutFile) << ">\n";
+  stream << "  <Technology=" << a_TechnologyFile << ">\n";
   QString t;
   misc::convert2ASCII(t = a_Frame_Text0);
   stream << "  <FrameText0=" << t << ">\n";
@@ -938,7 +939,14 @@ bool Schematic::loadProperties(QTextStream *stream)
     else if(cstr == "FrameText1") misc::convert2Unicode(a_Frame_Text1 = nstr);
     else if(cstr == "FrameText2") misc::convert2Unicode(a_Frame_Text2 = nstr);
     else if(cstr == "FrameText3") misc::convert2Unicode(a_Frame_Text3 = nstr);
-    else if (cstr == "LayoutFile") a_LayoutFile = nstr;
+    else if (cstr == "LayoutFile")
+    {
+      a_LayoutFile = nstr;
+    }
+    else if (cstr == "Technology")
+    {
+      a_TechnologyFile = nstr;
+    }
     else {
       QMessageBox::critical(nullptr, QObject::tr("Error"),
       QObject::tr("Format Error:\nUnknown property: ")+cstr);

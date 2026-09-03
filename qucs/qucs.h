@@ -73,6 +73,11 @@ typedef void (MouseActions::*pMouseFunc)(Schematic *, QMouseEvent *);
 typedef void (MouseActions::*pMouseFunc2)(Schematic *, QMouseEvent *, float,
                                           float);
 
+
+extern QString TechFileFilter;
+extern QString LayoutImportFilter;
+
+
 class QucsFileSystemModel : public QFileSystemModel {
   Q_OBJECT
 public:
@@ -398,7 +403,7 @@ private:
 
   // menus contain the items of their menubar
   enum { MaxRecentFiles = 8, MaxRecentProjects = 8 };
-  QMenu *fileMenu, *editMenu, *insMenu, *projMenu, *recentProjMenu, *simMenu,
+  QMenu *fileMenu, *editMenu, *insMenu, *projMenu, *techMenu,  *recentProjMenu, *simMenu,
       *viewMenu, *helpMenu, *alignMenu, *toolMenu, *recentFilesMenu, *cmMenu;
   QAction *fileRecentAction[MaxRecentFiles];
   QAction *fileClearRecent;
@@ -440,7 +445,7 @@ public:
       *createLib, *callConverter, *graph2csv, *callAtt, *centerHor, *centerVert,
       *loadModule, *buildModule, *callPwrComb, *callRFLayout, *callSPAR_Viewer,
       *callRxcalc;
-
+  QAction *techNew, *techOpen;
   QAction *helpQucsIndex;
   QAction *simSettings;
   QAction *buildVAModule;
@@ -508,6 +513,9 @@ public slots:
   void slotOpenRecentProject();
   void slotSaveDiagramToGraphicsFile();
   void slotSaveSchematicToGraphicsFile(bool diagram = false);
+
+  void slotTechNew();
+  void slotTechOpen();
 
 private slots:
   void slotCursorLeft(bool left = true);

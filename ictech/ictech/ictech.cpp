@@ -1,6 +1,6 @@
 #include "ictech.h"
 
-tech::tech()
+tech::tech(QString name)
 {
 
 }

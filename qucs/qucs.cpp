@@ -89,6 +89,10 @@
 #include "extsimkernels/CdlSettingsDialog.h"
 #include "schematic.h"
 
+QString TechFileFilter = tr("All files (*.*);;Tech File (*.tech)" );
+QString LayoutImportFilter = tr("All files (*.*);;GDSII (*.gdsi) ;; OASIS (*.oa)" );
+
+
 QucsApp::QucsApp(bool netlist2Console) :
   a_netlist2Console(netlist2Console)
 {
@@ -116,17 +120,19 @@ QucsApp::QucsApp(bool netlist2Console) :
     tr("Schematic") + " (*.sch);;" +
     tr("Symbol only") + " (*.sym);;" +
     tr("Data Display") + " (*.dpl);;" +
-    tr("Layout file")+" (*.lay);;" +
+    tr("Layout file")+" (*.gds *.oa);;" +
     tr("Qucs Documents") + " (*.sch *.dpl);;" +
     tr("VHDL Sources") + " (*.vhdl *.vhd);;" +
     tr("Verilog Sources") + " (*.v);;" +
     tr("Verilog-A Sources") + " (*.va);;" +
     tr("Octave Scripts") + " (*.m *.oct);;" +
+    tr("Tech files") + " (*.tech);;" +
     tr("Spice Files") + QStringLiteral(" (") + QucsSettings.spiceExtensions.join(" ") + QStringLiteral(");;") +
     tr("Any File")+" (*)";
 
   //updateSchNameHash();
   //updateSpiceNameHash();
+
 
   MouseMoveAction = nullptr;
   MousePressAction = nullptr;
@@ -1676,8 +1682,9 @@ void QucsApp::slotLayoutNew()
 {
   statusBar()->showMessage(tr("Creating new layout..."));
   slotHideEdit(); // disable text edit of component property
-
-  icLayout *d = new icLayout(this, nullptr, "");
+  // Select the technology
+  QString techFile;
+  icLayout *d = new icLayout(this, nullptr, "", techFile);
   int i = addDocumentTab(d);
   DocumentTab->setCurrentIndex(i);
 
@@ -1700,6 +1707,7 @@ void QucsApp::slotLayoutEdit()
 
   QString layoutFile = SchDoc->getLayoutFilename();
 
+
   icLayout* schLayout = SchDoc->getLayoutView();
 
   // We may have a view with no file name (if it wasn't saved)
@@ -1721,6 +1729,9 @@ void QucsApp::slotLayoutEdit()
                               tr("Create Layout?"),
                               tr("Current schematic does not have a layout view. Do you want to create one?"))==QMessageBox::No)
           return;
+
+
+
   }
   // Here we need to create a view
   SchDoc->createLayoutView();
@@ -4391,3 +4402,5 @@ void ContextMenuTabWidget::slotCxMenuOpenFolder()
     QDesktopServices::openUrl(QUrl::fromLocalFile(Info.canonicalPath()));
   }
 }
+
+

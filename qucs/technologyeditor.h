@@ -2,6 +2,7 @@
 #define TECHNOLOGYEDITOR_H
 
 #include <QDialog>
+#include "ictech.h"
 
 namespace Ui {
 class TechnologyEditor;
@@ -9,10 +10,14 @@ class TechnologyEditor;
 
 class TechnologyEditor : public QDialog {
   Q_OBJECT
+private:
+  bool m_bSaved;
 
 public:
-  explicit TechnologyEditor(QWidget* parent = nullptr);
+  explicit TechnologyEditor(const QString& filename="", QWidget* parent = nullptr);
   ~TechnologyEditor();
+
+  bool     fileSaved();
 
 private:
   Ui::TechnologyEditor* ui;

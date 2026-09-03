@@ -65,6 +65,8 @@
 
 #include "extsimkernels/xyce.h"
 
+#include "technologyeditor.h"
+
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
@@ -1921,3 +1923,26 @@ void QucsApp::slotSwitchToTab(int index) {
   }
 }
 ////////////////////////////////////////////////////////////////
+/// Technology handling
+
+void QucsApp::slotTechNew()
+{
+  TechnologyEditor editor("",this);
+
+  editor.exec();
+
+  if (editor.fileSaved())
+      Content->refresh();
+}
+
+void QucsApp::slotTechOpen()
+{
+  QString fileName = QFileDialog::getOpenFileName(this, "Open tech file", "", TechFileFilter );
+  if (fileName.isEmpty()) return;
+  TechnologyEditor editor(fileName,this);
+
+  editor.exec();
+
+  if (editor.fileSaved())
+    Content->refresh();
+}

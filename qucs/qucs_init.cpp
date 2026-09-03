@@ -874,6 +874,17 @@ void QucsApp::initActions() {
   helpAboutQt->setStatusTip(tr("About Qt"));
   helpAboutQt->setWhatsThis(tr("About Qt\n\nAbout Qt by Trolltech"));
   connect(helpAboutQt, SIGNAL(triggered()), qApp, SLOT(aboutQt()));
+
+
+  techNew = new QAction(tr("New technology"),this);
+  techNew->setStatusTip(tr("Create a new technology"));
+  techNew->setWhatsThis(tr("Create a new technology description"));
+  connect(techNew, &QAction::triggered, this, &QucsApp::slotTechNew);
+
+  techOpen = new QAction(tr("Open technology"),this);
+  techOpen->setStatusTip(tr("Open and edit a tech file"));
+  techOpen->setWhatsThis(tr("Edit a tech file"));
+  connect(techOpen, &QAction::triggered, this, &QucsApp::slotTechOpen);
 }
 
 // ----------------------------------------------------------
@@ -997,6 +1008,12 @@ void QucsApp::initMenuBar() {
     projMenu->addAction(loadModule);
   }
 
+  // Technology Section
+  techMenu = new QMenu(tr("Tec&hnology"));
+  techMenu->addAction(techNew);
+  techMenu->addAction(techOpen);
+
+
   toolMenu = new QMenu(tr("&Tools")); // menuBar entry toolMenu
   toolMenu->addAction(callEditor);
   toolMenu->addAction(callFilter);
@@ -1116,6 +1133,7 @@ void QucsApp::initMenuBar() {
   menuBar()->addMenu(alignMenu);
   menuBar()->addMenu(insMenu);
   menuBar()->addMenu(projMenu);
+  menuBar()->addMenu(techMenu);
   menuBar()->addMenu(toolMenu);
   menuBar()->addMenu(simMenu);
   menuBar()->addMenu(viewMenu);

@@ -34,6 +34,8 @@
 
 #include "misc.h"
 #include "iclayout.h"
+#include "ictech.h"
+#include "dlgselecttech.h"
 
 // just dummies for empty lists
 std::list<Wire*> SymbolWires;
@@ -91,6 +93,7 @@ Schematic::Schematic(QucsApp *App_, const QString &Name_) :
     // The 'i' means state for being unchanged.
     a_undoSymbol((QVector<QString*>() << new QString(" i\n</>\n</>\n</>\n</>\n"))),
     a_LayoutFile(""),
+    a_TechnologyFile(""),
     a_Layout(nullptr),
     a_simulationView(NETLIST),
     a_previousCursorPosition(),
@@ -2237,7 +2240,17 @@ bool Schematic::checkDplAndDatNames()
 bool  Schematic:: createLayoutView()
 {
   if (a_Layout!=nullptr) return false;
-  a_Layout = new icLayout(a_App, this, a_LayoutFile);
+  // Ask for the technology
+  if (a_TechnologyFile.isEmpty())
+  {
+    dlgSelectTech selectTech(this);
+    if (selectTech.exec()==QDialog::Rejected)
+      return false;
+
+    a_TechnologyFile = tech::getFilenameFromTech(selectTech.getSelectedTech());
+  }
+
+  a_Layout = new icLayout(a_App, this, a_LayoutFile, a_TechnologyFile);
 
   return (a_Layout != nullptr);
 }
@@ -2263,11 +2276,20 @@ void Schematic::attachLayoutView(icLayout* layout)
     if (oldlayout == nullptr) return;
     a_Layout = nullptr;
     oldlayout->attachToSchematic();
+
+    a_LayoutFile="";
+    a_TechnologyFile="";
     return;
   }
-
+  // Change in policy: we may overwrite the layout
   if ((a_Layout!=nullptr)&&(layout!=nullptr))
-    return;
+  {
+    a_Layout = layout;
+    a_Layout->attachToSchematic(this);
+    a_LayoutFile = layout->getDocName();
+    a_TechnologyFile = (layout->getTechnology() == nullptr ? "" : layout->getTechnology()->getFilename());
+  }
+
 
   if ((a_Layout==nullptr)&&(layout==nullptr))
     return;
@@ -2276,6 +2298,8 @@ void Schematic::attachLayoutView(icLayout* layout)
   {
     a_Layout = layout;
     a_Layout->attachToSchematic(this);
+    a_LayoutFile = layout->getDocName();
+    a_TechnologyFile = (layout->getTechnology() == nullptr ? "" : layout->getTechnology()->getFilename());
   }
 }
 /**

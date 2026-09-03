@@ -63,6 +63,7 @@ add_subdirectory( library )
 add_subdirectory( qucs-transcalc )
 add_subdirectory( qucs-powercombining )
 
+
 if(EXISTS ${CMAKE_SOURCE_DIR}/qucs-s-spar-viewer/CMakeLists.txt)
     add_subdirectory( qucs-s-spar-viewer )
 else()
@@ -136,5 +137,3 @@ if(KLAYOUT_FOUND)
     add_executable(my_app main.cpp)
     target_link_libraries(my_app PRIVATE ${KLAYOUT_LIBS})
 endif()
-
-add_subdirectory(ictech/ictech)
