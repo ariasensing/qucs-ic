@@ -2243,11 +2243,11 @@ bool  Schematic:: createLayoutView()
   // Ask for the technology
   if (a_TechnologyFile.isEmpty())
   {
-    dlgSelectTech selectTech(this);
-    if (selectTech.exec()==QDialog::Rejected)
+    dlgSelectTech selectTechDlg(this);
+    if (selectTechDlg.exec()==QDialog::Rejected)
       return false;
-
-    a_TechnologyFile = tech::getFilenameFromTech(selectTech.getSelectedTech());
+    tech* selectedTech = tech::getTechFromName(selectTechDlg.getSelectedTech());
+    a_TechnologyFile = selectedTech == nullptr ? "" : selectedTech->getFilename();
   }
 
   a_Layout = new icLayout(a_App, this, a_LayoutFile, a_TechnologyFile);
@@ -2287,7 +2287,7 @@ void Schematic::attachLayoutView(icLayout* layout)
     a_Layout = layout;
     a_Layout->attachToSchematic(this);
     a_LayoutFile = layout->getDocName();
-    a_TechnologyFile = (layout->getTechnology() == nullptr ? "" : layout->getTechnology()->getFilename());
+    a_TechnologyFile = (layout->getTechnology() == nullptr ? "" : layout->getTechnology());
   }
 
 
@@ -2299,7 +2299,7 @@ void Schematic::attachLayoutView(icLayout* layout)
     a_Layout = layout;
     a_Layout->attachToSchematic(this);
     a_LayoutFile = layout->getDocName();
-    a_TechnologyFile = (layout->getTechnology() == nullptr ? "" : layout->getTechnology()->getFilename());
+    a_TechnologyFile = (layout->getTechnology() == nullptr ? "" : layout->getTechnology());
   }
 }
 /**

@@ -39,9 +39,17 @@ public:
 
   bool  initKlayoutWidget();
 //----------------------------------
+// grid
+  void setGridOn(bool value);
+  void getGridOn();
+
+
+//----------------------------------
 // Technology
-  tech* getTechnology();
-  void  setTechnology(tech* ict);
+  QString getTechnology();
+  void    setTechnology(QString fname);
+
+  tech*   m_tech;
 private:
   Ui::icLayout*           ui;
   Schematic               *a_Schematic;
@@ -49,8 +57,10 @@ private:
   lay::LayoutViewWidget*  m_layoutWidget;
   lay::LayoutView*        m_layoutView;
   db::Manager*            m_dbManager;
+  db::Layout*             m_layout;
   unsigned int            m_canvas_id;
-  tech*                   m_technology;
+  QString                 m_technologyFile;
+  bool                    m_bGridOn;
 public slots:
   void                    loadLayoutClicked();
   void                    saveLayoutClicked();

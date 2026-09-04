@@ -1,7 +1,6 @@
 #include "ictech.h"
 
-QHash<QString, tech*>           tech::m_availableTechs = QHash<QString,tech*>();
-QHash<QString, QString>         tech::m_mapNameToFiles = QHash<QString,QString>();
+QSet<tech*>           tech::m_availableTechs = QSet<tech*>();
 /*
  * We have a 1:1 correspondance in between files and tech.
  * When creating a tech, it may be an empty file (new tech or void tech)
@@ -15,27 +14,34 @@ QHash<QString, QString>         tech::m_mapNameToFiles = QHash<QString,QString>(
 tech::tech(QString filename) :
                                m_isEmpty(true),
                                m_techName("[NONAME]"),
-                               m_fileName(),
+                               m_fileName(filename),
                                m_modelCorners(),
                                m_substrateCorners(),
                                m_Substrates(),
-                               m_lastError()
+                               m_lastError(),
+                               m_laydefs(nullptr),
+                               m_layout_tech_file(),
+                               m_model_files(),
+                               m_substrate_files(),
+                               m_symbol_files(),
+                               m_subcktSymbols()
 {
-  if (filename.isEmpty()) return;
-  // Check if we already have a tech with the same filename. If so copy data from the existing
-  QHash<QString,tech*>::iterator it = m_availableTechs.find(filename);
-  if (it!=m_availableTechs.end())
+
+  // Check if we already have a tech with the same filename.
+  // If so copy data from the existing (faster than loading)
+
+  tech* prev = tech::getTechFromFilename(filename);
+
+  if (prev!=nullptr)
   {
-    copyFrom(*it);
+    copyFrom(prev);
     return;
   }
 
-  m_fileName = filename;
-  // Should we keep a copy? For now, just clean
-  if (!load())
-    clean();
+  create_klayout_tech();
 
-  appendThisToAvailable();
+  if (!load())
+    clean();  
 }
 /**
  * @brief tech::clean. Clean only internal data (retain filename)
@@ -54,7 +60,7 @@ void tech::clean()
  */
 tech::~tech()
 {
-  removeThisFromAvailable();
+  removeFromProject();
 }
 /**
  * @brief tech::copyFrom
@@ -69,25 +75,25 @@ void    tech::copyFrom(tech* t2)
   m_modelCorners          = t2->m_modelCorners;
   m_substrateCorners      = t2->m_substrateCorners;
   m_Substrates            = t2->m_Substrates;
+
+  create_klayout_tech();
 }
 
 /**
  * @brief tech::appendThisToAvailable
  */
-void   tech::appendThisToAvailable()
+void   tech::makeAvailableForTheProject()
 {
   // Add a new holder in the available list
-  m_mapNameToFiles[m_techName] = m_fileName;
-  m_availableTechs[m_fileName] = this;
+    m_availableTechs.insert(this);
 
 }
 /**
  * @brief tech::removeThisFromAvailable
  */
-void   tech::removeThisFromAvailable()
+void   tech::removeFromProject()
 {
-  m_mapNameToFiles.remove(m_techName);
-  m_availableTechs.remove(m_fileName);
+  m_availableTechs.remove(this);
 
 }
 /**
@@ -97,8 +103,6 @@ void   tech::removeThisFromAvailable()
 void   tech::rename(const QString& newname)
 {
   if (newname==m_techName) return;
-  m_mapNameToFiles[newname] = m_mapNameToFiles[m_techName];
-  m_mapNameToFiles.remove(m_techName);
   m_techName = newname;
 }
 
@@ -195,9 +199,19 @@ bool  tech::loadSubstrateData(const QString& corner, const QString& filename)
  * @brief tech::save
  * @return
  */
-bool  tech::save()
+bool  tech::save(bool make_available)
 {
-  appendThisToAvailable();
+  if (make_available)
+  {
+    tech* prev = tech::getTechFromFilename(m_fileName);
+    if ((prev!=nullptr)&&(prev!=this))
+    {
+      // Remove previous one.
+      prev->removeFromProject();
+      makeAvailableForTheProject();
+    }
+  }
+
   return true;
 }
 
@@ -206,17 +220,15 @@ bool  tech::save()
  * @param filename
  * @return
  */
-bool tech::saveToFile(const QString& filename)
+bool tech::saveToFile(const QString& filename,bool make_available)
 {
   if (filename.isEmpty())
     return false;
 
-  if (filename==m_fileName)
-    return save();
-  // We cannot save to a filename already associated with another tech
-  removeThisFromAvailable();
+
   m_fileName = filename;
-  return save();
+
+  return save(make_available);
 }
 /**
  * @brief tech::load
@@ -224,7 +236,9 @@ bool tech::saveToFile(const QString& filename)
  */
 bool  tech::load()
 {
-  appendThisToAvailable();
+  // load technology
+  import_klayout_tech_file();
+
   return true;
 }
 
@@ -235,7 +249,8 @@ bool  tech::load()
  */
 bool tech::load(const QString& filename)
 {
-
+  m_fileName = filename;
+  return load();
 }
 
 /**
@@ -249,30 +264,19 @@ QString tech::getFilename()
 
 
 /**
- * @brief tech::getTechFromFilename
- * @param filename
- * @return The set of tech object attached to
- */
-tech*  tech::getTechFromFilename(const QString& filename)
-{
-  QHash<QString, tech*>::iterator it = m_availableTechs.find(filename);
-  if (it == m_availableTechs.end()) return nullptr;
-  return (*it);
-
-}
-/**
  * @brief tech::getTechFromName
  * @param techname
  * @return
  */
 tech*  tech::getTechFromName(const QString& techname)
 {
-  QHash<QString, QString>::iterator file_it = m_mapNameToFiles.find(techname);
-  if (file_it==m_mapNameToFiles.end()) return nullptr;
-  QHash<QString, tech*>::iterator it = m_availableTechs.find(*file_it);
-  if (it == m_availableTechs.end()) return nullptr;
-  return (*it);
-
+  for (const auto& avtech : std::as_const(m_availableTechs))
+  if (avtech!=nullptr)
+  {
+    if (avtech->getTechname() == techname)
+      return avtech;
+  }
+  return nullptr;
 }
 /**
  * @brief tech::getAvailableTechs
@@ -281,9 +285,8 @@ tech*  tech::getTechFromName(const QString& techname)
 QStringList tech::getAvailableTechs()
 {
   QStringList out;
-  QHash<QString, QString>::iterator file_it;
-  for (file_it = m_mapNameToFiles.begin(); file_it != m_mapNameToFiles.end(); file_it++)
-      out.append(file_it.key());
+  for (const auto& avtech : std::as_const(m_availableTechs))
+    out.append(avtech==nullptr?"":avtech->getTechname());
   return out;
 }
 
@@ -292,26 +295,21 @@ QStringList tech::getAvailableTechs()
  * @param tech
  * @return
  */
-QString tech::getFilenameFromTech(const QString &tech)
+tech* tech::getTechFromFilename(const QString &techfile)
 {
-  QHash<QString, QString>::iterator file_it = m_mapNameToFiles.find(tech);
-  if (file_it==m_mapNameToFiles.end()) return QString("");
-
-  return *file_it;
+  for (const auto& avtech : std::as_const(m_availableTechs))
+    if (avtech!=nullptr)
+  {
+    if (avtech->getFilename() == techfile)
+      return avtech;
+  }
+  return nullptr;
 }
 
 /**
- * @brief tech::getTechFromFilename
- * @param filname
- * @return
+ * @brief tech::createDefaultFileNames
  */
-QString tech::getTechnameFromFilename(const QString &filename)
+void   tech::createDefaultFileNames()
 {
-  QHash<QString, QString>::iterator file_it;
-  for (file_it = m_mapNameToFiles.begin(); file_it != m_mapNameToFiles.end(); file_it++)
-    if ((file_it.value())==filename) return file_it.key();
 
-  return "";
 }
-
-

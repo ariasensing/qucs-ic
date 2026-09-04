@@ -67,4 +67,12 @@ qucs-s-spar-viewer/latex/
 
 OpenVAF-Reloaded/*
 
+ADMS/*
+
+klayout/*
+
+qucsator/*
+
+qucsator-rf/*
+
 *.bak

@@ -328,10 +328,17 @@ void QucsApp::slotResetDiagramLimits() {
 void QucsApp::slotShowGrid() {
   qDebug() << "slotShowGrid";
   Schematic *schematic = static_cast<Schematic *>(DocumentTab->currentWidget());
-  if (!isTextDocument(schematic)) {
+  if (!isTextDocument(schematic))
+  {
+    if (isSchematicDocument(schematic)) {
     schematic->setGridOn(!schematic->getGridOn());
     schematic->setChanged(true);
     schematic->viewport()->repaint();
+    }
+    else
+    {
+
+    }
   }
 }
 

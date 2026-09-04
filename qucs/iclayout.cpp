@@ -16,12 +16,20 @@ extern QString LayoutImportFilter;
 icLayout::icLayout(QucsApp* app, Schematic* owner, const QString& fname,const QString& techfile) : QDialog(nullptr), QucsDoc(app, fname, LAYOUT),
   ui(new Ui::icLayout),
   a_Schematic(nullptr),
-  m_technology(nullptr)
+  m_layout(nullptr),
+  m_technologyFile(techfile)
 {
 
   QString filename = fname;
 
   ui->setupUi(this);
+  if (!techfile.isEmpty())
+  {
+    m_tech = tech::getTechFromFilename(techfile);
+    if (m_tech==nullptr)
+      m_tech = new tech(techfile);
+  }
+
   initKlayoutWidget();
   // Documents
   this->setProperty("DOC_TYPE",(uint16_t)(doc_type));
@@ -33,7 +41,10 @@ icLayout::icLayout(QucsApp* app, Schematic* owner, const QString& fname,const QS
     icLayout::load();
   }
 }
-
+/**
+ * @brief icLayout::initKlayoutWidget
+ * @return
+ */
 bool  icLayout::initKlayoutWidget()
 {
   m_dbManager    = new db::Manager(true);
@@ -43,7 +54,7 @@ bool  icLayout::initKlayoutWidget()
   // Add hierarchy
   QHBoxLayout* layout = new QHBoxLayout(ui->tabCellTree);
   layout->addWidget(m_layoutWidget->hierarchy_control_frame());
-  ui->tabNets->setLayout(layout);
+  ui->tabCellTree->setLayout(layout);
   // Layers
   QVBoxLayout *layersLayout = new QVBoxLayout(ui->tabLayers);
   layersLayout->addWidget(m_layoutWidget->layer_control_frame());
@@ -59,6 +70,12 @@ bool  icLayout::initKlayoutWidget()
   m_layoutView = m_layoutWidget->view();
   if (m_layoutView == nullptr) return false;
   m_canvas_id = m_layoutView->create_layout(false);
+  m_layout    = &(m_layoutView->cellview(0)->layout());
+  assert(m_layout!=nullptr);
+  // Update technology and layers
+  if (m_tech!=nullptr)
+    m_layout->set_technology_name(m_tech->getTechname().toStdString());
+
 
   // Connections
   connect(ui->btnLoad, &QPushButton::clicked, this, &icLayout::loadLayoutClicked);
@@ -152,6 +169,7 @@ void icLayout::loadLayoutClicked()
     m_layoutView->load_layout(layoutFile.toStdString(),false);
     m_layoutView->add_missing_layers();
 
+
     m_layoutView->max_hier();
     m_layoutView->zoom_fit();
   }
@@ -186,14 +204,14 @@ void icLayout::selectAll()
  * @brief icLayout::getTechnology
  * @return
  */
-tech* icLayout::getTechnology() {return m_technology;}
+QString icLayout::getTechnology() {return m_technologyFile;}
 /**
  * @brief icLayout::setTechnology
  * @param ict Pointer to the technology object
  */
-void  icLayout::setTechnology(tech* ict)
+void  icLayout::setTechnology(QString ict)
 {
-  m_technology=ict;
+  m_technologyFile=ict;
 
 }
 
