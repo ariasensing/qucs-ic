@@ -267,6 +267,8 @@ ADD_EXECUTABLE( ${QUCS_NAME} MACOSX_BUNDLE WIN32
   schematic_net.cpp
   technologyeditor.h technologyeditor.cpp technologyeditor.ui
   dlgselecttech.h dlgselecttech.cpp dlgselecttech.ui
+  technologyeditor_layers.cpp
+  editLayer.h
 
 
 

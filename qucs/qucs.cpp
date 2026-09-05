@@ -89,8 +89,8 @@
 #include "extsimkernels/CdlSettingsDialog.h"
 #include "schematic.h"
 
-QString TechFileFilter = tr("All files (*.*);;Tech File (*.tech)" );
-QString LayoutImportFilter = tr("All files (*.*);;GDSII (*.gdsi) ;; OASIS (*.oa)" );
+QString TechFileFilter = tr("Tech File (*.tech) ;; All files (*.*)" );
+QString LayoutImportFilter = tr("GDSII (*.gds) ;; OASIS (*.oa) ;; All files (*.*)" );
 
 
 QucsApp::QucsApp(bool netlist2Console) :

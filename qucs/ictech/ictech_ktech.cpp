@@ -16,8 +16,10 @@ const QString relative_layout_folder="./layout/";
  */
 QString   tech::getLayoutFolder()
 {
+  if (m_fileName.isEmpty()) return QString("");
   QDir    baseDir         = QFileInfo(m_fileName).dir();
   QString absoluteResult  = baseDir.absoluteFilePath(relative_layout_folder);
+  return absoluteResult;
 
 }
 /**
@@ -27,7 +29,10 @@ QString   tech::getLayoutFolder()
 QString   tech::getLayoutFilepath()
 {
   QString folderPath = getLayoutFolder();
+
   QString fileName = m_fileName;
+
+  if (fileName.isEmpty()) return QString("");
   // Change the extension to lyt
   QFileInfo fi(fileName);
   fileName = fi.baseName()+".lyt";
@@ -90,15 +95,20 @@ bool    tech::import_klayout_tech_file()
   m_layout_lyp_file =  QString::fromStdString(m_laydefs->layer_properties_file());
 
   import_klayout_layerdefs();
+  return true;
 
 }
 /**
  * @brief tech::import_klayout_layerdefs
  * @return
  */
-bool    tech::import_klayout_layerdefs()
+bool    tech::import_klayout_layerdefs(const QString& newLypFile)
 {
-  if (!m_layout_lyp_file.isEmpty()) return true;
+  if (newLypFile!=m_layout_lyp_file)
+    m_layout_lyp_file = newLypFile;
+
+  if (m_layout_lyp_file.isEmpty()) return true;
   if (m_laydefs==nullptr) return true;
   m_laydefs->set_layer_properties_file(m_layout_lyp_file.toStdString());
+  return true;
 }

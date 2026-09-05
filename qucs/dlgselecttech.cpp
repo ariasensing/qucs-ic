@@ -3,8 +3,9 @@
 #include "ictech.h"
 
 dlgSelectTech::dlgSelectTech(QWidget* parent)
-    : QDialog(parent), ui(new Ui::dlgSelectTech) ,
-      m_selected("")
+    : QDialog(parent),
+      m_selected(""),
+      ui(new Ui::dlgSelectTech)
 {
   ui->setupUi(this);
 

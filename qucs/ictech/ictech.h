@@ -85,18 +85,20 @@ private:
   db::Technology    *m_laydefs;           // Definition of layers
   // All files here are the basename
   QString            m_layout_tech_file;  // Storage point of layout properties
-  QString            m_layout_lyp_file;  // Storage point of layout properties
+  QString            m_layout_lyp_file;   // Storage point of layout properties
   QSet<QString>      m_model_files;       // Stored model files
   QSet<QString>      m_substrate_files;   // Substrate files
   QSet<QString>      m_symbol_files;      // Symbol files
   QHash<QString, QString> m_subcktSymbols;// Mapping from subckt and symbols
 
   void   createDefaultFileNames();
+public:
+
   // klayout
   void              create_klayout_tech();
   void              remove_klayout_tech();
   bool              import_klayout_tech_file();
-  bool              import_klayout_layerdefs();
+  bool              import_klayout_layerdefs(const QString& newLypFile="");
 
 
   QString           getLayoutFolder();

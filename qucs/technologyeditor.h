@@ -3,6 +3,9 @@
 
 #include <QDialog>
 #include "ictech.h"
+#include "layLayoutView.h"
+#include "dbLayout.h"
+#include "dbCell.h"
 
 namespace Ui {
 class TechnologyEditor;
@@ -22,15 +25,33 @@ public:
   ~TechnologyEditor();
 
   bool     fileSaved();
+private:
+
 
 private:
   Ui::TechnologyEditor* ui;
+
+  lay::LayoutView*        m_layoutView;   // Dummy view
+  db::Layout*             m_layout;       // Dummy layout
+
+  QPixmap makeLayerPreview(unsigned int fillColor, int frameColor, int ditherIndex,
+                   lay::LayoutView *view = nullptr,
+                   int size = 24);
+
+  void    update_layer_row(int row, const lay::LayerPropertiesNode &props);
+
 public slots:
   void      ok();
   void      cancel();
   void      save();         // Save the technology into the selected files
   void      saveas();
   void      load();
+  void      loadLayers();
+  void      saveLayers();
+  void      listLayers();
+  void      createLayer();
+  void      removeLayer();
+  void      editLayer(const QModelIndex& model);
 };
 
 #endif // TECHNOLOGYEDITOR_H
