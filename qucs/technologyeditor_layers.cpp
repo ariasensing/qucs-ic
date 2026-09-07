@@ -22,6 +22,11 @@ void TechnologyEditor::loadLayers()
   if (m_editedTech==nullptr) return;
   m_editedTech->import_klayout_layerdefs(newlypfile);
 
+  // Clear prev layers
+  m_editedTech->getLayoutView()->clear_layers();
+  m_editedTech->getLayoutView()->load_layer_props(newlypfile.toStdString());
+
+
   listLayers();
 }
 
@@ -41,12 +46,12 @@ void  TechnologyEditor::listLayers()
   // Probably there is a smarter way to know how many layers
 
   unsigned int row = 0;
-  for (lay::LayerPropertiesConstIterator it =  m_layoutView->begin_layers(); it != m_layoutView->end_layers(); ++it)
+  for (lay::LayerPropertiesConstIterator it =  m_editedTech->getLayoutView()->begin_layers(); it != m_editedTech->getLayoutView()->end_layers(); ++it)
     row++;
   ui->tblLayers->setRowCount( row);
 
   row = 0;
-  for (lay::LayerPropertiesConstIterator it =  m_layoutView->begin_layers(); it != m_layoutView->end_layers(); ++it)
+  for (lay::LayerPropertiesConstIterator it =  m_editedTech->getLayoutView()->begin_layers(); it != m_editedTech->getLayoutView()->end_layers(); ++it)
   {
 
     const lay::LayerPropertiesNode &node = *it;
@@ -83,7 +88,7 @@ void  TechnologyEditor::listLayers()
                          makeLayerPreview(fill,
                                           frame,
                                           dither,
-                                          m_layoutView));   // view can be nullptr
+                                          m_editedTech->getLayoutView()));   // view can be nullptr
 
     previewItem->setFlags(previewItem->flags() & ~Qt::ItemIsEditable);
     ui->tblLayers->setItem(row, 3, previewItem);
@@ -173,7 +178,7 @@ QPixmap TechnologyEditor::makeLayerPreview(unsigned int fillColor, int frameColo
   return pix;
 }
 /**
- * @brief TechnologyEditor::saveLayers
+ * @brief TechnologyEditor::saveLayers  This is to save data to a new lyp file
  */
 
 void TechnologyEditor::saveLayers()
@@ -183,7 +188,7 @@ void TechnologyEditor::saveLayers()
     newlypfile = QFileDialog::getSaveFileName(this, "Save Layer Property File","",
                                               tr("KLayout Property File (*.lyp);; All files (*.*)" ) );
   if (newlypfile.isEmpty()) return;
-  m_layoutView->save_layer_props(newlypfile.toStdString());
+  m_editedTech->getLayoutView()->save_layer_props(newlypfile.toStdString());
 
 }
 
@@ -192,7 +197,7 @@ void TechnologyEditor::saveLayers()
  */
 void      TechnologyEditor::createLayer()
 {
-  LayerDialog dlg(m_layoutView, this);
+  LayerDialog dlg(m_editedTech->getLayoutView(), this);
   if (dlg.exec() == QDialog::Accepted) {
     // use dlg.layer(), dlg.datatype(), dlg.name(), ...
     unsigned int id = dlg.layer();
@@ -206,7 +211,7 @@ void      TechnologyEditor::createLayer()
     props.set_line_style(dlg.lineStyle());
 
     // Check for existing one
-    for (lay::LayerPropertiesConstIterator it =  m_layoutView->begin_layers(); it != m_layoutView->end_layers(); ++it)
+    for (lay::LayerPropertiesConstIterator it =  m_editedTech->getLayoutView()->begin_layers(); it != m_editedTech->getLayoutView()->end_layers(); ++it)
     {
 
       const lay::LayerPropertiesNode &node = *it;
@@ -223,8 +228,8 @@ void      TechnologyEditor::createLayer()
           return;
         else
         {
-          m_layoutView->set_properties(it, props);
-          m_layoutView->update_content();
+          m_editedTech->getLayoutView()->set_properties(it, props);
+          m_editedTech->getLayoutView()->update_content();
           listLayers();
           return;
         }
@@ -232,7 +237,7 @@ void      TechnologyEditor::createLayer()
     }
 
     // New
-    m_layoutView->insert_layer(m_layoutView->begin_layers(), props);
+    m_editedTech->getLayoutView()->insert_layer(m_editedTech->getLayoutView()->begin_layers(), props);
     listLayers();
   }
 }
@@ -251,7 +256,7 @@ void      TechnologyEditor::removeLayer()
   if (!bok) return;
 
          // Check for existing one
-  for (lay::LayerPropertiesConstIterator it =  m_layoutView->begin_layers(); it != m_layoutView->end_layers(); ++it)
+  for (lay::LayerPropertiesConstIterator it =  m_editedTech->getLayoutView()->begin_layers(); it != m_editedTech->getLayoutView()->end_layers(); ++it)
   {
 
     const lay::LayerPropertiesNode &node = *it;
@@ -263,7 +268,7 @@ void      TechnologyEditor::removeLayer()
 
     if ((layer_id == id)&&(dt==purpose_id))
     {
-      m_layoutView->delete_layer(it);
+      m_editedTech->getLayoutView()->delete_layer(it);
       listLayers();
       return;
     }
@@ -284,7 +289,7 @@ void TechnologyEditor::editLayer(const QModelIndex& model)
   if (!bok) return;
 
          // Check for existing one
-  for (lay::LayerPropertiesConstIterator it =  m_layoutView->begin_layers(); it != m_layoutView->end_layers(); ++it)
+  for (lay::LayerPropertiesConstIterator it =  m_editedTech->getLayoutView()->begin_layers(); it != m_editedTech->getLayoutView()->end_layers(); ++it)
   {
 
     const lay::LayerPropertiesNode &node = *it;
@@ -296,7 +301,7 @@ void TechnologyEditor::editLayer(const QModelIndex& model)
 
     if ((layer_id == id)&&(dt==purpose_id))
     {
-      LayerDialog dlg(m_layoutView, *it, this);   // edit mode
+      LayerDialog dlg(m_editedTech->getLayoutView(), *it, this);   // edit mode
       if (dlg.exec() == QDialog::Accepted) {
         // layer() and datatype() stay the same
         // apply the other values back to the node / view
@@ -307,8 +312,8 @@ void TechnologyEditor::editLayer(const QModelIndex& model)
         props.set_dither_pattern(dlg.ditherPattern());
         props.set_line_style(dlg.lineStyle());
 
-        m_layoutView->set_properties(it, props);
-        m_layoutView->update_content();
+        m_editedTech->getLayoutView()->set_properties(it, props);
+        m_editedTech->getLayoutView()->update_content();
         listLayers();
         }
     }
@@ -345,17 +350,17 @@ void TechnologyEditor::applyCadenceToView(
                         const std::string &drfPath,
                         bool clearExisting)
 {
-  if (!m_layoutView)
+  if (!m_editedTech->getLayoutView())
     return;
 
-  auto imported = cadence_import::importCadence(layermapPath, drfPath, m_layoutView);
+  auto imported = cadence_import::importCadence(layermapPath, drfPath, m_editedTech->getLayoutView());
 
   if (clearExisting)
-    m_layoutView->clear_layers();
+    m_editedTech->getLayoutView()->clear_layers();
 
   for (const auto &node : imported.nodes)
-    m_layoutView->insert_layer(m_layoutView->end_layers(), node);
+    m_editedTech->getLayoutView()->insert_layer(m_editedTech->getLayoutView()->end_layers(), node);
 
-  m_layoutView->add_missing_layers();
-  m_layoutView->update_content();
+  m_editedTech->getLayoutView()->add_missing_layers();
+  m_editedTech->getLayoutView()->update_content();
 }

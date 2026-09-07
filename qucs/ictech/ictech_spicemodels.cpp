@@ -15,7 +15,7 @@ QString           tech::getSpiceModelsFolder()
   if (m_fileName.isEmpty()) return QString("");
   QDir    baseDir         = getTechnologyBaseFolder();
   QDir    modelDir(baseDir.absoluteFilePath(relative_models_folder));
-  return  modelDir.canonicalPath();
+  return  modelDir.absolutePath();
 }
 
 /**

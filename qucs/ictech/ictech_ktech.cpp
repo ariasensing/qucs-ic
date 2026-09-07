@@ -22,8 +22,8 @@ QString   tech::getLayoutFolder()
   if (m_fileName.isEmpty()) return QString("");
 
   QDir    baseDir         = getTechnologyBaseFolder();
-  QDir    layoutDir(baseDir.absoluteFilePath(relative_models_folder));
-  return layoutDir.canonicalPath();
+  QDir    layoutDir(baseDir.absoluteFilePath(relative_layout_folder));
+  return layoutDir.absolutePath();
 
 }
 /**
@@ -55,8 +55,8 @@ void  tech::create_klayout_tech()
   // Create an empty klayout technology
   db::Technology laytech;
   laytech.set_name(getTechname().toStdString());
-  m_laydefs = db::Technologies::instance()->add(laytech);
-  assert(m_laydefs!=nullptr);
+  m_ktech = db::Technologies::instance()->add(laytech);
+  assert(m_ktech!=nullptr);
 
   // Set the base path as
   QString layout_folder;
@@ -66,12 +66,30 @@ void  tech::create_klayout_tech()
   else
     layout_folder = getLayoutFolder();
 
-  m_laydefs->set_explicit_base_path(layout_folder.toStdString());
+  m_ktech->set_explicit_base_path(layout_folder.toStdString());
 
   // Set the layout tech file (lyt)
   // If not file given, assign a default name
   if (m_layout_tech_file.isEmpty())
     m_layout_tech_file = getLayoutFilepath();
+
+  // Create dummy layout view
+  m_layoutView = new lay::LayoutView(nullptr, true, nullptr,
+                                     lay::LayoutViewBase::LV_NoHierarchyPanel +
+                                         lay::LayoutViewBase::LV_NoEditorOptionsPanel +
+                                         lay::LayoutViewBase::LV_NoBookmarksView +
+                                         lay::LayoutViewBase::LV_NoZoom +
+                                         lay::LayoutViewBase::LV_NoGrid +
+                                         lay::LayoutViewBase::LV_NoPropertiesPopup +
+                                         lay::LayoutViewBase::LV_NoServices);
+
+  assert(m_layoutView!=nullptr);
+  m_layoutView->create_layout(m_techName.toStdString(),true,true);
+  m_layout =  &(m_layoutView->cellview(0)->layout());
+
+  assert(m_layout!=nullptr);
+
+
 }
 
 /**
@@ -80,11 +98,11 @@ void  tech::create_klayout_tech()
 void    tech::remove_klayout_tech()
 {
 
-  if (m_laydefs==nullptr) return;
+  if (m_ktech==nullptr) return;
   db::Technologies::instance()->remove(getTechname().toStdString());
-  //db::Technologies::unregister_ptr(m_laydefs->);
-  delete m_laydefs;
-  m_laydefs = nullptr;
+  //db::Technologies::unregister_ptr(m_ktech->);
+  delete m_ktech;
+  m_ktech = nullptr;
 }
 /**
  * @brief tech::import_klayout_tech_file
@@ -93,10 +111,10 @@ void    tech::remove_klayout_tech()
 
 bool    tech::import_klayout_tech_file()
 {
-  if ((m_laydefs==nullptr)||(m_layout_tech_file.isEmpty()))
+  if ((m_ktech==nullptr)||(m_layout_tech_file.isEmpty()))
     return true;
-  m_laydefs->load(m_layout_tech_file.toStdString());
-  m_layout_lyp_file =  QString::fromStdString(m_laydefs->layer_properties_file());
+  m_ktech->load(m_layout_tech_file.toStdString());
+  m_layout_lyp_file =  QString::fromStdString(m_ktech->layer_properties_file());
 
   import_klayout_layerdefs();
   return true;
@@ -112,12 +130,8 @@ bool    tech::import_klayout_layerdefs(const QString& newLypFile)
     m_layout_lyp_file = newLypFile;
 
   if (m_layout_lyp_file.isEmpty()) return true;
-  if (m_laydefs==nullptr) return true;
-  m_laydefs->set_layer_properties_file(m_layout_lyp_file.toStdString());
-
-  // Clear prev layers
-  m_layoutView->clear_layers();
-  m_layoutView->load_layer_props(newlypfile.toStdString());
+  if (m_ktech==nullptr) return true;
+  m_ktech->set_layer_properties_file(m_layout_lyp_file.toStdString());
 
   return true;
 }
@@ -127,29 +141,31 @@ bool    tech::import_klayout_layerdefs(const QString& newLypFile)
  * @param rootLayout
  */
 
-void    tech::saveLayoutData(XMLNode* rootLayout, XMLDocument* doc)
+void    tech::saveLayoutData(XMLElement* rootLayout, XMLDocument* )
 {
-  QDir    layoutBasePath(getLayoutFilepath());
+  QDir    layoutBasePath(getLayoutFolder());
 
-  QString defaultLytFile = getTechname()+".lyt";
-  QString defaultLypFile = getTechname()+".lyp";
+  QString defaultLytFile = QFileInfo(m_fileName).baseName()+".lyt";
+  QString defaultLypFile = QFileInfo(m_fileName).baseName()+".lyp";
 
   QString fullLytFile = QFileInfo(layoutBasePath,defaultLytFile).absoluteFilePath();
   QString fullLypFile = QFileInfo(layoutBasePath,defaultLypFile).absoluteFilePath();
 
-  m_laydefs->set_name(getTechname().toStdString());
+  m_ktech->set_name(getTechname().toStdString());
+  m_ktech->set_default_base_path(layoutBasePath);
 
-  m_laydefs->set_layer_properties_file(fullLytFile.toStdString());
+  m_ktech->set_layer_properties_file(fullLypFile.toStdString());
 
-  m_laydefs->save(fullLypFile.toStdString());
+  m_layoutView->save_layer_props(fullLypFile.toStdString());
 
-  if (doc==nullptr) return;
+  m_ktech->save(fullLytFile.toStdString());
+
   if (rootLayout==nullptr) return;
 
-  XMLElement* layoutFiles = doc->NewElement("layout_files");
-  assert(layoutFiles!=nullptr);
-  layoutFiles->SetAttribute("layout_tech_file", fullLytFile);
-  layoutFiles->SetAttribute("layout_properties_file",fullLypFile);
+  rootLayout->SetAttribute("layout_tech_file", fullLytFile.toLocal8Bit().data());
+  rootLayout->SetAttribute("layout_properties_file",fullLypFile.toLocal8Bit().data());
 
-  rootLayout->InsertEndChild(layoutFiles);
+  m_layout_lyp_file = fullLypFile;
+  m_layout_tech_file = fullLytFile;
+
 }

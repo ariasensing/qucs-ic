@@ -12,6 +12,7 @@
 #include "dbLayerMapping.h"
 #include "layLayoutView.h"
 #include "layLayerProperties.h"
+#include <QDir>
 
 
 /*
@@ -92,7 +93,10 @@ private:
   QHash<QString,Substrate*> m_Substrates;
   QString                   m_lastError;
 
-  db::Technology    *m_laydefs;           // Definition of layers
+  db::Technology*         m_ktech;           // Definition of layers
+  lay::LayoutView*        m_layoutView;   // Dummy view
+  db::Layout*             m_layout;       // Dummy layout
+
   // All files here are the basename
   QString            m_layout_tech_file;  // Storage point of layout technologies
   QString            m_layout_lyp_file;   // Storage point of layout properties
@@ -103,11 +107,11 @@ private:
 
   QDir               getTechnologyBaseFolder();
 
-  void               saveLayoutData(class tinyxml2::XMLNode* rootLayout, class tinyxml2::XMLDocument* doc);
-  void               saveModelData(class tinyxml2::XMLNode* rootLayout, class tinyxml2::XMLDocument* doc) {}
-  void               saveLibData(class tinyxml2::XMLNode* rootLayout, class tinyxml2::XMLDocument* doc) {}
-  void               saveStdCellData(class tinyxml2::XMLNode* rootLayout, class tinyxml2::XMLDocument* doc) {}
-  void               saveEMData(class tinyxml2::XMLNode* rootLayout, class tinyxml2::XMLDocument* doc) {}
+  void               saveLayoutData(class tinyxml2::XMLElement* rootLayout, class tinyxml2::XMLDocument* doc);
+  void               saveModelData(class tinyxml2::XMLElement* rootLayout, class tinyxml2::XMLDocument* doc) {}
+  void               saveLibData(class tinyxml2::XMLElement* rootLayout, class tinyxml2::XMLDocument* doc) {}
+  void               saveStdCellData(class tinyxml2::XMLElement* rootLayout, class tinyxml2::XMLDocument* doc) {}
+  void               saveEMData(class tinyxml2::XMLElement* rootLayout, class tinyxml2::XMLDocument* doc) {}
 
   void   createDefaultFileNames();
 // Saving
@@ -122,17 +126,15 @@ public:
 
 
   QString           getLayoutFolder();
-  QString           getLayoutFilepath();
   QString           getSpiceModelsFolder();
   QString           getEMFolder();
   QString           getLibrariesFolder();
   QString           getStdCellsFolder();
 
   QStringList       getSpiceModelsFiles();
+  QString           getLayoutFilepath();
 
-
-
-
+private:
   // Here we keep the list of saved technologies
   static QSet<tech*> m_availableTechs;
 
@@ -143,6 +145,17 @@ public:
   static QStringList    getAvailableTechs();
   void                  makeAvailableForTheProject();
   void                  removeFromProject();
+  void                  setDescription(const QString& descr);
+  QString               getDescription();
+  lay::LayoutView*      getLayoutView() {return m_layoutView;}
+
+  double                dbu() {return m_ktech->dbu();}
+  void                  dbu(double dbu) {if (dbu>0) m_ktech->set_dbu(dbu);}
+  QString               grid() {return QString(m_ktech->default_grids());}
+  void                  grid(QString grid_list) {m_ktech->set_default_grids(grid_list.toStdString());}
+  QString               getLypFile() {return m_layout_lyp_file;}
+  QString               getLytFile() {return m_layout_tech_file;}
+
 };
 
 #endif // ICTECH_H

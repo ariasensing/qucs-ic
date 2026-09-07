@@ -36,9 +36,8 @@ private:
 private:
   Ui::TechnologyEditor* ui;
 
-  lay::LayoutView*        m_layoutView;   // Dummy view
-  db::Layout*             m_layout;       // Dummy layout
-
+  QString                 m_lastError;
+  QWidget*                m_WidgetWithError;
   QPixmap makeLayerPreview(unsigned int fillColor, int frameColor, int ditherIndex,
                    lay::LayoutView *view = nullptr,
                    int size = 24);

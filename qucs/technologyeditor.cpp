@@ -7,7 +7,9 @@ TechnologyEditor::TechnologyEditor(const QString& filename, QWidget* parent)
     : QDialog(parent),
       m_bSaved(false),
       m_editedTech(nullptr),
-      ui(new Ui::TechnologyEditor)
+      ui(new Ui::TechnologyEditor),
+      m_lastError(""),
+      m_WidgetWithError(nullptr)
 {
   ui->setupUi(this);
 
@@ -24,30 +26,14 @@ TechnologyEditor::TechnologyEditor(const QString& filename, QWidget* parent)
                              &QPushButton::clicked, this, &TechnologyEditor::importLayerMap);
   connect(ui->tblLayers,     &QTableWidget::doubleClicked, this, &TechnologyEditor::editLayer);
 
-  // Create dummy layout view
-  m_layoutView = new lay::LayoutView(nullptr, true, nullptr,
-            lay::LayoutViewBase::LV_NoHierarchyPanel +
-            lay::LayoutViewBase::LV_NoEditorOptionsPanel +
-            lay::LayoutViewBase::LV_NoBookmarksView +
-            lay::LayoutViewBase::LV_NoZoom +
-            lay::LayoutViewBase::LV_NoGrid +
-            lay::LayoutViewBase::LV_NoPropertiesPopup +
-            lay::LayoutViewBase::LV_NoServices);
-
-  assert(m_layoutView!=nullptr);
 
   m_editedTech = new tech(filename);
-  // Create dummy layoutView and layout for the layer mgmt
-  m_layoutView->create_layout(m_editedTech->getTechname().toStdString(),true,true);
-  m_layout =  &(m_layoutView->cellview(0)->layout());
 
-  assert(m_layout!=nullptr);
 }
 
 TechnologyEditor::~TechnologyEditor() {
 
-  if (m_layoutView!=nullptr) delete m_layoutView;
-  m_layoutView = nullptr;
+  if (m_editedTech!=nullptr) delete m_editedTech;
 
   delete ui;
 }
@@ -83,14 +69,16 @@ void      TechnologyEditor::cancel()
  */
 void      TechnologyEditor::save()         // Save the technology into the selected files
 {
-  if (m_editedTech->getFilename()=="")
-    { saveas(); return;}
-
   if (!copyDataToTech())
   {
-    QMessageBox::critical(this, tr("Error"), tr("Errors in the form: ")+m_editedTech->getLastError());
+    QMessageBox::critical(this, tr("Error"), tr("Errors in the form: ")+m_lastError);
+    if (m_WidgetWithError!=nullptr) m_WidgetWithError->setFocus();
     return;
   }
+
+  if (m_editedTech->getFilename()=="")
+  { saveas(); return;}
+
   // Check for any preexisting tech
   tech* prev = tech::getTechFromFilename(m_editedTech->getFilename());
 
@@ -106,10 +94,14 @@ void      TechnologyEditor::save()         // Save the technology into the selec
  * @brief TechnologyEditor::saveas
  */
 
-void      TechnologyEditor::saveas()
+void      TechnologyEditor::  saveas()
 {
-  QString newFile = QFileDialog::getSaveFileName(this, tr("Save tech"), "", TechFileFilter);
+  QString selectedFilter;
+  QString newFile = QFileDialog::getSaveFileName(this, tr("Save tech"), "", TechFileFilter, &selectedFilter);
   if (newFile.isEmpty()) return;
+  QFileInfo fi(newFile);
+  if (fi.completeSuffix()!="tech")
+    newFile=QFileInfo(fi.absolutePath(),fi.baseName()+".tech").absoluteFilePath();
 
   tech* prev = tech::getTechFromFilename(m_editedTech->getFilename());
   // If this is a new technology, make it immediately available
@@ -134,12 +126,72 @@ void    TechnologyEditor::load()
 
 /**
  * @brief TechnologyEditor::copyDataToTech
+ * Copy the content of the dialog into the tech
  * @return
  */
 bool TechnologyEditor::copyDataToTech()
 {
+  m_lastError.clear();
+  m_WidgetWithError = nullptr;
+  // Tech name
+  QString newName = ui->leTechName->text();
+  if (newName.isEmpty())
+  { m_lastError = tr("Error: empty tech name"); m_WidgetWithError = ui->leTechFile; return false;}
+
+  m_editedTech->rename(newName);
+
+  // Description
+  m_editedTech->setDescription(ui->teTechDescription->toPlainText());
+
+  // LYP/LYT files are handled internally. No need to update
+  // DBU, Grid
+
+  bool bok;
+  double dbu = ui->leDBU->text().toDouble(&bok);
+  if ((!bok)||(dbu<0))
+  {
+    if (!bok)
+      m_lastError = tr("DBU must be a valid number");
+    else
+      m_lastError = tr("DBU must be positive");
+    m_WidgetWithError = ui->leDBU;
+    return false;
+  }
+
+  m_editedTech->dbu(dbu);
+
+  // grid
+  QString grid = ui->leGrid->text();
+
+  if (grid.isEmpty())
+    grid.number(5 * dbu);
+
+  m_editedTech->grid(grid);
+
   return true;
 }
 
 
+/**
+ * @brief TechnologyEditor::copyDataFromTech. This is an update of the GUI
+ * @return
+ */
+bool TechnologyEditor::copyDataFromTech()
+{
+  // Tech name
+  ui->leTechName->setText( m_editedTech->getTechname());
+  // Description
+  ui->teTechDescription->setPlainText(m_editedTech->getDescription());
+  // DBU
+  ui->leDBU->setText(QString::number(m_editedTech->dbu()));
+  // Grid
+  ui->leGrid->setText(m_editedTech->grid());
+  // Lyp/Lyt (clear them)
+  ui->leLypFile->clear();
+  ui->leTechFile->clear();
+  // Layers
+  listLayers();
+
+  return true;
+}
 

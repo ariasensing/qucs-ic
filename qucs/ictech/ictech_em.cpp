@@ -15,6 +15,6 @@ QString           tech::getEMFolder()
   if (m_fileName.isEmpty()) return QString("");
   QDir    baseDir         = getTechnologyBaseFolder();
   QDir    modelDir(baseDir.absoluteFilePath(relative_emdata_folder));
-  return  modelDir.canonicalPath();
+  return  modelDir.absolutePath();
 }
 

@@ -20,7 +20,9 @@ add_library(ictech STATIC
   ictech_spicemodels.cpp
   ictech_em.cpp
   ictech_libraries.cpp
+  ictech_stdcells.cpp
 )
+add_compile_definitions(HAVE_QT)
 
 target_include_directories(ictech PRIVATE ${PROJECT_SOURCE_DIR})
 target_link_libraries(ictech PRIVATE Qt${QT_VERSION_MAJOR}::Core tinyxml2::tinyxml2)

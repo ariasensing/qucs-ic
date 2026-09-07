@@ -24,7 +24,9 @@ tech::tech(QString filename) :
                                m_substrateCorners(),
                                m_Substrates(),
                                m_lastError(),
-                               m_laydefs(nullptr),
+                               m_ktech(nullptr),
+                               m_layoutView(nullptr),
+                               m_layout(nullptr),
                                m_layout_tech_file(),
                                m_model_files(),
                                m_substrate_files(),
@@ -37,13 +39,13 @@ tech::tech(QString filename) :
 
   tech* prev = tech::getTechFromFilename(filename);
 
+  create_klayout_tech();
+
   if (prev!=nullptr)
   {
     copyFrom(prev);
     return;
   }
-
-  create_klayout_tech();
 
   if (!load())
     clean();  
@@ -65,7 +67,9 @@ void tech::clean()
  */
 tech::~tech()
 {
+
   removeFromProject();
+  if (m_layoutView!=nullptr) delete m_layoutView;
 }
 /**
  * @brief tech::copyFrom
@@ -80,8 +84,20 @@ void    tech::copyFrom(tech* t2)
   m_modelCorners          = t2->m_modelCorners;
   m_substrateCorners      = t2->m_substrateCorners;
   m_Substrates            = t2->m_Substrates;
-
+  m_layout_tech_file      = t2->m_layout_tech_file;
+  m_layout_lyp_file       = t2->m_layout_lyp_file;
+  m_model_files           = t2->m_model_files;
+  m_symbol_files          = t2->m_symbol_files;
+  m_subcktSymbols         = t2->m_subcktSymbols;
   create_klayout_tech();
+  // Copy all layer props
+  m_layoutView->clear_layers();
+  for (lay::LayerPropertiesConstIterator it =  t2->m_layoutView->begin_layers();
+       it != t2->m_layoutView->end_layers(); ++it)
+    m_layoutView->insert_layer(m_layoutView->begin_layers(), *it);
+  // dbu / gris
+  m_ktech->set_dbu(t2->m_ktech->dbu());
+  m_ktech->set_default_grids(t2->m_ktech->default_grids());
 }
 
 /**
@@ -213,48 +229,74 @@ bool  tech::save(bool make_available)
   {
     tech* prev = tech::getTechFromFilename(m_fileName);
     if ((prev!=nullptr)&&(prev!=this))
-    {
-      // Remove previous one.
       prev->removeFromProject();
-      makeAvailableForTheProject();
-    }
+
+    makeAvailableForTheProject();
   }
 
   // Create folders, if missing
   QDir base = getTechnologyBaseFolder();
   if (!base.exists())
-    QDir.mkdir(base.canonicalPath());
+    QDir().mkdir(base.absolutePath());
 
-  QString layoutFolder = getLayoutFilepath();
+  QString layoutFolder = getLayoutFolder();
   if (!QDir(layoutFolder).exists())
-    QDir.mkdir(layoutFolder);
+    QDir().mkdir(layoutFolder);
+
+  QString emFolder = getEMFolder();
+  if (!QDir(emFolder).exists())
+    QDir().mkdir(emFolder);
+
+  QString spiceModelsFolder = getSpiceModelsFolder();
+  if (!QDir(spiceModelsFolder).exists())
+    QDir().mkdir(spiceModelsFolder);
+
+  QString librariesFolder = getLibrariesFolder();
+  if (!QDir(librariesFolder).exists())
+    QDir().mkdir(librariesFolder);
+
+  QString stdcellsFolder = getStdCellsFolder();
+  if (!QDir(stdcellsFolder).exists())
+    QDir().mkdir(stdcellsFolder);
+
 
   // Proceed with saving
 
   XMLDocument xmlTechDoc;
 
-  XMLNode * pTechRoot = xmlTechDoc.NewElement("technology");
-  assert(pTechRoot!=nullptr);
+  XMLElement * pTechRoot = xmlTechDoc.NewElement("technology");
+  pTechRoot->SetAttribute("name", m_techName.toLocal8Bit().data());
+  pTechRoot->SetAttribute("save_time",QDateTime::currentDateTime().toString().toLocal8Bit().data());
 
+  assert(pTechRoot!=nullptr);
+  // Properties
   XMLElement* pTechDescription = xmlTechDoc.NewElement("properties");
-  pTechDescription->SetAttribute("name", m_techName);
-  pTechDescription->SetAttribute("save_time",QDateTime::currentDateTime().toString());
   pTechRoot->InsertFirstChild(pTechDescription);
 
-  XMLNode* pLayoutDescription = xmlTechDoc.NewElement("layout");
-  pTechRoot->InsertEndChild(pLayoutDescription);
+  // Layout
+  XMLElement* pLayoutDescription = xmlTechDoc.NewElement("layout");
+  pTechDescription->InsertEndChild(pLayoutDescription);
 
-  XMLNode* pModelDescription = xmlTechDoc.NewElement("models");
-  pTechRoot->InsertEndChild(pModelDescription);
+  // Spice models
+  XMLElement* pModelDescription = xmlTechDoc.NewElement("models");
+  pTechDescription->InsertEndChild(pModelDescription);
 
-  XMLNode* pLibrariesDescription = xmlTechDoc.NewElement("libraries");
-  pTechRoot->InsertEndChild(pLibrariesDescription);
+  // Libraries
+  XMLElement* pLibrariesDescription = xmlTechDoc.NewElement("libraries");
+  pTechDescription->InsertEndChild(pLibrariesDescription);
 
-  XMLNode* pStdCells = xmlTechDoc.NewElement("stdcells");
+  //
+  XMLElement* pStdCells = xmlTechDoc.NewElement("stdcells");
   pTechRoot->InsertEndChild(pStdCells);
 
-  XMLNode eResult = xmlTechDoc.SaveFile(m_fileName);
-  XMLCheckResult(eResult);
+  xmlTechDoc.InsertFirstChild(pTechRoot);
+
+  // Save all relevant data in the folder
+  saveLayoutData(pLayoutDescription , &xmlTechDoc);
+
+
+  XMLError eResult = xmlTechDoc.SaveFile(m_fileName.toLocal8Bit().data());
+
 
 
   return true;
@@ -372,5 +414,23 @@ QDir    tech::getTechnologyBaseFolder()
   QString baseName        = QFileInfo(m_fileName).baseName()+QDir::separator();
   QDir    result(baseDir.absoluteFilePath(baseName));
 
-  return QDir(result.canonicalPath());
+  return result;//QDir(result.canonicalPath());
+}
+
+/**
+ * @brief tech::setDescription
+ * @param descr
+ */
+void    tech::setDescription(const QString& descr)
+{
+  m_ktech->set_description(descr.toStdString());
+}
+
+/**
+ * @brief tech::getDescription
+ * @return
+ */
+QString tech::getDescription()
+{
+  return m_ktech->description();
 }
