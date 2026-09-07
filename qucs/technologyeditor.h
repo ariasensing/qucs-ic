@@ -25,6 +25,7 @@ private:
 
   bool      copyDataToTech();   // GUI->tech
   bool      copyDataFromTech(); // tech->GUI
+  void      updateGUIAfterSave(); // After save GUI clean-up
 public:
   explicit TechnologyEditor(const QString& filename="", QWidget* parent = nullptr);
   ~TechnologyEditor();
@@ -61,6 +62,7 @@ public slots:
   void      removeLayer();
   void      editLayer(const QModelIndex& model);
   void      importLayerMap();
+  void      makeTechAvailable();
 };
 
 #endif // TECHNOLOGYEDITOR_H

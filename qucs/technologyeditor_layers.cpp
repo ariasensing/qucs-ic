@@ -23,8 +23,6 @@ void TechnologyEditor::loadLayers()
   m_editedTech->import_klayout_layerdefs(newlypfile);
 
   // Clear prev layers
-  m_editedTech->getLayoutView()->clear_layers();
-  m_editedTech->getLayoutView()->load_layer_props(newlypfile.toStdString());
 
 
   listLayers();

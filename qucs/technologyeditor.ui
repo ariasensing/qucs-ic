@@ -45,17 +45,27 @@
    <item row="1" column="0" colspan="5">
     <widget class="QTabWidget" name="tabWidget">
      <property name="currentIndex">
-      <number>1</number>
+      <number>0</number>
      </property>
      <widget class="QWidget" name="tabConfiguration">
       <attribute name="title">
        <string>Configuration</string>
       </attribute>
       <layout class="QGridLayout" name="gridLayout_6">
-       <item row="2" column="0">
-        <widget class="QLabel" name="label_3">
+       <item row="0" column="2">
+        <widget class="QLineEdit" name="leTechName"/>
+       </item>
+       <item row="1" column="2">
+        <widget class="QLabel" name="lblLastModified">
          <property name="text">
-          <string>Description</string>
+          <string>N/A</string>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="0">
+        <widget class="QLabel" name="label_10">
+         <property name="text">
+          <string>Last Modified</string>
          </property>
         </widget>
        </item>
@@ -65,12 +75,6 @@
           <string>Tech Name</string>
          </property>
         </widget>
-       </item>
-       <item row="2" column="2">
-        <widget class="QPlainTextEdit" name="teTechDescription"/>
-       </item>
-       <item row="0" column="2">
-        <widget class="QLineEdit" name="leTechName"/>
        </item>
        <item row="3" column="2">
         <widget class="QGroupBox" name="groupBox_7">
@@ -153,6 +157,29 @@
           </item>
          </layout>
         </widget>
+       </item>
+       <item row="2" column="2">
+        <widget class="QPlainTextEdit" name="teTechDescription"/>
+       </item>
+       <item row="2" column="0">
+        <widget class="QLabel" name="label_3">
+         <property name="text">
+          <string>Description</string>
+         </property>
+        </widget>
+       </item>
+       <item row="4" column="2">
+        <spacer name="verticalSpacer">
+         <property name="orientation">
+          <enum>Qt::Orientation::Vertical</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>20</width>
+           <height>40</height>
+          </size>
+         </property>
+        </spacer>
        </item>
       </layout>
      </widget>
@@ -530,6 +557,13 @@
     <widget class="QPushButton" name="btnSaveAs">
      <property name="text">
       <string>Save As...</string>
+     </property>
+    </widget>
+   </item>
+   <item row="0" column="3">
+    <widget class="QPushButton" name="btnMakeAvailable">
+     <property name="text">
+      <string>Make available..</string>
      </property>
     </widget>
    </item>

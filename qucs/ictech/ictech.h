@@ -92,7 +92,7 @@ private:
   QStringList               m_substrateCorners;
   QHash<QString,Substrate*> m_Substrates;
   QString                   m_lastError;
-
+  QString                   m_lastModified;
   db::Technology*         m_ktech;           // Definition of layers
   lay::LayoutView*        m_layoutView;   // Dummy view
   db::Layout*             m_layout;       // Dummy layout
@@ -108,6 +108,7 @@ private:
   QDir               getTechnologyBaseFolder();
 
   void               saveLayoutData(class tinyxml2::XMLElement* rootLayout, class tinyxml2::XMLDocument* doc);
+  bool               loadLayoutData(class tinyxml2::XMLElement* rootLayout);
   void               saveModelData(class tinyxml2::XMLElement* rootLayout, class tinyxml2::XMLDocument* doc) {}
   void               saveLibData(class tinyxml2::XMLElement* rootLayout, class tinyxml2::XMLDocument* doc) {}
   void               saveStdCellData(class tinyxml2::XMLElement* rootLayout, class tinyxml2::XMLDocument* doc) {}
@@ -151,10 +152,11 @@ public:
 
   double                dbu() {return m_ktech->dbu();}
   void                  dbu(double dbu) {if (dbu>0) m_ktech->set_dbu(dbu);}
-  QString               grid() {return QString(m_ktech->default_grids());}
+  QString               grid() {return QString::fromStdString(m_ktech->default_grids());}
   void                  grid(QString grid_list) {m_ktech->set_default_grids(grid_list.toStdString());}
   QString               getLypFile() {return m_layout_lyp_file;}
   QString               getLytFile() {return m_layout_tech_file;}
+  QString               getLastModified() {return m_lastModified;}
 
 };
 

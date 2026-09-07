@@ -114,6 +114,7 @@ void   tech::makeAvailableForTheProject()
  */
 void   tech::removeFromProject()
 {
+
   m_availableTechs.remove(this);
 
 }
@@ -275,15 +276,15 @@ bool  tech::save(bool make_available)
 
   // Layout
   XMLElement* pLayoutDescription = xmlTechDoc.NewElement("layout");
-  pTechDescription->InsertEndChild(pLayoutDescription);
+  pTechRoot->InsertEndChild(pLayoutDescription);
 
   // Spice models
   XMLElement* pModelDescription = xmlTechDoc.NewElement("models");
-  pTechDescription->InsertEndChild(pModelDescription);
+  pTechRoot->InsertEndChild(pModelDescription);
 
   // Libraries
   XMLElement* pLibrariesDescription = xmlTechDoc.NewElement("libraries");
-  pTechDescription->InsertEndChild(pLibrariesDescription);
+  pTechRoot->InsertEndChild(pLibrariesDescription);
 
   //
   XMLElement* pStdCells = xmlTechDoc.NewElement("stdcells");
@@ -323,8 +324,78 @@ bool tech::saveToFile(const QString& filename,bool make_available)
  */
 bool  tech::load()
 {
-  // load technology
-  import_klayout_tech_file();
+  m_lastError.clear();
+  // Clear layers
+  m_layoutView->clear_layers();
+
+  // Proceed with saving
+
+  XMLDocument xmlTechDoc;
+  XMLError error = xmlTechDoc.LoadFile(m_fileName.toLocal8Bit().data());
+  if (xmlTechDoc.Error())
+  {
+    m_lastError = tr("Error in tech file\n");
+
+    m_lastError.append(tr("❌ XML Parsing Failed!\n"));
+
+    // Get the internal error code enum (e.g., XML_ERROR_MISMATCHED_ELEMENT)
+    m_lastError.append(tr("Error ID: ") + QString::number(xmlTechDoc.ErrorID()) + "\n");
+
+    // Get the readable string name of the error
+    m_lastError.append(tr("Error Name: ") + xmlTechDoc.ErrorName() + "\n");
+
+    // Find exactly where the mistake happened
+    m_lastError.append(tr("Error Line: ")+ QString::number(xmlTechDoc.ErrorLineNum()) + "\n");
+
+    return false;
+  }
+
+  XMLElement * pTechRoot = xmlTechDoc.FirstChildElement("technology");
+
+  if (pTechRoot==nullptr)
+  {
+    m_lastError = "Missing header section in tech file";
+    return false;
+  }
+
+  QString name(pTechRoot->Attribute("name"));
+
+  if (name.isEmpty())
+  {
+    m_lastError = tr("Missing name");
+    return false;
+  }
+  m_techName = name;
+
+  m_lastModified = QString(pTechRoot->Attribute("save_time"));
+
+  XMLElement* pProperties = pTechRoot->FirstChildElement("properties");
+
+  if (pProperties==nullptr)
+  {
+    m_lastError = tr("Missing properties section");
+    return false;
+
+  }
+
+  XMLElement* pLayout = pTechRoot->FirstChildElement("layout");
+  if (pLayout==nullptr)
+  {
+    m_layout_lyp_file.clear();
+    m_layout_tech_file.clear();
+  }
+  else
+  {
+    if (!loadLayoutData(pLayout))
+    {
+      m_lastError = tr("Error while loading tech files");
+      return false;
+    }
+  }
+
+  XMLElement* pModelDescription = pTechRoot->FirstChildElement("models");
+  XMLElement* pLibrariesDescription = pTechRoot->FirstChildElement("libraries");
+  XMLElement* pStdCells = pTechRoot->FirstChildElement("stdcells");
 
   return true;
 }
@@ -432,5 +503,5 @@ void    tech::setDescription(const QString& descr)
  */
 QString tech::getDescription()
 {
-  return m_ktech->description();
+  return QString::fromStdString(m_ktech->description());
 }

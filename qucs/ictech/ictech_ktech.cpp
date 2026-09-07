@@ -114,7 +114,7 @@ bool    tech::import_klayout_tech_file()
   if ((m_ktech==nullptr)||(m_layout_tech_file.isEmpty()))
     return true;
   m_ktech->load(m_layout_tech_file.toStdString());
-  m_layout_lyp_file =  QString::fromStdString(m_ktech->layer_properties_file());
+  m_layout_lyp_file =  QString::fromStdString(m_ktech->eff_layer_properties_file());
 
   import_klayout_layerdefs();
   return true;
@@ -126,12 +126,15 @@ bool    tech::import_klayout_tech_file()
  */
 bool    tech::import_klayout_layerdefs(const QString& newLypFile)
 {
-  if (newLypFile!=m_layout_lyp_file)
+  if (!newLypFile.isEmpty())
     m_layout_lyp_file = newLypFile;
+  m_layoutView->clear_layers();
 
   if (m_layout_lyp_file.isEmpty()) return true;
   if (m_ktech==nullptr) return true;
   m_ktech->set_layer_properties_file(m_layout_lyp_file.toStdString());
+
+  m_layoutView->load_layer_props(m_layout_lyp_file.toStdString());
 
   return true;
 }
@@ -152,7 +155,7 @@ void    tech::saveLayoutData(XMLElement* rootLayout, XMLDocument* )
   QString fullLypFile = QFileInfo(layoutBasePath,defaultLypFile).absoluteFilePath();
 
   m_ktech->set_name(getTechname().toStdString());
-  m_ktech->set_default_base_path(layoutBasePath);
+  m_ktech->set_default_base_path(layoutBasePath.absolutePath().toStdString());
 
   m_ktech->set_layer_properties_file(fullLypFile.toStdString());
 
@@ -167,5 +170,26 @@ void    tech::saveLayoutData(XMLElement* rootLayout, XMLDocument* )
 
   m_layout_lyp_file = fullLypFile;
   m_layout_tech_file = fullLytFile;
+
+}
+
+/**
+ * @brief tech::loadLayoutData Load the section related to layers
+ * @param rootLayout
+ * @return
+ */
+bool    tech::loadLayoutData(class tinyxml2::XMLElement* rootLayout)
+{
+  if (rootLayout==nullptr) return true;
+  m_layout_tech_file = QString(rootLayout->Attribute("layout_tech_file"));
+  m_layout_lyp_file  = QString(rootLayout->Attribute("layout_properties_file"));
+
+  m_layoutView->clear_layers();
+
+  if (m_layout_tech_file.isEmpty()) return true;
+
+  import_klayout_tech_file();
+
+  return true;
 
 }

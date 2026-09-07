@@ -25,9 +25,14 @@ TechnologyEditor::TechnologyEditor(const QString& filename, QWidget* parent)
   connect(ui->btnImportLayerMap,
                              &QPushButton::clicked, this, &TechnologyEditor::importLayerMap);
   connect(ui->tblLayers,     &QTableWidget::doubleClicked, this, &TechnologyEditor::editLayer);
+  connect(ui->btnMakeAvailable,
+                            &QPushButton::clicked, this, &TechnologyEditor::makeTechAvailable);
 
 
   m_editedTech = new tech(filename);
+
+  if (!filename.isEmpty())
+    copyDataFromTech();
 
 }
 
@@ -88,6 +93,8 @@ void      TechnologyEditor::save()         // Save the technology into the selec
   // Update also the pre-loaded
   if (prev!=nullptr)
     prev->copyFrom(m_editedTech);
+
+  updateGUIAfterSave();
 }
 
 /**
@@ -110,6 +117,8 @@ void      TechnologyEditor::  saveas()
   // Update also the pre-loaded
   if (prev!=nullptr)
     prev->copyFrom(m_editedTech);
+
+  updateGUIAfterSave();
 }
 /**
  * @brief TechnologyEditor::load
@@ -121,7 +130,13 @@ void    TechnologyEditor::load()
   QString filename = QFileDialog::getOpenFileName(this, "Select tech file", "", TechFileFilter);
   if (filename== nullptr) return;
 
-  m_editedTech->load(filename);
+  if (!m_editedTech->load(filename))
+  {
+    QMessageBox::critical(this,tr("Error"), m_editedTech->getLastError());
+    return;
+  }
+
+  copyDataFromTech();
 }
 
 /**
@@ -189,9 +204,47 @@ bool TechnologyEditor::copyDataFromTech()
   // Lyp/Lyt (clear them)
   ui->leLypFile->clear();
   ui->leTechFile->clear();
+  // Last saved
+  ui->lblLastModified->setText(m_editedTech->getLastModified());
+
   // Layers
   listLayers();
 
   return true;
 }
+/**
+ * @brief TechnologyEditor::updateGUIAfterSave
+ */
+void TechnologyEditor::updateGUIAfterSave()
+{
+  ui->lblLastModified->setText(m_editedTech->getLastModified());
+  ui->leLypFile->clear();
+  ui->leTechFile->clear();
+}
+/**
+ * @brief TechnologyEditor::makeTechAvailable
+ */
+void TechnologyEditor::makeTechAvailable()
+{
+  // Check if we have a previous tech with the same name
+  // Check for any preexisting tech
+  tech* prev = tech::getTechFromFilename(m_editedTech->getFilename());
+
+  // Update also the pre-loaded
+  if (prev!=nullptr)
+  {
+    if (QMessageBox::question(this, tr("Confirm"), tr("The current technology will be overwritten by the current one\n Continue?"))
+        ==QMessageBox::No) return;
+
+    prev->copyFrom(m_editedTech);
+  }
+  else
+  {
+    tech* new_tech = new tech();
+    new_tech->copyFrom(m_editedTech);
+    new_tech->makeAvailableForTheProject();
+  }
+  return;
+}
+
 
