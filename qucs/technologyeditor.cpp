@@ -20,6 +20,8 @@ TechnologyEditor::TechnologyEditor(const QString& filename, QWidget* parent)
   connect(ui->btnSaveLayers, &QPushButton::clicked, this, &TechnologyEditor::saveLayers);
   connect(ui->btnNewLayer,   &QPushButton::clicked, this, &TechnologyEditor::createLayer);
   connect(ui->btnRemoveLayer,&QPushButton::clicked, this, &TechnologyEditor::removeLayer);
+  connect(ui->btnImportLayerMap,
+                             &QPushButton::clicked, this, &TechnologyEditor::importLayerMap);
   connect(ui->tblLayers,     &QTableWidget::doubleClicked, this, &TechnologyEditor::editLayer);
 
   // Create dummy layout view

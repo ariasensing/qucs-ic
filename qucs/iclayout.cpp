@@ -215,4 +215,24 @@ void  icLayout::setTechnology(QString ict)
 
 }
 
+/**
+ * @brief icLayout::setGridOn
+ * @param value
+ */
+void icLayout::setGridOn(bool value)
+{
+
+}
+
+
+/**
+ * @brief icLayout::getGridOn
+ * @return
+ */
+bool icLayout::getGridOn()
+{
+  return false;
+}
+
+
 

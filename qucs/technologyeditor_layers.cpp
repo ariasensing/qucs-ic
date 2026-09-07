@@ -5,7 +5,7 @@
 #include <QCheckBox>
 #include <QPainter>
 #include "editLayer.h"
-
+#include "cdn_import.h"
 /**
  * @brief TechnologyEditor::loadLayers
  * @return
@@ -21,10 +21,6 @@ void TechnologyEditor::loadLayers()
 
   if (m_editedTech==nullptr) return;
   m_editedTech->import_klayout_layerdefs(newlypfile);
-  // Clear prev layers
-  m_layoutView->clear_layers();
-  m_layoutView->load_layer_props(newlypfile.toStdString());
-
 
   listLayers();
 }
@@ -317,4 +313,49 @@ void TechnologyEditor::editLayer(const QModelIndex& model)
         }
     }
   }
+}
+
+/**
+ * @brief TechnologyEditor::importLayerMap
+ */
+void      TechnologyEditor::importLayerMap()
+{
+  QString layerMapFile =  QFileDialog::getOpenFileName(this, "Open Layer Map File","",
+                                                        tr("Layer map file (*.map *.layermap);; All files (*.*)" ) );
+
+  if (layerMapFile.isEmpty()) return;
+
+  QString displayFile =  QFileDialog::getOpenFileName(this, "Open Display File","",
+                                                      tr("Display (*.drf);; All files (*.*)" ) );
+
+  if (displayFile.isEmpty()) return;
+
+
+}
+
+/**
+ * @brief TechnologyEditor::applyCadenceToView
+ * @param view
+ * @param layermapPath
+ * @param drfPath
+ * @param clearExisting
+ */
+void TechnologyEditor::applyCadenceToView(
+                        const std::string &layermapPath,
+                        const std::string &drfPath,
+                        bool clearExisting)
+{
+  if (!m_layoutView)
+    return;
+
+  auto imported = cadence_import::importCadence(layermapPath, drfPath, m_layoutView);
+
+  if (clearExisting)
+    m_layoutView->clear_layers();
+
+  for (const auto &node : imported.nodes)
+    m_layoutView->insert_layer(m_layoutView->end_layers(), node);
+
+  m_layoutView->add_missing_layers();
+  m_layoutView->update_content();
 }

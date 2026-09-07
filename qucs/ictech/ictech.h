@@ -17,6 +17,7 @@
 /*
  * A technlogy is organized as follows.
  * tech_file (corners, files information)
+ * tech_file.data (main technology folder)
  *   |--> tech_file.layout folder
  *   |              |
  *   |              |-> lyt (techfile.lyt)
@@ -27,7 +28,7 @@
  *   |              |
  *   |              | -> deck1, 2, 3...
  *   |
- *   |--> tech_file.symbols folder
+ *   |--> tech_file.libraries folder
  *   |              |
  *   |              |-> symmap file (symbol mapping file)
  *   |              |-> symbol1, 2, 3 ...
@@ -44,6 +45,15 @@
  *   When saving a tech -> the folders are created if needed, each file is stored. kLayout tech is also registered
  *   When loading
 */
+
+namespace tinyxml2
+{
+class XMLNode;
+class XMLElement;
+class XMLDocument;
+}
+
+
 class ICTECH_EXPORT tech {
 public:
   tech(QString filename="");
@@ -84,14 +94,24 @@ private:
 
   db::Technology    *m_laydefs;           // Definition of layers
   // All files here are the basename
-  QString            m_layout_tech_file;  // Storage point of layout properties
+  QString            m_layout_tech_file;  // Storage point of layout technologies
   QString            m_layout_lyp_file;   // Storage point of layout properties
   QSet<QString>      m_model_files;       // Stored model files
   QSet<QString>      m_substrate_files;   // Substrate files
   QSet<QString>      m_symbol_files;      // Symbol files
   QHash<QString, QString> m_subcktSymbols;// Mapping from subckt and symbols
 
+  QDir               getTechnologyBaseFolder();
+
+  void               saveLayoutData(class tinyxml2::XMLNode* rootLayout, class tinyxml2::XMLDocument* doc);
+  void               saveModelData(class tinyxml2::XMLNode* rootLayout, class tinyxml2::XMLDocument* doc) {}
+  void               saveLibData(class tinyxml2::XMLNode* rootLayout, class tinyxml2::XMLDocument* doc) {}
+  void               saveStdCellData(class tinyxml2::XMLNode* rootLayout, class tinyxml2::XMLDocument* doc) {}
+  void               saveEMData(class tinyxml2::XMLNode* rootLayout, class tinyxml2::XMLDocument* doc) {}
+
   void   createDefaultFileNames();
+// Saving
+
 public:
 
   // klayout
@@ -103,6 +123,15 @@ public:
 
   QString           getLayoutFolder();
   QString           getLayoutFilepath();
+  QString           getSpiceModelsFolder();
+  QString           getEMFolder();
+  QString           getLibrariesFolder();
+  QString           getStdCellsFolder();
+
+  QStringList       getSpiceModelsFiles();
+
+
+
 
   // Here we keep the list of saved technologies
   static QSet<tech*> m_availableTechs;

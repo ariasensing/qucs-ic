@@ -10,17 +10,20 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Core)
 find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Core)
-
+find_package(tinyxml2 REQUIRED)
 add_library(ictech STATIC
   ictech_global.h
   ictech.cpp
   ictech.h
   substrate.h substrate.cpp
   ictech_ktech.cpp
+  ictech_spicemodels.cpp
+  ictech_em.cpp
+  ictech_libraries.cpp
 )
 
 target_include_directories(ictech PRIVATE ${PROJECT_SOURCE_DIR})
-target_link_libraries(ictech PRIVATE Qt${QT_VERSION_MAJOR}::Core)
+target_link_libraries(ictech PRIVATE Qt${QT_VERSION_MAJOR}::Core tinyxml2::tinyxml2)
 
 target_compile_definitions(ictech PRIVATE ICTECH_LIBRARY)
 

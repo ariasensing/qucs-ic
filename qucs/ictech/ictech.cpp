@@ -1,6 +1,11 @@
 #include "ictech.h"
+#include <tinyxml2.h>
+#include <QDateTime>
+#include <QDir>
 
 QSet<tech*>           tech::m_availableTechs = QSet<tech*>();
+
+using namespace tinyxml2;
 /*
  * We have a 1:1 correspondance in between files and tech.
  * When creating a tech, it may be an empty file (new tech or void tech)
@@ -201,6 +206,9 @@ bool  tech::loadSubstrateData(const QString& corner, const QString& filename)
  */
 bool  tech::save(bool make_available)
 {
+  if (m_fileName.isEmpty()) return false;
+  if (m_techName.isEmpty()) return false;
+
   if (make_available)
   {
     tech* prev = tech::getTechFromFilename(m_fileName);
@@ -211,6 +219,43 @@ bool  tech::save(bool make_available)
       makeAvailableForTheProject();
     }
   }
+
+  // Create folders, if missing
+  QDir base = getTechnologyBaseFolder();
+  if (!base.exists())
+    QDir.mkdir(base.canonicalPath());
+
+  QString layoutFolder = getLayoutFilepath();
+  if (!QDir(layoutFolder).exists())
+    QDir.mkdir(layoutFolder);
+
+  // Proceed with saving
+
+  XMLDocument xmlTechDoc;
+
+  XMLNode * pTechRoot = xmlTechDoc.NewElement("technology");
+  assert(pTechRoot!=nullptr);
+
+  XMLElement* pTechDescription = xmlTechDoc.NewElement("properties");
+  pTechDescription->SetAttribute("name", m_techName);
+  pTechDescription->SetAttribute("save_time",QDateTime::currentDateTime().toString());
+  pTechRoot->InsertFirstChild(pTechDescription);
+
+  XMLNode* pLayoutDescription = xmlTechDoc.NewElement("layout");
+  pTechRoot->InsertEndChild(pLayoutDescription);
+
+  XMLNode* pModelDescription = xmlTechDoc.NewElement("models");
+  pTechRoot->InsertEndChild(pModelDescription);
+
+  XMLNode* pLibrariesDescription = xmlTechDoc.NewElement("libraries");
+  pTechRoot->InsertEndChild(pLibrariesDescription);
+
+  XMLNode* pStdCells = xmlTechDoc.NewElement("stdcells");
+  pTechRoot->InsertEndChild(pStdCells);
+
+  XMLNode eResult = xmlTechDoc.SaveFile(m_fileName);
+  XMLCheckResult(eResult);
+
 
   return true;
 }
@@ -312,4 +357,20 @@ tech* tech::getTechFromFilename(const QString &techfile)
 void   tech::createDefaultFileNames()
 {
 
+}
+
+/**
+ * @brief tech::getTechnologyBaseFolder
+ * @return
+ */
+
+QDir    tech::getTechnologyBaseFolder()
+{
+  if (m_fileName.isEmpty()) return QDir();
+
+  QDir    baseDir         = QFileInfo(m_fileName).dir();
+  QString baseName        = QFileInfo(m_fileName).baseName()+QDir::separator();
+  QDir    result(baseDir.absoluteFilePath(baseName));
+
+  return QDir(result.canonicalPath());
 }

@@ -1,6 +1,9 @@
 #include "ictech.h"
 #include <QFileInfo>
 #include <QDir>
+#include <tinyxml2.h>
+
+using namespace tinyxml2;
 /**
  * All procedures related to the klayout technologies inside ictech are here
  * */
@@ -17,14 +20,15 @@ const QString relative_layout_folder="./layout/";
 QString   tech::getLayoutFolder()
 {
   if (m_fileName.isEmpty()) return QString("");
-  QDir    baseDir         = QFileInfo(m_fileName).dir();
-  QString absoluteResult  = baseDir.absoluteFilePath(relative_layout_folder);
-  return absoluteResult;
+
+  QDir    baseDir         = getTechnologyBaseFolder();
+  QDir    layoutDir(baseDir.absoluteFilePath(relative_models_folder));
+  return layoutDir.canonicalPath();
 
 }
 /**
  * @brief tech::getLayoutFilepath
- * @return A default name for the
+ * @return A default name for the lyt file in the technology
  */
 QString   tech::getLayoutFilepath()
 {
@@ -110,5 +114,42 @@ bool    tech::import_klayout_layerdefs(const QString& newLypFile)
   if (m_layout_lyp_file.isEmpty()) return true;
   if (m_laydefs==nullptr) return true;
   m_laydefs->set_layer_properties_file(m_layout_lyp_file.toStdString());
+
+  // Clear prev layers
+  m_layoutView->clear_layers();
+  m_layoutView->load_layer_props(newlypfile.toStdString());
+
   return true;
+}
+
+/**
+ * @brief tech::saveLayoutData
+ * @param rootLayout
+ */
+
+void    tech::saveLayoutData(XMLNode* rootLayout, XMLDocument* doc)
+{
+  QDir    layoutBasePath(getLayoutFilepath());
+
+  QString defaultLytFile = getTechname()+".lyt";
+  QString defaultLypFile = getTechname()+".lyp";
+
+  QString fullLytFile = QFileInfo(layoutBasePath,defaultLytFile).absoluteFilePath();
+  QString fullLypFile = QFileInfo(layoutBasePath,defaultLypFile).absoluteFilePath();
+
+  m_laydefs->set_name(getTechname().toStdString());
+
+  m_laydefs->set_layer_properties_file(fullLytFile.toStdString());
+
+  m_laydefs->save(fullLypFile.toStdString());
+
+  if (doc==nullptr) return;
+  if (rootLayout==nullptr) return;
+
+  XMLElement* layoutFiles = doc->NewElement("layout_files");
+  assert(layoutFiles!=nullptr);
+  layoutFiles->SetAttribute("layout_tech_file", fullLytFile);
+  layoutFiles->SetAttribute("layout_properties_file",fullLypFile);
+
+  rootLayout->InsertEndChild(layoutFiles);
 }

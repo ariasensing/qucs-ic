@@ -11,6 +11,11 @@ namespace Ui {
 class TechnologyEditor;
 }
 
+
+  /**
+   * @brief The TechnologyEditor class
+   */
+
 class TechnologyEditor : public QDialog {
   Q_OBJECT
 private:
@@ -38,8 +43,12 @@ private:
                    lay::LayoutView *view = nullptr,
                    int size = 24);
 
-  void    update_layer_row(int row, const lay::LayerPropertiesNode &props);
+  void                      update_layer_row(int row, const lay::LayerPropertiesNode &props);
 
+  // Convenience: apply directly to a LayoutView
+  void applyCadenceToView(const std::string &layermapPath,
+                          const std::string &drfPath,
+                          bool clearExisting = true);
 public slots:
   void      ok();
   void      cancel();
@@ -52,6 +61,7 @@ public slots:
   void      createLayer();
   void      removeLayer();
   void      editLayer(const QModelIndex& model);
+  void      importLayerMap();
 };
 
 #endif // TECHNOLOGYEDITOR_H

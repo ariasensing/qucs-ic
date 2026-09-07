@@ -41,7 +41,7 @@ public:
 //----------------------------------
 // grid
   void setGridOn(bool value);
-  void getGridOn();
+  bool getGridOn();
 
 
 //----------------------------------
