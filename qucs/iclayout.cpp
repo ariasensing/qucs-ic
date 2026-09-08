@@ -69,13 +69,12 @@ bool  icLayout::initKlayoutWidget()
 
   m_layoutView = m_layoutWidget->view();
   if (m_layoutView == nullptr) return false;
-  m_canvas_id = m_layoutView->create_layout(false);
+
+  m_canvas_id = m_layoutView->create_layout(m_tech->getTechname().toStdString(),false);
   m_layout    = &(m_layoutView->cellview(0)->layout());
   assert(m_layout!=nullptr);
-  // Update technology and layers
-  if (m_tech!=nullptr)
-    m_layout->set_technology_name(m_tech->getTechname().toStdString());
 
+  applyTechToView();
 
   // Connections
   connect(ui->btnLoad, &QPushButton::clicked, this, &icLayout::loadLayoutClicked);
@@ -166,12 +165,14 @@ void icLayout::loadLayoutClicked()
   if ((m_layoutWidget==nullptr)||(m_layoutView==nullptr)) return;
   try
   {
-    m_layoutView->load_layout(layoutFile.toStdString(),false);
+    m_layoutView->load_layout(layoutFile.toStdString(), m_tech->getTechname().toStdString(), false);
+    applyTechToView();
     m_layoutView->add_missing_layers();
-
 
     m_layoutView->max_hier();
     m_layoutView->zoom_fit();
+    m_layoutView->update_content();
+
   }
   catch(...)
   {
@@ -213,6 +214,26 @@ void  icLayout::setTechnology(QString ict)
 {
   m_technologyFile=ict;
 
+  if (m_technologyFile == m_tech->getFilename())
+    return;
+
+  // Check if we need to delete m_tech (if it was created here)
+  tech* query_tech = tech::getTechFromFilename(m_tech->getFilename());
+  if (query_tech == nullptr)
+  {
+    // It means that the current technology is not in the list of available one. We may delete it.
+    delete m_tech;
+    m_tech = nullptr;
+  }
+
+  // Get the new one
+  query_tech = tech::getTechFromFilename(m_technologyFile);
+  if (query_tech == nullptr)
+    m_tech = new tech(m_technologyFile);
+  else
+    m_tech = query_tech;
+
+  applyTechToView();
 }
 
 /**
@@ -232,6 +253,25 @@ void icLayout::setGridOn(bool value)
 bool icLayout::getGridOn()
 {
   return false;
+}
+
+/**
+ * @brief icLayout::applyTechToView
+ */
+void  icLayout::applyTechToView()
+{
+  return;
+  // Update technology and layers
+  if (m_tech!=nullptr)
+  {
+   // if (db::Technologies::instance()->has_technology(m_tech->getTechname().toStdString()))
+   //     m_layout->set_technology_name(m_tech->getTechname().toStdString());
+
+    m_tech->copyLayersToView(m_layoutView, true);
+  }
+  m_layoutView->add_missing_layers();
+  m_layoutView->update_content();
+
 }
 
 

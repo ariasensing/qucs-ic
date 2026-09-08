@@ -2,6 +2,8 @@
 #include <QFileInfo>
 #include <QDir>
 #include <tinyxml2.h>
+#include <layLayoutView.h>
+#include "layLayoutView_qt.h"
 
 using namespace tinyxml2;
 /**
@@ -53,9 +55,9 @@ void  tech::create_klayout_tech()
   remove_klayout_tech();
 
   // Create an empty klayout technology
-  db::Technology laytech;
-  laytech.set_name(getTechname().toStdString());
-  m_ktech = db::Technologies::instance()->add(laytech);
+  m_ktech = new db::Technology();
+  m_ktech->set_name(getTechname().toStdString());
+
   assert(m_ktech!=nullptr);
 
   // Set the base path as
@@ -75,13 +77,13 @@ void  tech::create_klayout_tech()
 
   // Create dummy layout view
   m_layoutView = new lay::LayoutView(nullptr, true, nullptr,
-                                     lay::LayoutViewBase::LV_NoHierarchyPanel +
-                                         lay::LayoutViewBase::LV_NoEditorOptionsPanel +
-                                         lay::LayoutViewBase::LV_NoBookmarksView +
-                                         lay::LayoutViewBase::LV_NoZoom +
-                                         lay::LayoutViewBase::LV_NoGrid +
-                                         lay::LayoutViewBase::LV_NoPropertiesPopup +
-                                         lay::LayoutViewBase::LV_NoServices);
+                                          lay::LayoutViewBase::LV_NoHierarchyPanel +
+                                          lay::LayoutViewBase::LV_NoEditorOptionsPanel +
+                                          lay::LayoutViewBase::LV_NoBookmarksView +
+                                          lay::LayoutViewBase::LV_NoZoom +
+                                          lay::LayoutViewBase::LV_NoGrid +
+                                          lay::LayoutViewBase::LV_NoPropertiesPopup +
+                                          lay::LayoutViewBase::LV_NoServices);
 
   assert(m_layoutView!=nullptr);
   m_layoutView->create_layout(m_techName.toStdString(),true,true);
@@ -191,5 +193,23 @@ bool    tech::loadLayoutData(class tinyxml2::XMLElement* rootLayout)
   import_klayout_tech_file();
 
   return true;
+
+}
+
+/**
+ * @brief tech::copyLayersToView
+ * @param lay
+ * @param clear_prev_layers
+ */
+void  tech::copyLayersToView(lay::LayoutView* view, bool clear_prev_layers)
+{
+  if (view==nullptr) return;
+  if (m_layoutView==nullptr) return;
+
+  if (clear_prev_layers) view->clear_layers();
+
+  for (lay::LayerPropertiesConstIterator it =  m_layoutView->begin_layers(); it != m_layoutView->end_layers(); ++it)
+    view->insert_layer(view->end_layers(), *it);
+
 
 }

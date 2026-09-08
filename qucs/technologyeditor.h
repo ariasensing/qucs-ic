@@ -23,8 +23,8 @@ private:
   tech*     m_editedTech;   // This is the local copy of the technology
 
 
-  bool      copyDataToTech();   // GUI->tech
-  bool      copyDataFromTech(); // tech->GUI
+  bool      GUItoTech();   // GUI->tech
+  bool      TechtoGUI(); // tech->GUI
   void      updateGUIAfterSave(); // After save GUI clean-up
 public:
   explicit TechnologyEditor(const QString& filename="", QWidget* parent = nullptr);

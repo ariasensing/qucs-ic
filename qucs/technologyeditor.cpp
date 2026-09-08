@@ -32,7 +32,7 @@ TechnologyEditor::TechnologyEditor(const QString& filename, QWidget* parent)
   m_editedTech = new tech(filename);
 
   if (!filename.isEmpty())
-    copyDataFromTech();
+    TechtoGUI();
 
 }
 
@@ -74,7 +74,7 @@ void      TechnologyEditor::cancel()
  */
 void      TechnologyEditor::save()         // Save the technology into the selected files
 {
-  if (!copyDataToTech())
+  if (!GUItoTech())
   {
     QMessageBox::critical(this, tr("Error"), tr("Errors in the form: ")+m_lastError);
     if (m_WidgetWithError!=nullptr) m_WidgetWithError->setFocus();
@@ -136,15 +136,15 @@ void    TechnologyEditor::load()
     return;
   }
 
-  copyDataFromTech();
+  TechtoGUI();
 }
 
 /**
- * @brief TechnologyEditor::copyDataToTech
+ * @brief TechnologyEditor::GUItoTech
  * Copy the content of the dialog into the tech
  * @return
  */
-bool TechnologyEditor::copyDataToTech()
+bool TechnologyEditor::GUItoTech()
 {
   m_lastError.clear();
   m_WidgetWithError = nullptr;
@@ -188,10 +188,10 @@ bool TechnologyEditor::copyDataToTech()
 
 
 /**
- * @brief TechnologyEditor::copyDataFromTech. This is an update of the GUI
+ * @brief TechnologyEditor::TechtoGUI. This is an update of the GUI
  * @return
  */
-bool TechnologyEditor::copyDataFromTech()
+bool TechnologyEditor::TechtoGUI()
 {
   // Tech name
   ui->leTechName->setText( m_editedTech->getTechname());

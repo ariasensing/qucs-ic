@@ -61,6 +61,7 @@ private:
   unsigned int            m_canvas_id;
   QString                 m_technologyFile;
   bool                    m_bGridOn;
+  void                    applyTechToView();
 public slots:
   void                    loadLayoutClicked();
   void                    saveLayoutClicked();

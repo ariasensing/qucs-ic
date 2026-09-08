@@ -158,6 +158,8 @@ public:
   QString               getLytFile() {return m_layout_tech_file;}
   QString               getLastModified() {return m_lastModified;}
 
+  void                  copyLayersToView(lay::LayoutView* view, bool clear_prev_layers);
+
 };
 
 #endif // ICTECH_H

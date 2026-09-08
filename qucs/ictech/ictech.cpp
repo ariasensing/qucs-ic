@@ -2,6 +2,8 @@
 #include <tinyxml2.h>
 #include <QDateTime>
 #include <QDir>
+#include "dbTechnology.h"
+#include "layLayoutView_qt.h"
 
 QSet<tech*>           tech::m_availableTechs = QSet<tech*>();
 
@@ -33,21 +35,20 @@ tech::tech(QString filename) :
                                m_symbol_files(),
                                m_subcktSymbols()
 {
-
-  // Check if we already have a tech with the same filename.
-  // If so copy data from the existing (faster than loading)
-
-  tech* prev = tech::getTechFromFilename(filename);
-
   create_klayout_tech();
-
-  if (prev!=nullptr)
+  // Check if already have a technology defined
+  if (!m_fileName.isEmpty())
   {
-    copyFrom(prev);
-    return;
+      tech* prev = tech::getTechFromFilename(m_fileName);
+      if (prev!=nullptr)
+      {
+        copyFrom(prev);
+        return;
+      }
   }
 
-  if (!load())
+  if (!m_fileName.isEmpty())
+    if (!load())
     clean();  
 }
 /**
@@ -89,15 +90,9 @@ void    tech::copyFrom(tech* t2)
   m_model_files           = t2->m_model_files;
   m_symbol_files          = t2->m_symbol_files;
   m_subcktSymbols         = t2->m_subcktSymbols;
-  create_klayout_tech();
-  // Copy all layer props
-  m_layoutView->clear_layers();
-  for (lay::LayerPropertiesConstIterator it =  t2->m_layoutView->begin_layers();
-       it != t2->m_layoutView->end_layers(); ++it)
-    m_layoutView->insert_layer(m_layoutView->begin_layers(), *it);
-  // dbu / gris
-  m_ktech->set_dbu(t2->m_ktech->dbu());
-  m_ktech->set_default_grids(t2->m_ktech->default_grids());
+
+  m_layoutView->copy_from(t2->m_layoutView);
+  (*m_ktech) = (*(t2->m_ktech));
 }
 
 /**
@@ -106,7 +101,22 @@ void    tech::copyFrom(tech* t2)
 void   tech::makeAvailableForTheProject()
 {
   // Add a new holder in the available list
-    m_availableTechs.insert(this);
+  m_availableTechs.insert(this);
+
+  // 2. Register it in the system
+  db::Technologies *techs = db::Technologies::instance();
+
+  std::string tname = m_techName.toStdString();
+  if (techs->has_technology(tname)) {
+    // already exists → replace or skip
+    techs->remove(tname);
+  }
+
+  // This makes a *copy* and registers it
+  auto prev = m_ktech;
+  // Since add function creates a new structure and copy it, let's delete our current and point to the most updated
+  m_ktech = techs->add(*m_ktech);
+  delete prev;
 
 }
 /**
@@ -117,6 +127,17 @@ void   tech::removeFromProject()
 
   m_availableTechs.remove(this);
 
+  if (tech::getTechFromFilename(m_fileName)==nullptr)
+  {
+    // 2. Unregister the technology
+    db::Technologies *techs = db::Technologies::instance();
+    std::string tname = m_techName.toStdString();
+    if (techs->has_technology(tname)) {
+      // already exists → replace or skip
+      techs->remove(tname);
+    }
+
+  }
 }
 /**
  * @brief tech::rename
@@ -126,6 +147,7 @@ void   tech::rename(const QString& newname)
 {
   if (newname==m_techName) return;
   m_techName = newname;
+  m_ktech->set_name(newname.toStdString());
 }
 
 
