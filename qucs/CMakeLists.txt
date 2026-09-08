@@ -271,6 +271,10 @@ ADD_EXECUTABLE( ${QUCS_NAME} MACOSX_BUNDLE WIN32
   editLayer.h
   cdn_import.cpp
   cdn_import.h
+  iclayout_actions.cpp
+  iclayout_actions_file.cpp
+  iclayout_actions_edit.cpp
+  iclayout_actions_insert.cpp
 
 
 

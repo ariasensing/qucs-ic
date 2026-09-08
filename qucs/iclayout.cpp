@@ -14,21 +14,22 @@ extern QString LayoutImportFilter;
  * @param fname
  */
 icLayout::icLayout(QucsApp* app, Schematic* owner, const QString& fname,const QString& techfile) : QDialog(nullptr), QucsDoc(app, fname, LAYOUT),
+  m_tech(nullptr),
   ui(new Ui::icLayout),
   a_Schematic(nullptr),
   m_layout(nullptr),
   m_technologyFile(techfile)
 {
 
-  QString filename = fname;
-
   ui->setupUi(this);
+
+  initMenuBar();
+  // TECH
   if (!techfile.isEmpty())
-  {
     m_tech = tech::getTechFromFilename(techfile);
-    if (m_tech==nullptr)
-      m_tech = new tech(techfile);
-  }
+
+  if (m_tech==nullptr)
+    m_tech = new tech(techfile);
 
   initKlayoutWidget();
   // Documents
@@ -36,10 +37,10 @@ icLayout::icLayout(QucsApp* app, Schematic* owner, const QString& fname,const QS
 
   attachToSchematic(owner);
 
-  if (!filename.isEmpty())
-  {
+  icLayout::setName(fname);
+
+  if (!fname.isEmpty())
     icLayout::load();
-  }
 }
 /**
  * @brief icLayout::initKlayoutWidget
@@ -154,44 +155,7 @@ int   icLayout::save()
   if (a_Schematic!=nullptr) a_Schematic->setLayoutFilename(a_DocName);
   return 0;
 }
-/**
- * @brief icLayout::loadLayoutClicked Load a layout file to be attached to this QucsDoc
- */
-void icLayout::loadLayoutClicked()
-{
-  QString layoutFile = QFileDialog::getOpenFileName(this,"Load layout file",lastDir, LayoutImportFilter);
-  if (layoutFile.isEmpty()) return;
 
-  if ((m_layoutWidget==nullptr)||(m_layoutView==nullptr)) return;
-  try
-  {
-    m_layoutView->load_layout(layoutFile.toStdString(), m_tech->getTechname().toStdString(), false);
-    applyTechToView();
-    m_layoutView->add_missing_layers();
-
-    m_layoutView->max_hier();
-    m_layoutView->zoom_fit();
-    m_layoutView->update_content();
-
-  }
-  catch(...)
-  {
-    return;
-  }
-
-  a_DocName = layoutFile;
-}
-/**
- * @brief icLayout::saveLayoutClicked
- */
-
-void icLayout::saveLayoutClicked()
-{
-  QString layoutFile = QFileDialog::getSaveFileName(this,"Save layout",lastDir, LayoutImportFilter);
-  if (layoutFile.isEmpty()) return;
-
-
-}
 /**
  * @brief icLayout::selectAll
  */

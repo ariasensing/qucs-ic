@@ -65,14 +65,22 @@ qucs-s-spar-viewer/html/
 
 qucs-s-spar-viewer/latex/
 
-OpenVAF-Reloaded
+OpenVAF-Reloaded/
+OpenVAF-Reloaded/*
 
-ADMS
+ADMS/
+ADMS/*
 
-klayout
+klayout/
+klayout/*
 
-qucsator
+qucsator/
+qucsator/*
 
 qucsator-rf
+qucsator-rf/*
+
+qucs-s-spar-viewer/
+qucs-s-spar-viewer/*
 
 *.bak

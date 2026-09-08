@@ -67,6 +67,46 @@ public slots:
   void                    saveLayoutClicked();
   void                    selectAll();
 
+private:
+  void                    initActions();
+  void                    initMenuBar();
+public:
+  QMenuBar *menuBar;
+  QMenu   *fileMenu, *editMenu, *insMenu, *viewMenu, *selectMenu, *emMenu, *schematicMenu;
+  QAction *fileNew, *fileOpen, *fileSave, *fileSaveAs,*fileClose, *fileSettings, *filePrint;
+  QAction *editCopy, *editPaste, *editCut, *editStretch, *editScale, *editMove, *editRotate, *editMirrorX, *editMirrorY,
+          *editChop;
+  QAction *insertRect, *insertPath, *insertVia, *insertInstance, *insertPolygon, *insertCircle;
+  QAction *editCoordinates;
+public slots:
+//Slot
+  void     slotFileNew();
+  void     slotFileOpen();
+  void     slotFileSave();
+  void     slotFileSaveAs();
+  void     slotFileClose();
+  void     slotFileSettings();
+  void     slotFilePrint();
+//Edit
+  void     slotEditCopy();
+  void     slotEditPaste();
+  void     slotEditCut();
+  void     slotEditScale();
+  void     slotEditMove();
+  void     slotEditRotate();
+  void     slotEditMirrorX();
+  void     slotEditMirrorY();
+  void     slotEditChop();
+// Insert
+  void     slotInsertRect();
+  void     slotInsertPath();
+  void     slotInsertVia();
+  void     slotInsertInstance();
+  void     slotInsertPolygon();
+  void     slotInsertCircle();
+// Edit coordinates
+  void     slotEditCoordinates();
+
 
 };
 
