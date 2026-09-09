@@ -4,7 +4,7 @@
 #include "dbManager.h"          // optional, for undo/redo
 #include "main.h"
 
-
+extern QString LayoutImportFilter;
 /**
  * @brief icLayout::slotFileNew. Create a new layout
  */

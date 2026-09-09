@@ -4,15 +4,22 @@
 #include "dbManager.h"          // optional, for undo/redo
 #include "main.h"
 #include "layLayoutView_qt.h"
+
+/**
+ * @brief icLayout::slotInsertRect Start the insertion of a rectangle
+ */
 void     icLayout::slotInsertRect()
 {
-  if (m_layoutViewWidget==nullptr) return;
+  if (m_layoutWidget==nullptr) return;
+
+  // Terminate any previous editing
+  terminatePreviousInsertion();
+
   // Enable edit coordinates
   editCoordinates->setEnabled(true);
 
-  m_layoutViewWidget
-
-
+  m_shapeDrawer = new RectangleDrawer(m_layoutView, this);
+  m_shapeDrawer->start();
 }
 
 
@@ -21,3 +28,14 @@ void     icLayout::slotInsertVia(){}
 void     icLayout::slotInsertInstance(){}
 void     icLayout::slotInsertPolygon(){}
 void     icLayout::slotInsertCircle(){}
+
+
+
+
+void     icLayout::terminatePreviousInsertion()
+{
+  if (m_shapeDrawer!=nullptr)
+    delete m_shapeDrawer;
+
+  m_shapeDrawer = nullptr;
+}

@@ -10,6 +10,7 @@
 #include "dbCell.h"
 
 #include "ictech.h"
+#include "rectangledrawer.h"
 
 namespace Ui {
 class icLayout;
@@ -42,12 +43,14 @@ public:
 // grid
   void setGridOn(bool value);
   bool getGridOn();
-
-
 //----------------------------------
 // Technology
   QString getTechnology();
   void    setTechnology(QString fname);
+
+protected:
+// Event
+  bool eventFilter(QObject *obj, QEvent *event) override;
 
   tech*   m_tech;
 private:
@@ -63,8 +66,6 @@ private:
   bool                    m_bGridOn;
   void                    applyTechToView();
 public slots:
-  void                    loadLayoutClicked();
-  void                    saveLayoutClicked();
   void                    selectAll();
 
 private:
@@ -78,6 +79,10 @@ public:
           *editChop;
   QAction *insertRect, *insertPath, *insertVia, *insertInstance, *insertPolygon, *insertCircle;
   QAction *editCoordinates;
+private:
+  // Helper for shape editing
+    ShapeDrawer *m_shapeDrawer;
+
 public slots:
 //Slot
   void     slotFileNew();
@@ -106,8 +111,35 @@ public slots:
   void     slotInsertCircle();
 // Edit coordinates
   void     slotEditCoordinates();
+protected:
+  void    terminatePreviousInsertion();
+// Cursor management
+  // Public control
+  void setMagnetic(bool on);
+  void setCatchDistance(double um);
+  void setGrid(double um);               // 0 = use view grid
+  void clearMagneticLayers();
+  void addMagneticLayer(int layer, int datatype = 0);
+  void addMagneticLayerIndex(unsigned int idx);
+  void updateSnapCursor(const QPointF &widgetPos);
+  db::DPoint pixelToMicron(const QPointF &pt) const;
+  db::DPoint snapToGrid(const db::DPoint &p) const;
+  db::DPoint snapMagnetic(const db::DPoint &p) const;
+  bool isLayerAllowed(unsigned int layerIndex) const;
+  double gridMicron() const;
 
+  lay::ShapeMarker           *mp_cursor     = nullptr;
 
+  bool   m_magnetic   = false;
+  double m_catchDist  = 0.5;      // µm
+  double m_grid       = 0.0;      // 0 = view grid
+  std::set<unsigned int> m_magneticLayers;
+
+         // cache for performance
+  db::DPoint m_lastRaw;
+  db::DPoint m_lastSnapped;
+  bool       m_hasCache = false;
+  double     m_cacheRadius2 = 0.0;
 };
 
 #endif // ICLAYOUT_H

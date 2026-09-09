@@ -18,13 +18,15 @@ icLayout::icLayout(QucsApp* app, Schematic* owner, const QString& fname,const QS
   ui(new Ui::icLayout),
   a_Schematic(nullptr),
   m_layout(nullptr),
-  m_technologyFile(techfile)
+  m_technologyFile(techfile),
+  m_shapeDrawer(nullptr)
 {
 
   ui->setupUi(this);
 
   initMenuBar();
-  // TECH
+
+  // Technology
   if (!techfile.isEmpty())
     m_tech = tech::getTechFromFilename(techfile);
 
@@ -32,6 +34,14 @@ icLayout::icLayout(QucsApp* app, Schematic* owner, const QString& fname,const QS
     m_tech = new tech(techfile);
 
   initKlayoutWidget();
+
+  // create the visual cursor marker
+  mp_cursor = new lay::ShapeMarker(m_layoutView, m_layoutView->active_cellview_index());
+  mp_cursor->set_frame_color(0x00ff00);
+  mp_cursor->set_line_width(1);
+  mp_cursor->set_vertex_size(9);
+  mp_cursor->set_dither_pattern(1);   // hollow
+
   // Documents
   this->setProperty("DOC_TYPE",(uint16_t)(doc_type));
 
@@ -41,6 +51,8 @@ icLayout::icLayout(QucsApp* app, Schematic* owner, const QString& fname,const QS
 
   if (!fname.isEmpty())
     icLayout::load();
+
+
 }
 /**
  * @brief icLayout::initKlayoutWidget
@@ -49,9 +61,11 @@ icLayout::icLayout(QucsApp* app, Schematic* owner, const QString& fname,const QS
 bool  icLayout::initKlayoutWidget()
 {
   m_dbManager    = new db::Manager(true);
-  m_layoutWidget = new lay::LayoutViewWidget(m_dbManager, false, nullptr);
+  m_layoutWidget = new lay::LayoutViewWidget(m_dbManager, true  , nullptr);
 
   if (m_layoutWidget==nullptr) return false;
+
+
   // Add hierarchy
   QHBoxLayout* layout = new QHBoxLayout(ui->tabCellTree);
   layout->addWidget(m_layoutWidget->hierarchy_control_frame());
@@ -77,10 +91,19 @@ bool  icLayout::initKlayoutWidget()
 
   applyTechToView();
 
-  // Connections
-  connect(ui->btnLoad, &QPushButton::clicked, this, &icLayout::loadLayoutClicked);
-  connect(ui->btnSave, &QPushButton::clicked, this, &icLayout::saveLayoutClicked);
+  // The real canvas that receives mouse events
 
+  m_layoutWidget->installEventFilter(this);
+  // Init the cursor mode
+  // after construction
+  setMagnetic(true);
+  setCatchDistance(0.6);
+  setGrid(0.0);                 // use the view’s editor grid
+
+  // only snap to metal1 & via
+  clearMagneticLayers();
+  addMagneticLayer(255, 255);
+  addMagneticLayer(255, 255);
   return true;
 }
 /**
@@ -90,6 +113,11 @@ icLayout::~icLayout() {
   delete ui;
   if (a_Schematic!=nullptr)
     a_Schematic->attachLayoutView();
+  if (m_shapeDrawer!=nullptr)
+    delete m_shapeDrawer;
+
+  if (mp_cursor!=nullptr) delete mp_cursor;
+  mp_cursor = nullptr;
 }
 /**
  * @brief icLayout::setName
