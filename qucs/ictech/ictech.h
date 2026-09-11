@@ -153,6 +153,7 @@ public:
   double                dbu() {return m_ktech->dbu();}
   void                  dbu(double dbu) {if (dbu>0) m_ktech->set_dbu(dbu);}
   QString               grid() {return QString::fromStdString(m_ktech->default_grids());}
+  double                grid_val() {return m_ktech->default_grid();}
   void                  grid(QString grid_list) {m_ktech->set_default_grids(grid_list.toStdString());}
   QString               getLypFile() {return m_layout_lyp_file;}
   QString               getLytFile() {return m_layout_tech_file;}

@@ -20,7 +20,7 @@ void     icLayout::slotFileOpen()
   QString layoutFile = QFileDialog::getOpenFileName(this,"Load layout file",lastDir, LayoutImportFilter);
   if (layoutFile.isEmpty()) return;
 
-  if ((m_layoutWidget==nullptr)||(m_layoutView==nullptr)) return;
+  if ((m_layoutView==nullptr)) return;
   try
   {
     m_layoutView->load_layout(layoutFile.toStdString(), m_tech->getTechname().toStdString(), false);

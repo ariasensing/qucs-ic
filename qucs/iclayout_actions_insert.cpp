@@ -10,16 +10,15 @@
  */
 void     icLayout::slotInsertRect()
 {
-  if (m_layoutWidget==nullptr) return;
-
-  // Terminate any previous editing
-  terminatePreviousInsertion();
+  if (m_plugin==nullptr) return;
+  if (!m_plugin->is_idle()) m_plugin->terminate_action();
 
   // Enable edit coordinates
   editCoordinates->setEnabled(true);
 
-  m_shapeDrawer = new RectangleDrawer(m_layoutView, this);
-  m_shapeDrawer->start();
+  // Create box numerical toolbox
+
+  m_plugin->start_insert_rect();
 }
 
 
@@ -30,12 +29,3 @@ void     icLayout::slotInsertPolygon(){}
 void     icLayout::slotInsertCircle(){}
 
 
-
-
-void     icLayout::terminatePreviousInsertion()
-{
-  if (m_shapeDrawer!=nullptr)
-    delete m_shapeDrawer;
-
-  m_shapeDrawer = nullptr;
-}

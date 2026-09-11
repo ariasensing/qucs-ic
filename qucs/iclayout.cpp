@@ -19,7 +19,7 @@ icLayout::icLayout(QucsApp* app, Schematic* owner, const QString& fname,const QS
   a_Schematic(nullptr),
   m_layout(nullptr),
   m_technologyFile(techfile),
-  m_shapeDrawer(nullptr)
+  m_toolbox_dialog(nullptr)
 {
 
   ui->setupUi(this);
@@ -34,13 +34,6 @@ icLayout::icLayout(QucsApp* app, Schematic* owner, const QString& fname,const QS
     m_tech = new tech(techfile);
 
   initKlayoutWidget();
-
-  // create the visual cursor marker
-  mp_cursor = new lay::ShapeMarker(m_layoutView, m_layoutView->active_cellview_index());
-  mp_cursor->set_frame_color(0x00ff00);
-  mp_cursor->set_line_width(1);
-  mp_cursor->set_vertex_size(9);
-  mp_cursor->set_dither_pattern(1);   // hollow
 
   // Documents
   this->setProperty("DOC_TYPE",(uint16_t)(doc_type));
@@ -60,11 +53,17 @@ icLayout::icLayout(QucsApp* app, Schematic* owner, const QString& fname,const QS
  */
 bool  icLayout::initKlayoutWidget()
 {
-  m_dbManager    = new db::Manager(true);
-  m_layoutWidget = new lay::LayoutViewWidget(m_dbManager, true  , nullptr);
 
+  m_dbManager    = new db::Manager(true);
+  m_layoutWidget = new lay::LayoutViewWidget(m_dbManager, true  , nullptr, this);
   if (m_layoutWidget==nullptr) return false;
 
+
+  m_layoutView =  m_layoutWidget->view();
+
+  if (m_layoutView == nullptr) return false;
+
+  // Connect to the plugin
 
   // Add hierarchy
   QHBoxLayout* layout = new QHBoxLayout(ui->tabCellTree);
@@ -76,34 +75,39 @@ bool  icLayout::initKlayoutWidget()
   ui->tabLayers->setLayout(layersLayout);
 
   // Toolbox
+  QVBoxLayout *toolboxLayout = new QVBoxLayout(ui->tabToolbox);
+  toolboxLayout->addWidget(m_layoutWidget->layer_toolbox_frame());
+  ui->tabToolbox->setLayout(toolboxLayout);
 
-
-  // Layout widget
   QHBoxLayout *mainLayout = new QHBoxLayout(ui->centerFrame);
-  mainLayout->addWidget(m_layoutWidget,1);
+  mainLayout->addWidget(m_layoutWidget);
 
-  m_layoutView = m_layoutWidget->view();
-  if (m_layoutView == nullptr) return false;
+  int my_mode_id = -1;
+
+
+  std::vector<lay::Plugin*> plugins = m_layoutView->plugins();
+  for (lay::Plugin* plugin : plugins)
+  {
+    if (plugin->plugin_declaration()->name()=="adv_layout")
+    {
+      my_mode_id = plugin->plugin_declaration()->id();
+      break;
+    }
+  }
+
+  if (my_mode_id >=0)
+    m_layoutView->switch_mode(my_mode_id);
 
   m_canvas_id = m_layoutView->create_layout(m_tech->getTechname().toStdString(),false);
-  m_layout    = &(m_layoutView->cellview(0)->layout());
+  m_layout    = &(m_layoutView->active_cellview()->layout());
   assert(m_layout!=nullptr);
 
   applyTechToView();
+  m_plugin = layAdvancedEditingPlugin::get_plugin_from_view(m_layoutView);
 
-  // The real canvas that receives mouse events
+  // Connect the plugin instance to this
+  connect(m_plugin, &layAdvancedEditingPlugin::update_mouse_position, this, &icLayout::update_mouse_position);
 
-  m_layoutWidget->installEventFilter(this);
-  // Init the cursor mode
-  // after construction
-  setMagnetic(true);
-  setCatchDistance(0.6);
-  setGrid(0.0);                 // use the view’s editor grid
-
-  // only snap to metal1 & via
-  clearMagneticLayers();
-  addMagneticLayer(255, 255);
-  addMagneticLayer(255, 255);
   return true;
 }
 /**
@@ -113,11 +117,8 @@ icLayout::~icLayout() {
   delete ui;
   if (a_Schematic!=nullptr)
     a_Schematic->attachLayoutView();
-  if (m_shapeDrawer!=nullptr)
-    delete m_shapeDrawer;
-
-  if (mp_cursor!=nullptr) delete mp_cursor;
-  mp_cursor = nullptr;
+  if (m_toolbox_dialog!=nullptr)
+    delete m_toolbox_dialog;
 }
 /**
  * @brief icLayout::setName
@@ -263,6 +264,23 @@ void  icLayout::applyTechToView()
   }
   m_layoutView->add_missing_layers();
   m_layoutView->update_content();
+
+}
+
+
+void     icLayout::insert_started()
+{
+  if (m_plugin) m_plugin->insert_rect_start();
+  // Create the dialog and put it in the toolbox
+}
+
+void     icLayout::insert_done(bool added, const db::Shape& shape)
+{
+
+}
+
+void     icLayout::update_mouse_position(double xdb, double ydb,  int pxx,  int pxy)
+{
 
 }
 

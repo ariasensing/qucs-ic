@@ -277,7 +277,16 @@ ADD_EXECUTABLE( ${QUCS_NAME} MACOSX_BUNDLE WIN32
   iclayout_actions_insert.cpp
   rectangledrawer.h rectangledrawer.cpp
   shapedrawer.h shapedrawer.cpp
-  iclayout_cursor.cpp
+  layadvancededitingplugin.h layadvancededitingplugin.cpp
+  layadvancededitpluginfactory.cpp
+  layadvancedediting_insert_rect.cpp
+
+
+
+
+
+
+
 
 
 
