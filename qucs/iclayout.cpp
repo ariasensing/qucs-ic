@@ -1,8 +1,11 @@
 #include "iclayout.h"
 #include "ui_iclayout.h"
 #include "schematic.h"
-#include "dbManager.h"          // optional, for undo/redo
 #include "main.h"
+
+#include "dbManager.h"          // optional, for undo/redo
+
+#include "qtoolbox_selection_w.h"
 
 extern QString TechFileFilter;
 extern QString LayoutImportFilter;
@@ -45,7 +48,14 @@ icLayout::icLayout(QucsApp* app, Schematic* owner, const QString& fname,const QS
   if (!fname.isEmpty())
     icLayout::load();
 
+  QToolbox_Selection_w* tbs = new QToolbox_Selection_w(this);
 
+  m_toolbox_dialog = tbs;
+  QVBoxLayout *toolboxLayout = new QVBoxLayout(ui->tabToolbox);
+  toolboxLayout->addWidget(m_toolbox_dialog);
+  ui->tabToolbox->setLayout(toolboxLayout);
+
+  connect(this, &icLayout::new_mouse_position, tbs, &QToolbox_Selection_w::new_mouse_position);
 }
 /**
  * @brief icLayout::initKlayoutWidget
@@ -74,10 +84,6 @@ bool  icLayout::initKlayoutWidget()
   layersLayout->addWidget(m_layoutWidget->layer_control_frame());
   ui->tabLayers->setLayout(layersLayout);
 
-  // Toolbox
-  QVBoxLayout *toolboxLayout = new QVBoxLayout(ui->tabToolbox);
-  toolboxLayout->addWidget(m_layoutWidget->layer_toolbox_frame());
-  ui->tabToolbox->setLayout(toolboxLayout);
 
   QHBoxLayout *mainLayout = new QHBoxLayout(ui->centerFrame);
   mainLayout->addWidget(m_layoutWidget);
@@ -107,6 +113,9 @@ bool  icLayout::initKlayoutWidget()
 
   // Connect the plugin instance to this
   connect(m_plugin, &layAdvancedEditingPlugin::update_mouse_position, this, &icLayout::update_mouse_position);
+
+  connect((QToolbox_Selection_w*)(m_toolbox_dialog), &QToolbox_Selection_w::zoom_on_position,
+          m_plugin, &layAdvancedEditingPlugin::zoom_on_new_position);
 
   return true;
 }
@@ -270,7 +279,6 @@ void  icLayout::applyTechToView()
 
 void     icLayout::insert_started()
 {
-  if (m_plugin) m_plugin->insert_rect_start();
   // Create the dialog and put it in the toolbox
 }
 
@@ -281,7 +289,7 @@ void     icLayout::insert_done(bool added, const db::Shape& shape)
 
 void     icLayout::update_mouse_position(double xdb, double ydb,  int pxx,  int pxy)
 {
-
+  emit new_mouse_position(xdb,ydb);
 }
 
 

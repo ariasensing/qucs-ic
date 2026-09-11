@@ -73,6 +73,8 @@ bool layAdvancedEditingPlugin::mouse_move_event(const db::DPoint &p, unsigned in
 
   emit  update_mouse_position(p.x(), p.y(), static_cast<int>(std::round(ppx.x())), static_cast<int>(std::round(ppx.y())));
 
+  m_shapeDrawer->set_new_mouse_position();
+
   return false;     // or true if you consume the event
 }
 
@@ -189,6 +191,34 @@ QPointF layAdvancedEditingPlugin::micron_to_pixel(const db::DPoint& micron_pos)
  * @brief layAdvancedEditingPlugin::terminate_action Terminate whatever action was on-going
  */
 void        layAdvancedEditingPlugin::terminate_action()
+{
+
+}
+
+/**
+ * @brief layAdvancedEditingPlugin::zoom_on_new_position
+ * @param x
+ * @param y
+ */
+void   layAdvancedEditingPlugin::zoom_on_new_position(double x, double y)
+{
+
+}
+
+/**
+ * @brief layAdvancedEditingPlugin::get_new_coords
+ * @param x
+ * @param y
+ */
+void   layAdvancedEditingPlugin::get_new_coords(double x, double y)
+{
+
+}
+/**
+ * @brief layAdvancedEditingPlugin::get_new_value
+ * @param x
+ */
+void   layAdvancedEditingPlugin::get_new_value(double x)
 {
 
 }

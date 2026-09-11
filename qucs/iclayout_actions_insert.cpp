@@ -12,13 +12,14 @@ void     icLayout::slotInsertRect()
 {
   if (m_plugin==nullptr) return;
   if (!m_plugin->is_idle()) m_plugin->terminate_action();
+  if (m_toolbox_dialog!=nullptr) delete m_toolbox_dialog;
+  m_toolbox_dialog = nullptr;
 
   // Enable edit coordinates
   editCoordinates->setEnabled(true);
 
   // Create box numerical toolbox
-
-  m_plugin->start_insert_rect();
+  m_plugin->insert_rect_start();
 }
 
 

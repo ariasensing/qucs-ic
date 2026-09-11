@@ -17,9 +17,9 @@ RectangleDrawer::RectangleDrawer(lay::LayoutView *view, QObject *parent)
 
 RectangleDrawer::~RectangleDrawer()
 {
-  clearMarker();
+  //clearMarker();
 }
-
+/*
 void RectangleDrawer::start()
 {
   ShapeDrawer::start();
@@ -190,3 +190,4 @@ void RectangleDrawer::updateMarker(const db::DPoint &p2)
     m_marker->set_halo(0);
 
 }
+*/

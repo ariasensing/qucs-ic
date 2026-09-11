@@ -20,15 +20,8 @@ public:
   explicit RectangleDrawer(lay::LayoutView *view, QObject *parent = nullptr);
   ~RectangleDrawer();
 
-         // Start / stop interactive drawing
-  void start() override;
-  void stop()  override;
+  // Start / stop interactive drawing
 
-         // Feed mouse events (coordinates must be in micron / D-units)
-  bool mousePress  (const db::DPoint &p, Qt::MouseButton button) override;
-  bool mouseMove   (const db::DPoint &p) override;
-  bool mouseRelease(const db::DPoint &p, Qt::MouseButton button) override;
-  bool eventFilter(QObject *obj, QEvent *event) override;
 private:
   void clearMarker();
   void updateMarker(const db::DPoint &p2);

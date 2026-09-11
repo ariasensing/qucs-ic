@@ -4,10 +4,11 @@
 #include "layPlugin.h"
 #include "layLayoutViewBase.h"
 #include "dbManager.h"
-#include "shapedrawer.h"
 #include "dbShape.h"
 #include <QObject>
 #include <QMap>
+
+#include "shapedrawer.h"
 namespace lay {
 class Dispatcher;
 }
@@ -66,21 +67,49 @@ public:
   void        insert_circle_start() {}
   void        insert_circle_terminate() {}
 
-  void        terminate_action() {}
+  void        terminate_action();
 private:
   lay::LayoutViewBase *mp_view;
   // Helper for shape editing
 
   bool         m_is_idle;        //
-  ShapeDrawer *m_shapeDrawer;
+  class ShapeDrawer *m_shapeDrawer;
 
 signals:
   void  update_mouse_position(double xdb, double ydb,  int pxx,  int pxy);
   void  insert_started();
   void  insert_done(bool added, const db::Shape& shape);
+  void  set_query_name(const QString& query_name);
 private:
   QPointF micron_to_pixel(const db::DPoint& micron_pos);
+public slots:
+  void   zoom_on_new_position(double x, double y);
+  void   get_new_coords(double x, double y);
+  void   get_new_value(double x);
 
+
+//----------------------------------------------------
+// Snapping
+
+public:
+  void set_magnetic(bool on);
+  void set_catch_distance(double microns);   // e.g. 0.5 µm
+  void set_grid(double grid_um);             // 0 = use view’s editor grid
+
+  db::DPoint current_snapped_pos() const { return m_snapped; }
+
+private:
+  void update_cursor(const db::DPoint &raw);
+  db::DPoint snap_to_grid(const db::DPoint &p) const;
+  db::DPoint snap_magnetic(const db::DPoint &p) const;
+
+  lay::LayoutView *mp_view;
+  lay::Marker     *mp_cursor = nullptr;   // the visible cross-hair
+
+  bool     m_magnetic     = false;
+  double   m_catch_dist   = 0.5;          // µm
+  double   m_grid         = 0.0;          // 0 → use view grid
+  db::DPoint m_snapped;
 
 };
 

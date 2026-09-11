@@ -9,11 +9,11 @@
 #include "dbLayout.h"
 #include "dbCell.h"
 #include "layPlugin.h"
+#include "layadvancededitingplugin.h"
 
 #include "ictech.h"
-#include "rectangledrawer.h"
-#include "qlayoutwidget.h"
-#include "layadvancededitingplugin.h"
+#include "qtoolbox_helper_w.h"
+
 namespace Ui {
 class icLayout;
 }
@@ -118,7 +118,9 @@ public slots:
   void     insert_started();
   void     insert_done(bool added, const db::Shape& shape);
 private:
-  QDialog   *m_toolbox_dialog;
+  QToolbox_helper_w   *m_toolbox_dialog;
+signals:
+  void  new_mouse_position(double x, double y);
 
 
 };
