@@ -109,10 +109,10 @@ private:
 
   void               saveLayoutData(class tinyxml2::XMLElement* rootLayout, class tinyxml2::XMLDocument* doc);
   bool               loadLayoutData(class tinyxml2::XMLElement* rootLayout);
-  void               saveModelData(class tinyxml2::XMLElement* rootLayout, class tinyxml2::XMLDocument* doc) {}
-  void               saveLibData(class tinyxml2::XMLElement* rootLayout, class tinyxml2::XMLDocument* doc) {}
-  void               saveStdCellData(class tinyxml2::XMLElement* rootLayout, class tinyxml2::XMLDocument* doc) {}
-  void               saveEMData(class tinyxml2::XMLElement* rootLayout, class tinyxml2::XMLDocument* doc) {}
+  void               saveModelData(class tinyxml2::XMLElement* /*rootLayout*/, class tinyxml2::XMLDocument* /*doc*/) {}
+  void               saveLibData(class tinyxml2::XMLElement* /*rootLayout*/, class tinyxml2::XMLDocument* /*doc*/) {}
+  void               saveStdCellData(class tinyxml2::XMLElement* /*rootLayout*/, class tinyxml2::XMLDocument* /*doc*/) {}
+  void               saveEMData(class tinyxml2::XMLElement* /*rootLayout*/, class tinyxml2::XMLDocument* /*doc*/) {}
 
   void   createDefaultFileNames();
 // Saving

@@ -18,7 +18,7 @@ private:
   Ui::QToolbox_helper_w* ui;
 public slots:
   // The mouse position changed
-  void new_mouse_position(double x, double y) {}
+  void new_mouse_position(double , double ) {}
 signals:
   void zoom_on_position(double x, double y);
 };

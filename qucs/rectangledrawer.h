@@ -17,14 +17,13 @@ class RectangleDrawer : public ShapeDrawer
 {
   Q_OBJECT
 public:
-  explicit RectangleDrawer(lay::LayoutView *view, QObject *parent = nullptr);
+  explicit RectangleDrawer(lay::LayoutViewBase *view, QObject *parent = nullptr);
   ~RectangleDrawer();
 
   // Start / stop interactive drawing
 
 private:
-  void clearMarker();
-  void updateMarker(const db::DPoint &p2);
+  void clearMarker();  
   void createBox(const db::DPoint &p1, const db::DPoint &p2);
 
 

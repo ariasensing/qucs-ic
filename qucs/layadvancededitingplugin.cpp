@@ -2,6 +2,8 @@
 #include "layadvancededitingplugin.h"
 #include "layLayoutViewBase.h"
 #include "tlLog.h"   // optional, for tl::info / tl::warn
+#include "mouseselectiondrawer.h"
+#include "shapedrawer.h"
 
 QMap<lay::LayoutViewBase*, layAdvancedEditingPlugin*> layAdvancedEditingPlugin::m_mapped_plugins = QMap<lay::LayoutViewBase*, layAdvancedEditingPlugin*> ();
 
@@ -14,6 +16,15 @@ layAdvancedEditingPlugin::layAdvancedEditingPlugin(db::Manager * /*manager*/, la
 {
   if (mp_view!=nullptr)
     m_mapped_plugins[mp_view] = this;
+
+  if ((mp_view!=nullptr)&&(mp_view->widget()!=nullptr))
+    mp_view->widget()->setCursor(Qt::BlankCursor);
+
+  // Build a default (selection) shapeDrawer
+
+  if ((mp_view!=nullptr)&&(mp_view->widget()!=nullptr))
+    m_shapeDrawer = new MouseSelectionDrawer(mp_view,mp_view->widget());
+
 }
 
 /**
@@ -67,13 +78,18 @@ void layAdvancedEditingPlugin::update()
  * @return
  */
 
-bool layAdvancedEditingPlugin::mouse_move_event(const db::DPoint &p, unsigned int /*buttons*/, bool prio)
+bool layAdvancedEditingPlugin::mouse_move_event(const db::DPoint &p, unsigned int /*buttons*/, bool /*prio*/)
 {
-  QPointF ppx =micron_to_pixel(p);
+  if (m_shapeDrawer==nullptr) return false;
 
-  emit  update_mouse_position(p.x(), p.y(), static_cast<int>(std::round(ppx.x())), static_cast<int>(std::round(ppx.y())));
+  m_shapeDrawer->set_new_mouse_position(p);
 
-  m_shapeDrawer->set_new_mouse_position();
+  db::DPoint snapped = m_shapeDrawer->current_snapped_pos();
+
+  QPointF ppx = micron_to_pixel(snapped);
+
+  emit  update_mouse_position(snapped.x(), snapped.y(), static_cast<int>(std::round(ppx.x())), static_cast<int>(std::round(ppx.y())));
+
 
   return false;     // or true if you consume the event
 }
@@ -170,22 +186,7 @@ void layAdvancedEditingPlugin::menu_activated(const std::string &symbol)
  */
 QPointF layAdvancedEditingPlugin::micron_to_pixel(const db::DPoint& micron_pos)
 {
-  QPointF res;
-  if (mp_view==nullptr) return res;
-
-         // micron → mathematical pixel
-  db::DCplxTrans micron2pixel = mp_view->viewport().trans();
-  db::DPoint pixel = micron2pixel * micron_pos;
-
-  QWidget *canvas = mp_view->widget();
-
-         // Convert mathematical y → Qt y (top-left)
-  double x = (std::round(pixel.x()));
-  double y = canvas->height() - 1 - (std::round(pixel.y()));  // ← y-flip
-
-  return QPointF(x, y);
-
-
+  return micron_to_pixel(mp_view, micron_pos);
 }
 /**
  * @brief layAdvancedEditingPlugin::terminate_action Terminate whatever action was on-going
@@ -200,25 +201,43 @@ void        layAdvancedEditingPlugin::terminate_action()
  * @param x
  * @param y
  */
-void   layAdvancedEditingPlugin::zoom_on_new_position(double x, double y)
+void   layAdvancedEditingPlugin::zoom_on_new_position(double , double )
 {
 
 }
 
 /**
- * @brief layAdvancedEditingPlugin::get_new_coords
+ * @brief layAdvancedEditingPlugin::set_new_coords
  * @param x
  * @param y
  */
-void   layAdvancedEditingPlugin::get_new_coords(double x, double y)
+void   layAdvancedEditingPlugin::set_new_coords(double , double )
 {
 
 }
 /**
- * @brief layAdvancedEditingPlugin::get_new_value
+ * @brief layAdvancedEditingPlugin::set_new_value
  * @param x
  */
-void   layAdvancedEditingPlugin::get_new_value(double x)
+void   layAdvancedEditingPlugin::set_new_value(double )
 {
 
 }
+
+
+// Helper function
+QPointF layAdvancedEditingPlugin::micron_to_pixel(lay::LayoutViewBase* view, const db::DPoint &micronPos)
+{
+  if (!view || !view->widget())
+    return QPointF();
+
+  db::DCplxTrans micron2pixel = view->viewport().trans();
+  db::DPoint pixel = micron2pixel * micronPos;
+
+  QWidget *canvas = view->widget();
+  int x = static_cast<int>(std::round(pixel.x()));
+  int y = canvas->height() - 1 - static_cast<int>(std::round(pixel.y()));
+
+  return QPointF(x, y);
+}
+

@@ -8,10 +8,10 @@ class MouseSelectionDrawer  : public ShapeDrawer
 {
   Q_OBJECT
 public:
-  explicit MouseSelectionDrawer(lay::LayoutView *view, QObject *parent = nullptr);
+  explicit MouseSelectionDrawer(lay::LayoutViewBase *view, QObject *parent = nullptr);
 
-  void set_new_mouse_position(double x, double y) override;
-  void start_dragging(double x, double y ) override;
+  void set_new_mouse_position(const db::DPoint& p) override;
+  void start_dragging(const db::DPoint& p ) override;
 };
 
 #endif // MOUSESELECTIONDRAWER_H

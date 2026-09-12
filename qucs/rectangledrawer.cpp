@@ -8,7 +8,7 @@
 #include "layLayoutView_qt.h"
 
 
-RectangleDrawer::RectangleDrawer(lay::LayoutView *view, QObject *parent)
+RectangleDrawer::RectangleDrawer(lay::LayoutViewBase *view, QObject *parent)
     : ShapeDrawer(view, parent)
 
 {

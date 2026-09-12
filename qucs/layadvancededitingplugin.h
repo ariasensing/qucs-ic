@@ -13,6 +13,10 @@ namespace lay {
 class Dispatcher;
 }
 
+/*
+ * This the main controller for the advanced editing function. It is, as a matter of fact, the glue
+ * logic in between the layLayoutView and the shapeDrawer subclasses
+ * */
 
 class layAdvancedEditingPlugin : public QObject,  public lay::Plugin ,  public lay::ViewService
 {
@@ -45,8 +49,10 @@ public:
   virtual bool configure(const std::string &name, const std::string &value) override;
   virtual void config_finalize() override;
 
-         // Optional menu handling for this instance
+  // Optional menu handling for this instance
   virtual void menu_activated(const std::string &symbol) override;
+
+  static QPointF micron_to_pixel(lay::LayoutViewBase* view, const db::DPoint& micron_pos);
 //-----------------------------------------------
 // Plugins instance
   static layAdvancedEditingPlugin* get_plugin_from_view(lay::LayoutViewBase* view);
@@ -61,7 +67,7 @@ public:
   void        insert_rect_terminate();
 // paths
   void        insert_path_start() {}
-  void        insert_path_coord_given(double x, double y) {}
+  void        insert_path_coord_given(double , double ) {}
   void        insert_path_terminate() {}
 // circles
   void        insert_circle_start() {}
@@ -84,32 +90,13 @@ private:
   QPointF micron_to_pixel(const db::DPoint& micron_pos);
 public slots:
   void   zoom_on_new_position(double x, double y);
-  void   get_new_coords(double x, double y);
-  void   get_new_value(double x);
+  void   set_new_coords(double x, double y);
+  void   set_new_value(double x);
 
 
 //----------------------------------------------------
 // Snapping
 
-public:
-  void set_magnetic(bool on);
-  void set_catch_distance(double microns);   // e.g. 0.5 µm
-  void set_grid(double grid_um);             // 0 = use view’s editor grid
-
-  db::DPoint current_snapped_pos() const { return m_snapped; }
-
-private:
-  void update_cursor(const db::DPoint &raw);
-  db::DPoint snap_to_grid(const db::DPoint &p) const;
-  db::DPoint snap_magnetic(const db::DPoint &p) const;
-
-  lay::LayoutView *mp_view;
-  lay::Marker     *mp_cursor = nullptr;   // the visible cross-hair
-
-  bool     m_magnetic     = false;
-  double   m_catch_dist   = 0.5;          // µm
-  double   m_grid         = 0.0;          // 0 → use view grid
-  db::DPoint m_snapped;
 
 };
 

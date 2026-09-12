@@ -1,7 +1,7 @@
 // layAdvancedEditingPluginDeclaration.cc
 #include "layPlugin.h"
 #include "tlClassRegistry.h"
-#include "layadvancededitingplugin.h".h"
+#include "layadvancededitingplugin.h"
 
 class layAdvancedEditingPluginDeclaration : public lay::PluginDeclaration
 {
@@ -13,13 +13,13 @@ public:
   }
 
          // Optional: configuration keys (name, default value)
-  virtual void get_options(std::vector<std::pair<std::string, std::string>> &options) const override
+  virtual void get_options(std::vector<std::pair<std::string, std::string>> &) const override
   {
     // options.push_back(std::make_pair("my_plugin.some_option", "default"));
   }
 
          // Optional: menu entries
-  virtual void get_menu_entries(std::vector<lay::MenuEntry> &menu_entries) const override
+  virtual void get_menu_entries(std::vector<lay::MenuEntry> &) const override
   {
     // Example:
     // menu_entries.push_back(

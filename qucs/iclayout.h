@@ -43,7 +43,7 @@ public:
   bool  initKlayoutWidget();
 //----------------------------------
 // grid
-  void setGridOn(bool value);
+  void setGridOn(bool );
   bool getGridOn();
 //----------------------------------
 // Technology

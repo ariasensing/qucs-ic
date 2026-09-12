@@ -90,6 +90,9 @@ bool  icLayout::initKlayoutWidget()
 
   int my_mode_id = -1;
 
+  m_canvas_id = m_layoutView->create_layout(m_tech->getTechname().toStdString(),false);
+  m_layout    = &(m_layoutView->active_cellview()->layout());
+  assert(m_layout!=nullptr);
 
   std::vector<lay::Plugin*> plugins = m_layoutView->plugins();
   for (lay::Plugin* plugin : plugins)
@@ -104,9 +107,7 @@ bool  icLayout::initKlayoutWidget()
   if (my_mode_id >=0)
     m_layoutView->switch_mode(my_mode_id);
 
-  m_canvas_id = m_layoutView->create_layout(m_tech->getTechname().toStdString(),false);
-  m_layout    = &(m_layoutView->active_cellview()->layout());
-  assert(m_layout!=nullptr);
+
 
   applyTechToView();
   m_plugin = layAdvancedEditingPlugin::get_plugin_from_view(m_layoutView);
@@ -242,7 +243,7 @@ void  icLayout::setTechnology(QString ict)
  * @brief icLayout::setGridOn
  * @param value
  */
-void icLayout::setGridOn(bool value)
+void icLayout::setGridOn(bool )
 {
 
 }
@@ -282,12 +283,12 @@ void     icLayout::insert_started()
   // Create the dialog and put it in the toolbox
 }
 
-void     icLayout::insert_done(bool added, const db::Shape& shape)
+void     icLayout::insert_done(bool , const db::Shape& )
 {
 
 }
 
-void     icLayout::update_mouse_position(double xdb, double ydb,  int pxx,  int pxy)
+void     icLayout::update_mouse_position(double xdb, double ydb,  int ,  int )
 {
   emit new_mouse_position(xdb,ydb);
 }

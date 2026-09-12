@@ -110,7 +110,7 @@ void  TechnologyEditor::listLayers()
  * @param row
  * @param props
  */
-void    TechnologyEditor::update_layer_row(int row, const lay::LayerPropertiesNode &props)
+void    TechnologyEditor::update_layer_row(int , const lay::LayerPropertiesNode &)
 {
 
 }
@@ -198,8 +198,8 @@ void      TechnologyEditor::createLayer()
   LayerDialog dlg(m_editedTech->getLayoutView(), this);
   if (dlg.exec() == QDialog::Accepted) {
     // use dlg.layer(), dlg.datatype(), dlg.name(), ...
-    unsigned int id = dlg.layer();
-    unsigned int dt = dlg.datatype();
+    int id = dlg.layer();
+    int dt = dlg.datatype();
 
     lay::LayerProperties props;
     props.set_name(dlg.name().toStdString());
@@ -248,9 +248,9 @@ void      TechnologyEditor::removeLayer()
   // Get current index
   int row = ui->tblLayers->currentRow();
   bool bok;
-  unsigned int id=  ui->tblLayers->item(row,0)->text().toInt(&bok);
+  int id=  ui->tblLayers->item(row,0)->text().toInt(&bok);
   if (!bok) return;
-  unsigned int dt=  ui->tblLayers->item(row,1)->text().toInt(&bok);
+  int dt=  ui->tblLayers->item(row,1)->text().toInt(&bok);
   if (!bok) return;
 
          // Check for existing one
@@ -276,14 +276,14 @@ void      TechnologyEditor::removeLayer()
 /**
  * @brief TechnologyEditor::editLayer
  */
-void TechnologyEditor::editLayer(const QModelIndex& model)
+void TechnologyEditor::editLayer(const QModelIndex& )
 {
   // Get current index
   int row = ui->tblLayers->currentRow();
   bool bok;
-  unsigned int id=  ui->tblLayers->item(row,0)->text().toInt(&bok);
+  int id=  ui->tblLayers->item(row,0)->text().toInt(&bok);
   if (!bok) return;
-  unsigned int dt=  ui->tblLayers->item(row,1)->text().toInt(&bok);
+  int dt=  ui->tblLayers->item(row,1)->text().toInt(&bok);
   if (!bok) return;
 
          // Check for existing one
