@@ -1,15 +1,15 @@
 // layAdvancedEditingPlugin.cc
 #include "layadvancededitingplugin.h"
 #include "layLayoutViewBase.h"
+#include "edtShapeService.h"
 #include "tlLog.h"   // optional, for tl::info / tl::warn
-#include "mouseselectiondrawer.h"
 #include "shapedrawer.h"
 
 QMap<lay::LayoutViewBase*, layAdvancedEditingPlugin*> layAdvancedEditingPlugin::m_mapped_plugins = QMap<lay::LayoutViewBase*, layAdvancedEditingPlugin*> ();
 
-layAdvancedEditingPlugin::layAdvancedEditingPlugin(db::Manager * /*manager*/, lay::Dispatcher * /*dispatcher*/, lay::LayoutViewBase *view)
-    : lay::Plugin(view),   // important: base constructor takes the view
-      lay::ViewService(view ? view->canvas() : nullptr),
+layAdvancedEditingPlugin::layAdvancedEditingPlugin(db::Manager * manager, lay::Dispatcher * /*dispatcher*/, lay::LayoutViewBase *view)
+    :
+      edt::Service(manager, view, db::ShapeIterator::All),
       mp_view(view),
       m_is_idle(true),
       m_shapeDrawer(nullptr)
@@ -20,11 +20,7 @@ layAdvancedEditingPlugin::layAdvancedEditingPlugin(db::Manager * /*manager*/, la
   if ((mp_view!=nullptr)&&(mp_view->widget()!=nullptr))
     mp_view->widget()->setCursor(Qt::BlankCursor);
 
-  // Build a default (selection) shapeDrawer
-
-  if ((mp_view!=nullptr)&&(mp_view->widget()!=nullptr))
-    m_shapeDrawer = new MouseSelectionDrawer(mp_view,mp_view->widget());
-
+  clear_mouse_cursors();
 }
 
 /**
@@ -80,16 +76,17 @@ void layAdvancedEditingPlugin::update()
 
 bool layAdvancedEditingPlugin::mouse_move_event(const db::DPoint &p, unsigned int /*buttons*/, bool /*prio*/)
 {
-  if (m_shapeDrawer==nullptr) return false;
+  if (!mp_view) return false;
+  clear_mouse_cursors();
 
-  m_shapeDrawer->set_new_mouse_position(p);
+  m_last_snapped = snap_to_grid(p);
 
-  db::DPoint snapped = m_shapeDrawer->current_snapped_pos();
+  if (m_magnetic)
+    m_last_snapped = snap2(m_last_snapped);
 
-  QPointF ppx = micron_to_pixel(snapped);
+  emit  update_mouse_position(m_last_snapped);
 
-  emit  update_mouse_position(snapped.x(), snapped.y(), static_cast<int>(std::round(ppx.x())), static_cast<int>(std::round(ppx.y())));
-
+  add_mouse_cursor( m_last_snapped, /*emphasize=*/true);
 
   return false;     // or true if you consume the event
 }
@@ -239,5 +236,45 @@ QPointF layAdvancedEditingPlugin::micron_to_pixel(lay::LayoutViewBase* view, con
   int y = canvas->height() - 1 - static_cast<int>(std::round(pixel.y()));
 
   return QPointF(x, y);
+}
+
+/**
+ * @brief layAdvancedEditingPlugin::get_snapped_pos
+ * @return
+ */
+db::DPoint& layAdvancedEditingPlugin::get_snapped_pos()
+{
+  return m_last_snapped;
+}
+
+/**
+ * @brief layAdvancedEditingPlugin::snap_to_grid
+ * @param p
+ * @return
+ */
+db::DPoint layAdvancedEditingPlugin::snap_to_grid(const db::DPoint &p) const
+{
+  double g = grid_micron();
+
+  if (g <= 0.0)
+    return p;
+
+  double x = std::round(p.x() / g) * g;
+  double y = std::round(p.y() / g) * g;
+  return db::DPoint(x, y);
+}
+
+/**
+ * @brief layAdvancedEditingPlugin::grid_micron
+ * @return
+ */
+
+double layAdvancedEditingPlugin::grid_micron() const
+{
+  if (mp_view->cellviews()==0) return 0.001;
+  db::Layout* layout = &(mp_view->active_cellview()->layout());
+
+  if (layout==nullptr) return 0.001;
+  return layout->dbu();
 }
 

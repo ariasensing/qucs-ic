@@ -43,34 +43,7 @@ protected:
 public:
   virtual void set_new_mouse_position(const db::DPoint& p);
   virtual void start_dragging(const db::DPoint&  ) {}
-
-//------------------------------------------------------
-//------------------------------------------------------
-// Magnetic snapping handler
-//------------------------------------------------------
-//------------------------------------------------------
-public:
-  void                set_magnetic(bool on)               { m_magnetic = on; }
-  void                set_catch_distance(int  pixels );
-  void                set_grid(double grid_um);             // 0 = use view’s editor grid
-  double              grid_micron() const;
-  db::DPoint          current_snapped_pos() const { return m_snapped; }
-  static unsigned int brighterColor(unsigned int rgb, double factor = 1.4);
-  QPointF             micron_to_pixel(const db::DPoint &micronPos) const;
-  double              pixels_to_micron(double pixels) const;
-private:
-  void       update_cursor(const db::DPoint &raw);
-  db::DPoint snap_to_grid(const db::DPoint &p) const;
-  db::DPoint snap_magnetic(const db::DPoint &p) const;
-
-  bool     m_magnetic     = false;
-  int      m_catch_pixels = 12;           // pixels
-  double   m_grid         = 0.0;          // 0 → use view grid
-  db::DPoint m_snapped;
-  QPointF    m_snapped_pixels;
-
-
-
+  static unsigned int brighter_color(unsigned int rgb, double factor = 1.4);
 
 };
 

@@ -288,9 +288,9 @@ void     icLayout::insert_done(bool , const db::Shape& )
 
 }
 
-void     icLayout::update_mouse_position(double xdb, double ydb,  int ,  int )
+void     icLayout::update_mouse_position(const db::DPoint& pt)
 {
-  emit new_mouse_position(xdb,ydb);
+  emit new_mouse_position(pt.x(), pt.y());
 }
 
 

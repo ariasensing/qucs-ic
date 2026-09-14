@@ -282,7 +282,7 @@ ADD_EXECUTABLE( ${QUCS_NAME} MACOSX_BUNDLE WIN32
   layadvancedediting_insert_rect.cpp
 
 
-  mouseselectiondrawer.h mouseselectiondrawer.cpp
+
   qtoolbox_helper_w.h qtoolbox_helper_w.cpp qtoolbox_helper_w.ui
   qtoolbox_selection_w.h qtoolbox_selection_w.cpp qtoolbox_selection_w.ui
   crosshairoverlay.h
@@ -411,16 +411,18 @@ INSTALL( FILES ${SCRIPTS} PERMISSIONS OWNER_EXECUTE OWNER_WRITE OWNER_READ
 
 add_compile_definitions(HAVE_QT)
 
-set(KLAYOUT_INCLUDE_HOME "/usr/local/share/klayout")
-target_include_directories(${QUCS_NAME} PRIVATE ${KLAYOUT_INCLUDE_HOME}/include/lay)
-target_include_directories(${QUCS_NAME} PRIVATE ${KLAYOUT_INCLUDE_HOME}/include/layui)
-target_include_directories(${QUCS_NAME} PRIVATE ${KLAYOUT_INCLUDE_HOME}/include/layview)
-target_include_directories(${QUCS_NAME} PRIVATE ${KLAYOUT_INCLUDE_HOME}/include/laybasic)
-target_include_directories(${QUCS_NAME} PRIVATE ${KLAYOUT_INCLUDE_HOME}/include/db)
-target_include_directories(${QUCS_NAME} PRIVATE ${KLAYOUT_INCLUDE_HOME}/include/tl)
-target_include_directories(${QUCS_NAME} PRIVATE ${KLAYOUT_INCLUDE_HOME}/include/gsi)
+set(KLAYOUT_HOME "/home/alessioc/projects/qucs_s/klayout")
+set(KLAYOUT_INCLUDE_HOME "${KLAYOUT_HOME}/include")
+target_include_directories(${QUCS_NAME} PRIVATE ${KLAYOUT_INCLUDE_HOME}/lay)
+target_include_directories(${QUCS_NAME} PRIVATE ${KLAYOUT_INCLUDE_HOME}/layui)
+target_include_directories(${QUCS_NAME} PRIVATE ${KLAYOUT_INCLUDE_HOME}/layview)
+target_include_directories(${QUCS_NAME} PRIVATE ${KLAYOUT_INCLUDE_HOME}/laybasic)
+target_include_directories(${QUCS_NAME} PRIVATE ${KLAYOUT_INCLUDE_HOME}/db)
+target_include_directories(${QUCS_NAME} PRIVATE ${KLAYOUT_INCLUDE_HOME}/tl)
+target_include_directories(${QUCS_NAME} PRIVATE ${KLAYOUT_INCLUDE_HOME}/gsi)
+target_include_directories(${QUCS_NAME} PRIVATE ${KLAYOUT_INCLUDE_HOME}/edt)
 
-set(KLAYOUT_LIBRARY_HOME "/home/alessioc/projects/qucs_s/klayout/bin-release/")
+set(KLAYOUT_LIBRARY_HOME "${KLAYOUT_HOME}/bin-release/")
 target_link_directories(${QUCS_NAME} PRIVATE ${KLAYOUT_LIBRARY_HOME})
 target_link_directories(${QUCS_NAME} PRIVATE ${KLAYOUT_LIBRARY_HOME}/db_plugins)
 target_link_directories(${QUCS_NAME} PRIVATE ${KLAYOUT_LIBRARY_HOME}/lay_plugins)
@@ -432,6 +434,7 @@ target_link_libraries(${QUCS_NAME} PRIVATE klayout_db)
 target_link_libraries(${QUCS_NAME} PRIVATE klayout_rdb)
 target_link_libraries(${QUCS_NAME} PRIVATE klayout_tl)
 target_link_libraries(${QUCS_NAME} PRIVATE klayout_gsi)
+target_link_libraries(${QUCS_NAME} PRIVATE klayout_edt)
 
 target_link_libraries(${QUCS_NAME} PRIVATE gds2)
 target_link_libraries(${QUCS_NAME} PRIVATE lefdef)

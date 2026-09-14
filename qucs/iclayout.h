@@ -113,7 +113,7 @@ public slots:
 // Edit coordinates
   void     slotEditCoordinates();
 // Mouse move
-  void update_mouse_position(double xdb, double ydb, int pxx, int pxy);
+  void update_mouse_position(const db::DPoint& pt);
 // Operation
   void     insert_started();
   void     insert_done(bool added, const db::Shape& shape);

@@ -3,6 +3,7 @@
 
 #include "layPlugin.h"
 #include "layLayoutViewBase.h"
+#include "edtShapeService.h"
 #include "dbManager.h"
 #include "dbShape.h"
 #include <QObject>
@@ -18,7 +19,7 @@ class Dispatcher;
  * logic in between the layLayoutView and the shapeDrawer subclasses
  * */
 
-class layAdvancedEditingPlugin : public QObject,  public lay::Plugin ,  public lay::ViewService
+class layAdvancedEditingPlugin : public QObject,  public edt::Service
 {
   Q_OBJECT
 private:
@@ -82,7 +83,7 @@ private:
   class ShapeDrawer *m_shapeDrawer;
 
 signals:
-  void  update_mouse_position(double xdb, double ydb,  int pxx,  int pxy);
+  void  update_mouse_position(const db::DPoint& pt);
   void  insert_started();
   void  insert_done(bool added, const db::Shape& shape);
   void  set_query_name(const QString& query_name);
@@ -96,7 +97,16 @@ public slots:
 
 //----------------------------------------------------
 // Snapping
+private:
+  bool            m_magnetic = true;
+  db::DPoint      m_last_snapped;
+  double          grid_micron() const;
+  db::DPoint      snap_to_grid(const db::DPoint &p) const;
+public:
 
+  void            set_snap_mode(bool enable) {m_magnetic = enable;}
+  bool            is_snap_mode() {return m_magnetic;}
+  db::DPoint&     get_snapped_pos();
 
 };
 
