@@ -94,6 +94,9 @@ bool  icLayout::initKlayoutWidget()
   m_layout    = &(m_layoutView->active_cellview()->layout());
   assert(m_layout!=nullptr);
 
+  applyTechToView();
+
+  // Plugin
   std::vector<lay::Plugin*> plugins = m_layoutView->plugins();
   for (lay::Plugin* plugin : plugins)
   {
@@ -108,9 +111,12 @@ bool  icLayout::initKlayoutWidget()
     m_layoutView->switch_mode(my_mode_id);
 
 
+  lay::Plugin* active = m_layoutView->active_plugin();
 
-  applyTechToView();
+
   m_plugin = layAdvancedEditingPlugin::get_plugin_from_view(m_layoutView);
+  m_plugin->set_snap_mode(true);
+  assert(active == m_plugin);
 
   // Connect the plugin instance to this
   connect(m_plugin, &layAdvancedEditingPlugin::update_mouse_position, this, &icLayout::update_mouse_position);

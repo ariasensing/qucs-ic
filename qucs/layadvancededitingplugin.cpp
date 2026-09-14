@@ -21,6 +21,11 @@ layAdvancedEditingPlugin::layAdvancedEditingPlugin(db::Manager * manager, lay::D
     mp_view->widget()->setCursor(Qt::BlankCursor);
 
   clear_mouse_cursors();
+
+  if (mp_view) {
+    set_cursor(lay::Cursor::cross);
+  }
+
 }
 
 /**
@@ -40,6 +45,8 @@ layAdvancedEditingPlugin* layAdvancedEditingPlugin::get_plugin_from_view(lay::La
 layAdvancedEditingPlugin::~layAdvancedEditingPlugin()
 {
   m_mapped_plugins.remove(mp_view);
+  clear_mouse_cursors();
+  clear_partial_selection();
 }
 /**
  * @brief layAdvancedEditingPlugin::activated
@@ -61,12 +68,34 @@ void layAdvancedEditingPlugin::deactivated()
     set_cursor(lay::Cursor::arrow);
   }
   tl::info << "layAdvancedEditingPlugin deactivated";
+  m_dragging = false;
 }
 
+/**
+ * @brief MagneticCursorPlugin::drag_cancel
+ */
+void layAdvancedEditingPlugin::drag_cancel()
+{
+  m_dragging = false;
+  clear_mouse_cursors();
+}
+/**
+ * @brief layAdvancedEditingPlugin::update
+ */
 void layAdvancedEditingPlugin::update()
 {
   // Called when the view (layers, cell, etc.) changes
 }
+/**
+ * @brief layAdvancedEditingPlugin::leave_event
+ * @return
+ */
+bool layAdvancedEditingPlugin::leave_event(bool /*prio*/)
+{
+  clear_mouse_cursors();
+  return false;
+}
+
 /**
  * @brief layAdvancedEditingPlugin::mouse_move_event
  * @param p
@@ -74,7 +103,7 @@ void layAdvancedEditingPlugin::update()
  * @return
  */
 
-bool layAdvancedEditingPlugin::mouse_move_event(const db::DPoint &p, unsigned int /*buttons*/, bool /*prio*/)
+bool layAdvancedEditingPlugin::mouse_move_event(const db::DPoint &p, unsigned int buttons, bool /*prio*/)
 {
   if (!mp_view) return false;
   clear_mouse_cursors();
@@ -88,9 +117,19 @@ bool layAdvancedEditingPlugin::mouse_move_event(const db::DPoint &p, unsigned in
 
   add_mouse_cursor( m_last_snapped, /*emphasize=*/true);
 
-  return false;     // or true if you consume the event
-}
+  // Check if left button is kept down
+  if (!(buttons & lay::LeftButton))
+    return false;
 
+  if (!m_selection_mode) return false;
+
+  if (m_dragging && (buttons & lay::LeftButton)) {
+    m_drag_box = db::DBox(m_drag_start, p);
+    // Optional: draw rubber band yourself if you want visual feedback
+    // (KLayout already draws one when the selection service is active)
+  }
+  return true;
+}
 /**
  * @brief layAdvancedEditingPlugin::mouse_press_event
  * @param p
@@ -100,13 +139,11 @@ bool layAdvancedEditingPlugin::mouse_move_event(const db::DPoint &p, unsigned in
  */
 bool layAdvancedEditingPlugin::mouse_press_event(const db::DPoint &p, unsigned int buttons, bool prio)
 {
-  if (!prio) {
-    return false;
-  }
-  // Example reaction
-  if ((buttons & lay::LeftButton) != 0) {
-    tl::info << "Left click at " << p.to_string();
-    // grab_mouse();  // if you want exclusive mouse capture
+
+  if (buttons & lay::LeftButton) {
+    m_dragging   = true;
+    m_drag_start = p;
+    m_drag_box   = db::DBox(p, p);
     return true;
   }
   return false;
@@ -131,10 +168,26 @@ bool layAdvancedEditingPlugin::mouse_double_click_event(const db::DPoint & /*p*/
  * @brief layAdvancedEditingPlugin::mouse_release_event
  * @return
  */
-bool layAdvancedEditingPlugin::mouse_release_event(const db::DPoint & /*p*/, unsigned int /*buttons*/, bool /*prio*/)
+bool layAdvancedEditingPlugin::mouse_release_event(const db::DPoint & p, unsigned int buttons, bool prio)
 {
-  // ungrab_mouse();
-  return false;
+  if (!m_dragging)
+    return false;
+
+  m_dragging = false;
+
+  bool add = (buttons & lay::ShiftButton) != 0;   // Shift = add to selection
+
+  db::DBox box(m_drag_start, p);
+  if (box.empty() || box.width() < 1e-6 || box.height() < 1e-6) {
+    // pure click
+    select_at_point(p, add);
+  } else {
+    // rubber-box
+    select_in_box(box, add);
+  }
+
+  visualize_partial_selection();
+  return true;
 }
 /**
  * @brief layAdvancedEditingPlugin::wheel_event
@@ -278,3 +331,275 @@ double layAdvancedEditingPlugin::grid_micron() const
   return layout->dbu();
 }
 
+/**
+ * @brief layAdvancedEditingPlugin::clear_partial_selection
+ */
+void layAdvancedEditingPlugin::clear_partial_selection()
+{
+  m_partial_selection.clear();
+  // You may also want to clear the view’s normal selection:
+  // mp_view->clear_object_selection();
+}
+
+/**
+ * @brief layAdvancedEditingPlugin::select_at_point
+ * @param p
+ * @param add
+ */
+void layAdvancedEditingPlugin::select_at_point(const db::DPoint &p, bool add)
+{
+  if (!add)
+    clear_partial_selection();
+
+  db::DBox search_box(p, p);
+  search_box.enlarge(db::vector(m_pick_tolerance_um,m_pick_tolerance_um));
+
+  std::vector<PartialSelection> found;
+
+  // Only the active cellview
+  int cv_index = mp_view->active_cellview_index();
+  if (cv_index < 0)
+    return;
+
+  const lay::CellView &cv = mp_view->active_cellview();
+
+  db::Layout &layout = cv->layout();
+  db::Cell &cell = *(cv.cell());                 // <-- current cell only
+  double dbu = layout.dbu();
+  db::CplxTrans to_micron(dbu);
+
+  // Search box in database units
+  db::Box db_box = db::Box(search_box.transformed(db::VCplxTrans(1.0 / dbu)));
+
+  // Visible layers of this cellview
+  for (lay::LayerPropertiesConstIterator l = mp_view->begin_layers();
+       !l.at_end(); ++l)
+  {
+    if (l->cellview_index() != cv_index || !l->visible(true) || l->layer_index() < 0)
+      continue;
+
+    unsigned int layer = (unsigned int)l->layer_index();
+
+    // Non-recursive iterator – only shapes in the current cell
+    for (db::ShapeIterator si = cell.begin_overlapping(layer,db_box, db::ShapeIterator::All);
+         !si.at_end(); ++si)
+    {
+      collect_partials_from_shape(*si, layer, to_micron, search_box,
+                                  m_pick_tolerance_um,
+                                  cv_index, cell.cell_index(), found);
+    }
+  }
+
+  // For a pure click keep only the closest hit
+  if (!found.empty() && !add) {
+    std::sort(found.begin(), found.end(),
+              [&p](const PartialSelection &a, const PartialSelection &b) {
+                double da = a.is_vertex() ? a.vertex.distance(p)
+                                          : a.edge.distance(p);
+                double db = b.is_vertex() ? b.vertex.distance(p)
+                                          : b.edge.distance(p);
+                return da < db;
+              });
+    m_partial_selection.push_back(found.front());
+  } else {
+    m_partial_selection.insert(m_partial_selection.end(),
+                               found.begin(), found.end());
+  }
+}
+
+/**
+ * @brief layAdvancedEditingPlugin::select_in_box
+ * @param box
+ * @param add
+ */
+void layAdvancedEditingPlugin::select_in_box(const db::DBox &box, bool add)
+{
+  if (!add)
+    clear_partial_selection();
+
+  std::vector<PartialSelection> found;
+
+  int cv_index = mp_view->active_cellview_index();
+  if (cv_index < 0)
+    return;
+
+  const lay::CellView &cv = mp_view->cellview(cv_index);
+  if (!cv.is_valid())
+    return;
+
+  db::Layout &layout = cv->layout();
+  db::Cell &cell = *(cv.cell());                 // <-- current cell only
+  double dbu = layout.dbu();
+  db::CplxTrans to_micron(dbu);
+
+  db::Box db_box = db::Box(box.transformed(db::VCplxTrans(1.0 / dbu)));
+
+  for (lay::LayerPropertiesConstIterator l = mp_view->begin_layers();
+       !l.at_end(); ++l)
+  {
+    if (l->cellview_index() != cv_index || !l->visible(true) || l->layer_index() < 0)
+      continue;
+
+    unsigned int layer = (unsigned int)l->layer_index();
+
+    for (db::ShapeIterator si = cell.begin_overlapping(layer,db_box, db::ShapeIterator::All);
+         !si.at_end(); ++si)
+    {
+      collect_partials_from_shape(*si, layer, to_micron, box,
+                                  0.0 /* exact box */,
+                                  cv_index, cell.cell_index(), found);
+    }
+  }
+
+  m_partial_selection.insert(m_partial_selection.end(),
+                             found.begin(), found.end());
+}
+
+/**
+ * @brief layAdvancedEditingPlugin::collect_partials_from_shape
+ * @param iter
+ * @param search_box
+ * @param pick_tol_um
+ * @param out
+ */
+void layAdvancedEditingPlugin::collect_partials_from_shape(
+                                      const db::Shape &shape,
+                                      unsigned int layer,
+                                      const db::CplxTrans &to_micron,
+                                      const db::DBox &search_box,
+                                      double pick_tol_um,
+                                      int cv_index,
+                                      db::cell_index_type cell_index,
+                                      std::vector<PartialSelection> &out)
+{
+  if (!(shape.is_polygon() || shape.is_path() || shape.is_box() ||
+        shape.is_simple_polygon()))
+    return;
+
+  db::DPolygon poly = shape_to_dpolygon(shape, to_micron);
+
+  std::vector<db::DEdge>  edges;
+  std::vector<db::DPoint> vertices;
+  extract_edges_and_vertices(poly, edges, vertices);
+
+         // Build a top-level ObjectInstPath (no hierarchy)
+  lay::ObjectInstPath path;
+  path.set_cv_index(cv_index);
+  path.set_topcell(cell_index);
+  path.set_layer(layer);
+  path.set_shape(shape);
+  // path remains empty → object lives in the top cell
+
+         // ----- vertices -----
+  for (size_t i = 0; i < vertices.size(); ++i) {
+    const db::DPoint &v = vertices[i];
+    bool hit = false;
+    if (pick_tol_um > 0.0)
+      hit = (v.distance(search_box.center()) <= pick_tol_um);
+     else
+      hit = search_box.contains(v);
+
+    if (hit) {
+      PartialSelection ps;
+      ps.path         = path;
+      ps.edge_index   = -1;
+      ps.vertex_index = int(i);
+      ps.vertex       = v;
+      out.push_back(ps);
+    }
+  }
+
+         // ----- edges -----
+  for (size_t i = 0; i < edges.size(); ++i) {
+    const db::DEdge &e = edges[i];
+    bool hit = false;
+    if (pick_tol_um > 0.0)
+      hit = (e.distance(search_box.center()) <= pick_tol_um);
+      else
+      hit = e.clipped(search_box).first;
+
+    if (hit) {
+      PartialSelection ps;
+      ps.path         = path;
+      ps.edge_index   = int(i);
+      ps.vertex_index = -1;
+      ps.edge         = e;
+      out.push_back(ps);
+    }
+  }
+}
+
+void layAdvancedEditingPlugin::visualize_partial_selection()
+{
+  clear_mouse_cursors();   // keep magnetic cursor clean
+
+  for (const auto &ps : m_partial_selection) {
+    if (ps.is_vertex()) {
+      add_mouse_cursor(ps.vertex, true);          // strong point marker
+    } else if (ps.is_edge()) {
+      add_edge_marker(ps.edge, true);             // strong edge marker
+    }
+  }
+}
+
+
+// --------------------------------------------------------------------------
+// Geometry helpers
+// --------------------------------------------------------------------------
+
+db::DPolygon
+layAdvancedEditingPlugin::shape_to_dpolygon(const db::Shape &shape, const db::CplxTrans &tr)
+{
+  // 1. Get the shape as an integer polygon
+  db::Polygon poly;
+  if (shape.is_polygon() || shape.is_simple_polygon()) {
+    shape.polygon(poly);
+  }
+  else if (shape.is_path()) {
+    db::Path path;
+    shape.path(path);
+    poly = path.polygon();               // or path.simple_polygon()
+  }
+  else if (shape.is_box()) {
+    poly = db::Polygon(shape.box());
+  }
+  else {
+    return db::DPolygon();               // unsupported shape type
+  }
+
+   // 2. Build the combined transformation:
+   //    hierarchy (ICplxTrans) → database units → microns (CplxTrans)
+  db::CplxTrans to_micron(mp_view->active_cellview()->layout().dbu());          // scales by dbu
+  db::CplxTrans total = to_micron * db::CplxTrans(tr);
+
+  // 3. Apply it (both of these are equivalent)
+
+  return poly.transformed(total);
+}
+/**
+ * @brief layAdvancedEditingPlugin::extract_edges_and_vertices
+ * @param poly
+ * @param edges
+ * @param vertices
+ */
+void layAdvancedEditingPlugin::extract_edges_and_vertices(
+    const db::DPolygon &poly,
+    std::vector<db::DEdge>  &edges,
+    std::vector<db::DPoint> &vertices)
+{
+  edges.clear();
+  vertices.clear();
+
+  // hull
+  for (auto e = poly.begin_edge(); !e.at_end(); ++e) {
+    edges.push_back(*e);
+    vertices.push_back((*e).p1());
+  }
+  // holes (if any)
+  for (unsigned h = 0; h < poly.holes(); ++h) {
+    for (auto e = poly.begin_edge(h); !e.at_end(); ++e) {
+      edges.push_back(*e);
+      vertices.push_back((*e).p1());
+    }
+  }
+}

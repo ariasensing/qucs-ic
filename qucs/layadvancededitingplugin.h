@@ -5,7 +5,18 @@
 #include "layLayoutViewBase.h"
 #include "edtShapeService.h"
 #include "dbManager.h"
+#include "layObjectInstPath.h"
 #include "dbShape.h"
+#include "dbEdge.h"
+#include "dbPoint.h"
+#include "dbBox.h"
+#include "dbPolygon.h"
+#include "dbPath.h"
+#include "dbRecursiveShapeIterator.h"
+#include "dbInstElement.h"
+
+
+
 #include <QObject>
 #include <QMap>
 
@@ -52,6 +63,10 @@ public:
 
   // Optional menu handling for this instance
   virtual void menu_activated(const std::string &symbol) override;
+
+  virtual void drag_cancel() override;
+
+  virtual bool leave_event(bool /*prio*/) override;
 
   static QPointF micron_to_pixel(lay::LayoutViewBase* view, const db::DPoint& micron_pos);
 //-----------------------------------------------
@@ -108,6 +123,49 @@ public:
   bool            is_snap_mode() {return m_magnetic;}
   db::DPoint&     get_snapped_pos();
 
+//------------------------------------------------------
+// Partial selection
+  bool   m_selection_mode = true;
+  struct PartialSelection {
+    lay::ObjectInstPath path;          // the shape (or instance path)
+    int                 edge_index;    // >=0 → edge, -1 → not an edge
+    int                 vertex_index;  // >=0 → vertex, -1 → not a vertex
+    db::DEdge           edge;          // valid when edge_index >= 0
+    db::DPoint          vertex;        // valid when vertex_index >= 0
+
+    bool is_edge()   const { return edge_index   >= 0; }
+    bool is_vertex() const { return vertex_index >= 0; }
+  };
+
+  std::vector<PartialSelection> m_partial_selection;
+
+  // Rubber-box selection
+  bool       m_dragging;
+  db::DPoint m_drag_start;
+  db::DBox   m_drag_box;
+  // Configuration
+  double m_pick_tolerance_um = 0.005;   // how close the mouse must be (µm)
+
+  void clear_partial_selection();
+  void select_at_point(const db::DPoint &p, bool add);
+  void select_in_box  (const db::DBox   &box, bool add);
+  void collect_partials_from_shape(const db::Shape &shape,
+                                   unsigned int layer,
+                                   const db::CplxTrans &to_micron,
+                                   const db::DBox &search_box,
+                                   double pick_tol_um,
+                                   int cv_index,
+                                   db::cell_index_type cell_index,
+                                   std::vector<PartialSelection> &out);
+
+  void visualize_partial_selection();
+
+         // Helpers
+  db::DPolygon shape_to_dpolygon(const db::Shape &shape,
+                                  const db::CplxTrans &to_micron);
+  void extract_edges_and_vertices(const db::DPolygon &poly,
+                                  std::vector<db::DEdge>  &edges,
+                                  std::vector<db::DPoint> &vertices);
 };
 
 #endif // LAYADVANCEDEDITINGPLUGIN_H
