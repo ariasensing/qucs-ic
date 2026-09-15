@@ -93,16 +93,16 @@ public:
 //-----------------------------------------------
 // All functios are virtualized so that we have a single entry point
 
-  bool (*mode_mouse_move_event)(const db::DPoint &p, unsigned int buttons, bool prio) = 0;
-  bool (*mode_mouse_press_event)(const db::DPoint &p, unsigned int buttons, bool prio) = 0;
-  bool (*mode_mouse_click_event)(const db::DPoint &p, unsigned int buttons, bool prio) = 0;
-  bool (*mode_mouse_double_click_event)(const db::DPoint &p, unsigned int buttons, bool prio) = 0;
-  bool (*mode_mouse_release_event)(const db::DPoint &p, unsigned int buttons, bool prio) = 0;
-  bool (*mode_start)() =0;
-  bool (*mode_complete)()=0;
-  bool (*mode_abort)()=0;
-  void (*mode_drag_cancel)() = 0;
-  bool (*mode_key_event)(unsigned int /*key*/, unsigned int /*buttons*/) = 0;
+  bool (layAdvancedEditingPlugin::*mode_mouse_move_event)(const db::DPoint &p, unsigned int buttons, bool prio) = 0;
+  bool (layAdvancedEditingPlugin::*mode_mouse_press_event)(const db::DPoint &p, unsigned int buttons, bool prio) = 0;
+  bool (layAdvancedEditingPlugin::*mode_mouse_click_event)(const db::DPoint &p, unsigned int buttons, bool prio) = 0;
+  bool (layAdvancedEditingPlugin::*mode_mouse_double_click_event)(const db::DPoint &p, unsigned int buttons, bool prio) = 0;
+  bool (layAdvancedEditingPlugin::*mode_mouse_release_event)(const db::DPoint &p, unsigned int buttons, bool prio) = 0;
+  void (layAdvancedEditingPlugin::*mode_start)() =0;
+  void (layAdvancedEditingPlugin::*mode_complete)()=0;
+  void (layAdvancedEditingPlugin::*mode_abort)()=0;
+  void (layAdvancedEditingPlugin::*mode_drag_cancel)() = 0;
+  bool (layAdvancedEditingPlugin::*mode_key_event)(unsigned int /*key*/, unsigned int /*buttons*/) = 0;
 
 //-----------------------------------------------
 // Plugins instance
@@ -119,10 +119,10 @@ public:
   void        selection_complete();
   void        selection_abort();
   bool        selection_mouse_move(const db::DPoint &p, unsigned int buttons, bool prio);
-  bool        selection_mouse_click(const db::DPoint &p, unsigned int buttons);
+  bool        selection_mouse_click(const db::DPoint &p, unsigned int buttons, bool prio);
   bool        selection_mouse_press(const db::DPoint &p, unsigned int buttons, bool prio);
   bool        selection_mouse_release(const db::DPoint &p, unsigned int buttons, bool prio);
-  bool        selection_mouse_double_click(const db::DPoint &p, unsigned int buttons);
+  bool        selection_mouse_double_click(const db::DPoint &p, unsigned int buttons, bool prio);
   void        selection_drag_cancel();
   bool        selection_key_event(unsigned int key, unsigned int buttons);
 
@@ -133,16 +133,11 @@ public:
   void        insert_rect_coord_given_p2(double x, double y);
   void        insert_rect_terminate();
   void        insert_rect_abort();
-  void        insert_rect_mouse_click(const db::DPoint &p, unsigned int buttons);
-  void        insert_rect_mouse_double_click(const db::DPoint &p, unsigned int buttons);
-
-// paths
-  void        insert_path_start() {}
-  void        insert_path_coord_given(double , double ) {}
-  void        insert_path_terminate() {}
-// circles
-  void        insert_circle_start() {}
-  void        insert_circle_terminate() {}
+  bool        insert_rect_mouse_click(const db::DPoint &p, unsigned int buttons, bool prio);
+  bool        insert_rect_mouse_double_click(const db::DPoint &p, unsigned int buttons, bool prio);
+  bool        insert_rect_mouse_move(const db::DPoint &p, unsigned int buttons, bool prio);
+  bool        insert_rect_mouse_press(const db::DPoint &p, unsigned int buttons, bool prio);
+  bool        insert_rect_mouse_release(const db::DPoint &p, unsigned int buttons, bool prio);
 
   void        terminate_action();
 private:
@@ -193,7 +188,7 @@ private:
     bool is_edge()   const { return edge_index   >= 0; }
     bool is_vertex() const { return vertex_index >= 0; }
   };
-
+  std::vector<PartialSelection> m_hovering; // List of objects we are hovering over
   std::vector<PartialSelection> m_partial_selection;
 
   // Rubber-box selection
@@ -225,6 +220,10 @@ private:
                                   std::vector<db::DPoint> &vertices);
 
   void  update_cursor_markers();
+
+  void  clear_hovering_list();
+  void  update_hovering_list(const db::DPoint& pt);
+
 };
 
 #endif // LAYADVANCEDEDITINGPLUGIN_H

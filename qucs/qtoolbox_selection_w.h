@@ -20,6 +20,7 @@ private:
 public slots:
   // The mouse position changed
   void new_mouse_position(double x, double y);
+  void zoom_pressed();
 signals:
   void zoom_on_position(double x, double y);
 

@@ -20,11 +20,8 @@ layAdvancedEditingPlugin::layAdvancedEditingPlugin(db::Manager * manager, lay::D
   if ((mp_view!=nullptr)&&(mp_view->widget()!=nullptr))
     mp_view->widget()->setCursor(Qt::BlankCursor);
 
-  clear_mouse_cursors();
+  init_mode();
 
-  if (mp_view) {
-    set_cursor(lay::Cursor::cross);
-  }
 
 }
 
@@ -113,7 +110,7 @@ bool layAdvancedEditingPlugin::mouse_move_event(const db::DPoint &p, unsigned in
   emit  update_mouse_position(m_last_snapped);
 
   if (mode_mouse_move_event)
-    return (mode_mouse_move_event)(p,buttons,prio);
+    return (this->*mode_mouse_move_event)(p,buttons,prio);
 
   return false;
 }
@@ -127,7 +124,7 @@ bool layAdvancedEditingPlugin::mouse_move_event(const db::DPoint &p, unsigned in
 bool layAdvancedEditingPlugin::mouse_press_event(const db::DPoint &p, unsigned int buttons, bool prio)
 {
   if (mode_mouse_press_event)
-   return mode_mouse_press_event(p,buttons,prio);
+   return (this->*mode_mouse_press_event)(p,buttons,prio);
 
   return false;
 }
@@ -138,12 +135,8 @@ bool layAdvancedEditingPlugin::mouse_press_event(const db::DPoint &p, unsigned i
 bool layAdvancedEditingPlugin::mouse_click_event(const db::DPoint & p, unsigned int buttons, bool prio)
 {
 
-  if (m_current_operation==Selection)
-    clear_partial_selection();
-  else
-    if (m_current_operation==InsertRectangle)
-      insert_rect_mouse_click(p,buttons);
-
+  if (mode_mouse_click_event)
+    return (this->*mode_mouse_click_event)(p,buttons,prio);
 
   return false;
 }
@@ -151,8 +144,11 @@ bool layAdvancedEditingPlugin::mouse_click_event(const db::DPoint & p, unsigned 
  * @brief layAdvancedEditingPlugin::mouse_double_click_event
  * @return
  */
-bool layAdvancedEditingPlugin::mouse_double_click_event(const db::DPoint & /*p*/, unsigned int /*buttons*/, bool /*prio*/)
+bool layAdvancedEditingPlugin::mouse_double_click_event(const db::DPoint & p, unsigned int buttons, bool prio)
 {
+  if (mode_mouse_double_click_event)
+    return (this->*mode_mouse_double_click_event)(p, buttons,prio);
+
   return false;
 }
 /**
@@ -161,27 +157,8 @@ bool layAdvancedEditingPlugin::mouse_double_click_event(const db::DPoint & /*p*/
  */
 bool layAdvancedEditingPlugin::mouse_release_event(const db::DPoint & p, unsigned int buttons, bool prio)
 {
-  if (m_current_operation==Selection)
-  {
-    if (!m_dragging)
-      return false;
-
-    m_dragging = false;
-
-    bool add = (buttons & lay::ShiftButton) != 0;   // Shift = add to selection
-
-    db::DBox box(m_drag_start, p);
-    if (box.empty() || box.width() < 1e-6 || box.height() < 1e-6) {
-      // pure click
-      select_at_point(p, add);
-    } else {
-      // rubber-box
-      select_in_box(box, add);
-    }
-
-    update_cursor_markers();
-    return true;
-  }
+  if (mode_mouse_release_event)
+    return (this->*mode_mouse_release_event)(p,buttons,prio);
 
   return false;
 }
@@ -239,12 +216,15 @@ QPointF layAdvancedEditingPlugin::micron_to_pixel(const db::DPoint& micron_pos)
  */
 void        layAdvancedEditingPlugin::terminate_action()
 {
-  if (m_current_operation==Selection)
-    clear_partial_selection();
-  else
-    if (m_current_operation==InsertRectangle)
-        insert_rect_terminate();
 
+  // Terminate current operation and start common (selection) mode
+
+  if (mode_abort)
+    if (m_current_operation!=Unknown)
+      (this->*mode_abort)();
+
+  m_current_operation = Unknown;
+  selection_start();
 }
 
 /**
@@ -252,8 +232,13 @@ void        layAdvancedEditingPlugin::terminate_action()
  * @param x
  * @param y
  */
-void   layAdvancedEditingPlugin::zoom_on_new_position(double , double )
+void   layAdvancedEditingPlugin::zoom_on_new_position(double xc, double yc)
 {
+  if (!mp_view) return;
+  double w = mp_view->box().width();
+  double h = mp_view->box().height();
+
+  mp_view->zoom_box(db::DBox(xc-w/2, yc-h/2, xc+w/2, yc+h/2));
 
 }
 
@@ -458,107 +443,6 @@ void layAdvancedEditingPlugin::select_in_box(const db::DBox &box, bool add)
 
 }
 
-/**
- * @brief layAdvancedEditingPlugin::collect_partials_from_shape
- * @param iter
- * @param search_box
- * @param pick_tol_um
- * @param out
- */
-void layAdvancedEditingPlugin::collect_partials_from_shape(
-                                      const db::Shape &shape,
-                                      unsigned int layer,
-                                      const db::CplxTrans &to_micron,
-                                      const db::DBox &search_box,
-                                      double pick_tol_um,
-                                      int cv_index,
-                                      db::cell_index_type cell_index,
-                                      std::vector<PartialSelection> &out)
-{
-  if (!(shape.is_polygon() || shape.is_path() || shape.is_box() ||
-        shape.is_simple_polygon()))
-    return;
-
-  db::DPolygon poly = shape_to_dpolygon(shape, to_micron);
-
-  std::vector<db::DEdge>  edges;
-  std::vector<db::DPoint> vertices;
-  extract_edges_and_vertices(poly, edges, vertices);
-
-         // Build a top-level ObjectInstPath (no hierarchy)
-  lay::ObjectInstPath path;
-  path.set_cv_index(cv_index);
-  path.set_topcell(cell_index);
-  path.set_layer(layer);
-  path.set_shape(shape);
-  // Search for entire polygon
-
-  db::DBox aabb = poly.box();
-  if ((search_box.bottom()<=aabb.bottom())&&(search_box.top()>=aabb.top())&&
-      (search_box.left()<=aabb.left())&&(search_box.right()>=aabb.right()))
-  {
-    PartialSelection ps;
-    ps.path         = path;
-    ps.edge_index   = -1;
-    ps.vertex_index = -1;
-    out.push_back(ps);
-    // Put the object selected into the main selection
-    select(path, lay::Editable::Add);
-    return;
-  }
-  // path remains empty → object lives in the top cell
-
-  // ----- vertices -----
-  for (size_t i = 0; i < vertices.size(); ++i) {
-    const db::DPoint &v = vertices[i];
-    bool hit = false;
-    if (pick_tol_um > 0.0)
-      hit = (v.distance(search_box.center()) <= pick_tol_um);
-     else
-      hit = search_box.contains(v);
-
-    if (hit) {
-      PartialSelection ps;
-      ps.path         = path;
-      ps.edge_index   = -1;
-      ps.vertex_index = int(i);
-      ps.vertex       = v;
-      out.push_back(ps);
-    }
-  }
-
-         // ----- edges -----
-  for (size_t i = 0; i < edges.size(); ++i) {
-    const db::DEdge &e = edges[i];
-    bool hit = false;
-    if (pick_tol_um > 0.0)
-      hit = (e.distance(search_box.center()) <= pick_tol_um);
-      else
-      hit = search_box.contains(e.p1()) && search_box.contains(e.p2());
-
-    if (hit) {
-      PartialSelection ps;
-      ps.path         = path;
-      ps.edge_index   = int(i);
-      ps.vertex_index = -1;
-      ps.edge         = e;
-      out.push_back(ps);
-    }
-  }
-}
-
-void layAdvancedEditingPlugin::visualize_partial_selection()
-{
-  for (const auto &ps : m_partial_selection) {
-    if (ps.is_vertex()) {
-      add_mouse_cursor(ps.vertex, false);          // strong point marker
-    } else if (ps.is_edge()) {
-      add_edge_marker(ps.edge, false);             // strong edge marker
-    }
-  }
-}
-
-
 // --------------------------------------------------------------------------
 // Geometry helpers
 // --------------------------------------------------------------------------
@@ -614,15 +498,7 @@ void layAdvancedEditingPlugin::extract_edges_and_vertices(
   }
 }
 
-/**
- * @brief layAdvancedEditingPlugin::update_cursor_markers
- */
-void  layAdvancedEditingPlugin::update_cursor_markers()
-{
-  clear_mouse_cursors();
-  add_mouse_cursor(m_last_snapped, false);
-  visualize_partial_selection();
-}
+
 
 /**
  * @brief layAdvancedEditingPlugin::key_event
@@ -630,9 +506,13 @@ void  layAdvancedEditingPlugin::update_cursor_markers()
  * @param buttons
  * @return
  */
-bool layAdvancedEditingPlugin::key_event (unsigned int key, unsigned int /*buttons*/)
+bool layAdvancedEditingPlugin::key_event (unsigned int key, unsigned int buttons)
 {
   // ESC: break any function
+
+  if (mode_key_event)
+    return (this->*mode_key_event)(key,buttons);
+
   return false;
 }
 

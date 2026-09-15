@@ -2635,6 +2635,7 @@ void QucsApp::slotZoomOut()
  */
 void QucsApp::slotTune(bool checked)
 {
+
     if (checked)
     {
         QWidget *w = DocumentTab->currentWidget(); // remember from which Tab the tuner was started
@@ -2648,6 +2649,7 @@ void QucsApp::slotTune(bool checked)
             tune->blockSignals(false);
             return;
         }
+        if (isLayoutDocument(w)) return;
 
         Schematic* d(dynamic_cast<Schematic*>(w));
         assert(d);
