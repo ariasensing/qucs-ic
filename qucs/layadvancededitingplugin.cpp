@@ -82,6 +82,22 @@ void layAdvancedEditingPlugin::update()
   // Called when the view (layers, cell, etc.) changes
 }
 /**
+ * @brief layAdvancedEditingPlugin::enter_event
+ * @param prio
+ * @return
+ */
+bool layAdvancedEditingPlugin::enter_event (bool prio)
+{
+  if (!mp_view) return false;
+
+  if ((mp_view->widget()!=nullptr)&&(!mp_view->widget()->hasFocus()))
+  {
+    mp_view->widget()->setFocusPolicy(Qt::StrongFocus);
+    mp_view->widget()->setFocus();
+  }
+  return true;
+}
+/**
  * @brief layAdvancedEditingPlugin::leave_event
  * @return
  */
@@ -110,7 +126,7 @@ bool layAdvancedEditingPlugin::mouse_move_event(const db::DPoint &p, unsigned in
   emit  update_mouse_position(m_last_snapped);
 
   if (mode_mouse_move_event)
-    return (this->*mode_mouse_move_event)(p,buttons,prio);
+    return (this->*mode_mouse_move_event)(m_last_snapped,buttons,prio);
 
   return false;
 }
@@ -121,10 +137,10 @@ bool layAdvancedEditingPlugin::mouse_move_event(const db::DPoint &p, unsigned in
  * @param prio
  * @return
  */
-bool layAdvancedEditingPlugin::mouse_press_event(const db::DPoint &p, unsigned int buttons, bool prio)
+bool layAdvancedEditingPlugin::mouse_press_event(const db::DPoint &/*p*/, unsigned int buttons, bool prio)
 {
   if (mode_mouse_press_event)
-   return (this->*mode_mouse_press_event)(p,buttons,prio);
+   return (this->*mode_mouse_press_event)(m_last_snapped,buttons,prio);
 
   return false;
 }
@@ -132,11 +148,11 @@ bool layAdvancedEditingPlugin::mouse_press_event(const db::DPoint &p, unsigned i
  * @brief layAdvancedEditingPlugin::mouse_click_event
  * @return
  */
-bool layAdvancedEditingPlugin::mouse_click_event(const db::DPoint & p, unsigned int buttons, bool prio)
+bool layAdvancedEditingPlugin::mouse_click_event(const db::DPoint &/* p*/, unsigned int buttons, bool prio)
 {
 
   if (mode_mouse_click_event)
-    return (this->*mode_mouse_click_event)(p,buttons,prio);
+    return (this->*mode_mouse_click_event)(m_last_snapped,buttons,prio);
 
   return false;
 }
@@ -144,10 +160,10 @@ bool layAdvancedEditingPlugin::mouse_click_event(const db::DPoint & p, unsigned 
  * @brief layAdvancedEditingPlugin::mouse_double_click_event
  * @return
  */
-bool layAdvancedEditingPlugin::mouse_double_click_event(const db::DPoint & p, unsigned int buttons, bool prio)
+bool layAdvancedEditingPlugin::mouse_double_click_event(const db::DPoint &/* p*/, unsigned int buttons, bool prio)
 {
   if (mode_mouse_double_click_event)
-    return (this->*mode_mouse_double_click_event)(p, buttons,prio);
+    return (this->*mode_mouse_double_click_event)(m_last_snapped, buttons,prio);
 
   return false;
 }
@@ -155,10 +171,10 @@ bool layAdvancedEditingPlugin::mouse_double_click_event(const db::DPoint & p, un
  * @brief layAdvancedEditingPlugin::mouse_release_event
  * @return
  */
-bool layAdvancedEditingPlugin::mouse_release_event(const db::DPoint & p, unsigned int buttons, bool prio)
+bool layAdvancedEditingPlugin::mouse_release_event(const db::DPoint &/*p*/, unsigned int buttons, bool prio)
 {
   if (mode_mouse_release_event)
-    return (this->*mode_mouse_release_event)(p,buttons,prio);
+    return (this->*mode_mouse_release_event)(m_last_snapped,buttons,prio);
 
   return false;
 }
@@ -501,15 +517,41 @@ void layAdvancedEditingPlugin::extract_edges_and_vertices(
 
 
 /**
- * @brief layAdvancedEditingPlugin::key_event
+ * @brief layAdvancedEditingPlugin::key_event_x This is not actually an event handler since it is called by
+ * the icLyaout QDialog directly
  * @param key
  * @param buttons
  * @return
  */
 bool layAdvancedEditingPlugin::key_event (unsigned int key, unsigned int buttons)
 {
-  // ESC: break any function
+  /*
+   * The zoom shortcuts are preserved across each mode. So they are handled here
+   * */
+  if (key == 'F')
+  {
+    if (mp_view!=nullptr)
+      mp_view->zoom_fit();
+    // Full zoom
+    return true;
+  }
+  if (key == '+')
+  {
+    if (mp_view!=nullptr)
+      mp_view->zoom_in();
+    // Full zoom
+    return true;
+  }
+  if (key == '-')
+  {
+    if (mp_view!=nullptr)
+      mp_view->zoom_out();
+    // Full zoom
+    return true;
+  }
 
+
+  //
   if (mode_key_event)
     return (this->*mode_key_event)(key,buttons);
 

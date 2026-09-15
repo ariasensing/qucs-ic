@@ -50,6 +50,6 @@ public:
 // (lower numbers appear earlier). The string is a unique name.
 static tl::RegisteredClass<lay::PluginDeclaration> s_decl(
     new layAdvancedEditingPluginDeclaration(),
-    1,                        // position among other plugins
+    0,                        // position among other plugins
     "adv_layout"              // unique internal name
     );

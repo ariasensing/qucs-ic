@@ -31,7 +31,9 @@ void     icLayout::slotFileOpen()
     m_layoutView->zoom_fit();
     m_layoutView->update_content();
 
-  }
+    // loading a files restore the "select" mode as active, so we need to restore our own
+    set_adv_layout_mode();
+ }
   catch(...)
   {
     return;

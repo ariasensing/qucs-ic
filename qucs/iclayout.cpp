@@ -48,14 +48,6 @@ icLayout::icLayout(QucsApp* app, Schematic* owner, const QString& fname,const QS
   if (!fname.isEmpty())
     icLayout::load();
 
-  QToolbox_Selection_w* tbs = new QToolbox_Selection_w(this);
-
-  m_toolbox_dialog = tbs;
-  QVBoxLayout *toolboxLayout = new QVBoxLayout(ui->tabToolbox);
-  toolboxLayout->addWidget(m_toolbox_dialog);
-  ui->tabToolbox->setLayout(toolboxLayout);
-
-  connect(this, &icLayout::new_mouse_position, tbs, &QToolbox_Selection_w::new_mouse_position);
 }
 /**
  * @brief icLayout::initKlayoutWidget
@@ -67,7 +59,6 @@ bool  icLayout::initKlayoutWidget()
   m_dbManager    = new db::Manager(true);
   m_layoutWidget = new lay::LayoutViewWidget(m_dbManager, true  , nullptr, this);
   if (m_layoutWidget==nullptr) return false;
-
 
   m_layoutView =  m_layoutWidget->view();
 
@@ -88,15 +79,28 @@ bool  icLayout::initKlayoutWidget()
   QHBoxLayout *mainLayout = new QHBoxLayout(ui->centerFrame);
   mainLayout->addWidget(m_layoutWidget);
 
-  int my_mode_id = -1;
-
   m_canvas_id = m_layoutView->create_layout(m_tech->getTechname().toStdString(),false);
   m_layout    = &(m_layoutView->active_cellview()->layout());
   assert(m_layout!=nullptr);
 
   applyTechToView();
 
+  set_adv_layout_mode();
+
+  return true;
+}
+/**
+ * @brief icLayout::set_adv_layout_mode
+ */
+
+void icLayout::set_adv_layout_mode()
+{
+  if (m_layoutView==nullptr)  return;
+  if (m_layoutWidget==nullptr) return;
+
+  if (m_layoutView->mode_name()=="adv_layout") return;
   // Plugin
+  int my_mode_id = -1;
   std::vector<lay::Plugin*> plugins = m_layoutView->plugins();
   for (lay::Plugin* plugin : plugins)
   {
@@ -113,18 +117,23 @@ bool  icLayout::initKlayoutWidget()
 
   lay::Plugin* active = m_layoutView->active_plugin();
 
-
   m_plugin = layAdvancedEditingPlugin::get_plugin_from_view(m_layoutView);
   m_plugin->set_snap_mode(true);
   assert(active == m_plugin);
 
-  // Connect the plugin instance to this
+         // Connect the plugin instance to this
   connect(m_plugin, &layAdvancedEditingPlugin::update_mouse_position, this, &icLayout::update_mouse_position);
+  connect(m_plugin, &layAdvancedEditingPlugin::selection_started,   this,     &icLayout::selection_started);
+  connect(m_plugin, &layAdvancedEditingPlugin::insert_rect_started, this,     &icLayout::insertion_rect_started);
 
-  connect((QToolbox_Selection_w*)(m_toolbox_dialog), &QToolbox_Selection_w::zoom_on_position,
-          m_plugin, &layAdvancedEditingPlugin::zoom_on_new_position);
+         // The plugin is actually started during creation (which happens during layoutView creation since
+         // we added the pluginFactory). The first signal (selection_started) is emitted before the connection above
+         // is created. So we have to force the call for the first time only
+  selection_started();
 
-  return true;
+  //m_layoutWidget->setFocusPolicy(Qt::StrongFocus);
+  m_layoutWidget->setFocus();
+
 }
 /**
  * @brief icLayout::~icLayout
@@ -254,7 +263,6 @@ void icLayout::setGridOn(bool )
 
 }
 
-
 /**
  * @brief icLayout::getGridOn
  * @return
@@ -283,21 +291,62 @@ void  icLayout::applyTechToView()
 
 }
 
-
-void     icLayout::insert_started()
+/**
+ * @brief icLayout::selection_started
+ */
+void     icLayout::selection_started()
 {
+  if (m_toolbox_dialog!=nullptr) delete m_toolbox_dialog;
+
   // Create the dialog and put it in the toolbox
+  QToolbox_Selection_w* tbs = new QToolbox_Selection_w(this);
+
+  m_toolbox_dialog = tbs;
+  QVBoxLayout *toolboxLayout = new QVBoxLayout(ui->tabToolbox);
+  toolboxLayout->addWidget(m_toolbox_dialog);
+  ui->tabToolbox->setLayout(toolboxLayout);
+
+  connect(this, &icLayout::new_mouse_position, tbs, &QToolbox_Selection_w::new_mouse_position);
+  connect((QToolbox_Selection_w*)(m_toolbox_dialog), &QToolbox_Selection_w::zoom_on_position,
+          m_plugin, &layAdvancedEditingPlugin::zoom_on_new_position);
 }
 
-void     icLayout::insert_done(bool , const db::Shape& )
-{
-
-}
-
+/**
+ * @brief icLayout::update_mouse_position
+ * @param pt
+ */
 void     icLayout::update_mouse_position(const db::DPoint& pt)
 {
   emit new_mouse_position(pt.x(), pt.y());
 }
 
+/**
+ * @brief icLayout::insertion_rect_started
+ */
+void icLayout::insertion_rect_started()
+{
+
+}
 
 
+/**
+ * @brief icLayout::keyPressEvent
+ * @param event
+ */
+
+/*
+void icLayout::keyPressEvent(QKeyEvent *event)
+{
+  int buttons;
+
+  Qt::MouseButtons qmb = QApplication::mouseButtons();
+  buttons = (qmb & Qt::LeftButton) * lay::LeftButton +
+            (qmb & Qt::RightButton)* lay::RightButton +
+            (qmb & Qt::MiddleButton) * lay::MidButton;
+
+  if (m_plugin!=nullptr)
+    m_plugin->key_event_x(event->key(), buttons);
+
+}
+
+*/

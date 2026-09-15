@@ -36,6 +36,8 @@ void        layAdvancedEditingPlugin::selection_start()
     set_cursor(lay::Cursor::cross);
   }
 
+  emit selection_started();
+
 }
 
 /**
@@ -151,8 +153,10 @@ bool        layAdvancedEditingPlugin::selection_mouse_move(const db::DPoint &p, 
     {
       m_dragging   = true;
       m_drag_start = m_last_snapped;
-      m_drag_box   = db::DBox(m_last_snapped, m_last_snapped);
     }
+    m_drag_box   = db::DBox(m_last_snapped, m_last_snapped);
+    add_edge_marker();
+
   }
 
   update_cursor_markers();
@@ -169,9 +173,15 @@ bool        layAdvancedEditingPlugin::selection_mouse_move(const db::DPoint &p, 
  */
 bool        layAdvancedEditingPlugin::selection_key_event(unsigned int key, unsigned int /*buttons*/)
 {
-  if (key=='A'){}
+  if (key=='a')
+  {
+    // Select all
+    return true;
+  }
     // Select all shapes
   //  select(mp_view->active_cellview()->layout().get
+
+  return false;
 
 }
 
@@ -285,6 +295,7 @@ void layAdvancedEditingPlugin::visualize_partial_selection()
 void  layAdvancedEditingPlugin::update_cursor_markers()
 {
   clear_mouse_cursors();
+
   add_mouse_cursor(m_last_snapped, false);
   visualize_partial_selection();
 }

@@ -68,6 +68,7 @@ public:
   virtual void update() override;
 
          // Mouse events (return true if the event was consumed)
+  virtual bool enter_event (bool prio) override;
   virtual bool mouse_move_event(const db::DPoint &p, unsigned int buttons, bool prio) override;
   virtual bool mouse_press_event(const db::DPoint &p, unsigned int buttons, bool prio) override;
   virtual bool mouse_click_event(const db::DPoint &p, unsigned int buttons, bool prio) override;
@@ -88,7 +89,8 @@ public:
 
   static QPointF micron_to_pixel(lay::LayoutViewBase* view, const db::DPoint& micron_pos);
 
-  virtual bool key_event (unsigned int /*key*/, unsigned int /*buttons*/) override;
+  //bool          key_event_x (unsigned int key, unsigned int buttons);
+  virtual bool  key_event (unsigned int /*key*/, unsigned int /*buttons*/) override;
 
 //-----------------------------------------------
 // All functios are virtualized so that we have a single entry point
@@ -149,9 +151,8 @@ private:
 
 signals:
   void  update_mouse_position(const db::DPoint& pt);
-  void  insert_started();
-  void  insert_done(bool added, const db::Shape& shape);
-  void  set_query_name(const QString& query_name);
+  void  selection_started();
+  void  insert_rect_started();
 private:
   QPointF micron_to_pixel(const db::DPoint& micron_pos);
 public slots:

@@ -41,6 +41,7 @@ public:
   void  attachToSchematic(Schematic *schematic = nullptr);
 
   bool  initKlayoutWidget();
+  void  set_adv_layout_mode();
 //----------------------------------
 // grid
   void setGridOn(bool );
@@ -53,6 +54,7 @@ public:
 protected:
 
   tech*   m_tech;
+
 private:
   Ui::icLayout*           ui;
   Schematic               *a_Schematic;
@@ -115,8 +117,9 @@ public slots:
 // Mouse move
   void update_mouse_position(const db::DPoint& pt);
 // Operation
-  void     insert_started();
-  void     insert_done(bool added, const db::Shape& shape);
+  void     selection_started();
+  void     insertion_rect_started();
+
 private:
   QToolbox_helper_w   *m_toolbox_dialog;
 signals:

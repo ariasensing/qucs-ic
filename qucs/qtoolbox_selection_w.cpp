@@ -14,7 +14,11 @@ QToolbox_Selection_w::~QToolbox_Selection_w() {
   delete ui;
 }
 
-
+/**
+ * @brief QToolbox_Selection_w::new_mouse_position Update the output labels with the current position
+ * @param x
+ * @param y
+ */
 void QToolbox_Selection_w::new_mouse_position(double x, double y)
 {
   ui->lePointX->setText(QString::number(x));
@@ -22,6 +26,9 @@ void QToolbox_Selection_w::new_mouse_position(double x, double y)
 
 }
 
+/**
+ * @brief QToolbox_Selection_w::zoom_pressed Process and signal the request for a new position in the view
+ */
 void QToolbox_Selection_w::zoom_pressed()
 {
   bool bok;
