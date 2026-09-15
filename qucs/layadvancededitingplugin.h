@@ -15,7 +15,7 @@
 #include "dbRecursiveShapeIterator.h"
 #include "dbInstElement.h"
 
-
+#include <functional>
 
 #include <QObject>
 #include <QMap>
@@ -36,6 +36,24 @@ class layAdvancedEditingPlugin : public QObject,  public edt::Service
 private:
   // Let's keep a copy of the instantiated plugins
   static QMap<lay::LayoutViewBase*, layAdvancedEditingPlugin*> m_mapped_plugins;
+
+  enum operation {
+    Selection             = 0,
+    InsertRectangle ,
+    InsertPath,
+    InsertVias,
+    InsertInstance,
+    Move,
+    Stretch,
+    MirrorX,
+    MirrorY,
+    Chop,
+    Copy,
+    Paste,
+    Unknown
+  };
+
+  operation     m_current_operation = Unknown;
 public:
   layAdvancedEditingPlugin(db::Manager *manager, lay::Dispatcher *dispatcher, lay::LayoutViewBase *view);
   virtual ~layAdvancedEditingPlugin();
@@ -69,18 +87,55 @@ public:
   virtual bool leave_event(bool /*prio*/) override;
 
   static QPointF micron_to_pixel(lay::LayoutViewBase* view, const db::DPoint& micron_pos);
+
+  virtual bool key_event (unsigned int /*key*/, unsigned int /*buttons*/) override;
+
+//-----------------------------------------------
+// All functios are virtualized so that we have a single entry point
+
+  bool (*mode_mouse_move_event)(const db::DPoint &p, unsigned int buttons, bool prio) = 0;
+  bool (*mode_mouse_press_event)(const db::DPoint &p, unsigned int buttons, bool prio) = 0;
+  bool (*mode_mouse_click_event)(const db::DPoint &p, unsigned int buttons, bool prio) = 0;
+  bool (*mode_mouse_double_click_event)(const db::DPoint &p, unsigned int buttons, bool prio) = 0;
+  bool (*mode_mouse_release_event)(const db::DPoint &p, unsigned int buttons, bool prio) = 0;
+  bool (*mode_start)() =0;
+  bool (*mode_complete)()=0;
+  bool (*mode_abort)()=0;
+  void (*mode_drag_cancel)() = 0;
+  bool (*mode_key_event)(unsigned int /*key*/, unsigned int /*buttons*/) = 0;
+
 //-----------------------------------------------
 // Plugins instance
   static layAdvancedEditingPlugin* get_plugin_from_view(lay::LayoutViewBase* view);
 
 //-----------------------------------------------
 // Actions
+// Each mode has a "start" procedure, a "terminate" procedure (successful) and an
+// "abort" procedure. Also they handle mouse events
   bool        is_idle() {return m_is_idle;}
-// rects
+
+// selection
+  void        selection_start();
+  void        selection_complete();
+  void        selection_abort();
+  bool        selection_mouse_move(const db::DPoint &p, unsigned int buttons, bool prio);
+  bool        selection_mouse_click(const db::DPoint &p, unsigned int buttons);
+  bool        selection_mouse_press(const db::DPoint &p, unsigned int buttons, bool prio);
+  bool        selection_mouse_release(const db::DPoint &p, unsigned int buttons, bool prio);
+  bool        selection_mouse_double_click(const db::DPoint &p, unsigned int buttons);
+  void        selection_drag_cancel();
+  bool        selection_key_event(unsigned int key, unsigned int buttons);
+
+
+// rects.
   void        insert_rect_start();
   void        insert_rect_coord_given_p1(double x, double y);
   void        insert_rect_coord_given_p2(double x, double y);
   void        insert_rect_terminate();
+  void        insert_rect_abort();
+  void        insert_rect_mouse_click(const db::DPoint &p, unsigned int buttons);
+  void        insert_rect_mouse_double_click(const db::DPoint &p, unsigned int buttons);
+
 // paths
   void        insert_path_start() {}
   void        insert_path_coord_given(double , double ) {}
@@ -94,7 +149,7 @@ private:
   lay::LayoutViewBase *mp_view;
   // Helper for shape editing
 
-  bool         m_is_idle;        //
+  bool               m_is_idle;
   class ShapeDrawer *m_shapeDrawer;
 
 signals:
@@ -113,6 +168,7 @@ public slots:
 //----------------------------------------------------
 // Snapping
 private:
+  void            init_mode();
   bool            m_magnetic = true;
   db::DPoint      m_last_snapped;
   double          grid_micron() const;
@@ -125,7 +181,8 @@ public:
 
 //------------------------------------------------------
 // Partial selection
-  bool   m_selection_mode = true;
+private:
+
   struct PartialSelection {
     lay::ObjectInstPath path;          // the shape (or instance path)
     int                 edge_index;    // >=0 → edge, -1 → not an edge
@@ -166,6 +223,8 @@ public:
   void extract_edges_and_vertices(const db::DPolygon &poly,
                                   std::vector<db::DEdge>  &edges,
                                   std::vector<db::DPoint> &vertices);
+
+  void  update_cursor_markers();
 };
 
 #endif // LAYADVANCEDEDITINGPLUGIN_H

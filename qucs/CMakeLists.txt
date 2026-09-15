@@ -286,6 +286,7 @@ ADD_EXECUTABLE( ${QUCS_NAME} MACOSX_BUNDLE WIN32
   qtoolbox_helper_w.h qtoolbox_helper_w.cpp qtoolbox_helper_w.ui
   qtoolbox_selection_w.h qtoolbox_selection_w.cpp qtoolbox_selection_w.ui
   crosshairoverlay.h
+  layadvancedediting_selection.cpp
 
 
 
